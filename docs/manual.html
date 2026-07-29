@@ -1,0 +1,776 @@
+<title>वाक् · Vāk — a Sanskrit-native programming language</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root {
+  /* मसी — manuscript ink, paper, and haritāla: the orpiment yellow Indian
+     manuscripts used for headings and for painting over mistakes. */
+  --ink:      #16223f;
+  --ink-soft: #4a5570;
+  --ink-faint:#7c8499;
+  --paper:    #f7f6f1;
+  --paper-2:  #eeece4;
+  --rule:     #cfcdc2;
+  --gold:     #a8781f;
+  --gold-lit: #f0e4c4;
+  --indigo:   #37508c;
+  --crimson:  #9a3324;
+  --shadow:   rgba(22,34,63,.07);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink:      #e6e3d9;
+    --ink-soft: #a9aec0;
+    --ink-faint:#767d92;
+    --paper:    #10141f;
+    --paper-2:  #171c2b;
+    --rule:     #2c3346;
+    --gold:     #d8a94a;
+    --gold-lit: #2a2415;
+    --indigo:   #8aa2df;
+    --crimson:  #e0806e;
+    --shadow:   rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="light"] {
+  --ink:#16223f; --ink-soft:#4a5570; --ink-faint:#7c8499; --paper:#f7f6f1;
+  --paper-2:#eeece4; --rule:#cfcdc2; --gold:#a8781f; --gold-lit:#f0e4c4;
+  --indigo:#37508c; --crimson:#9a3324; --shadow:rgba(22,34,63,.07);
+}
+:root[data-theme="dark"] {
+  --ink:#e6e3d9; --ink-soft:#a9aec0; --ink-faint:#767d92; --paper:#10141f;
+  --paper-2:#171c2b; --rule:#2c3346; --gold:#d8a94a; --gold-lit:#2a2415;
+  --indigo:#8aa2df; --crimson:#e0806e; --shadow:rgba(0,0,0,.4);
+}
+
+/* देवनागरी must be named in every stack: no Latin face contains it, and a
+   silent fallback is what breaks pages like this one. */
+html {
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+           Georgia, "Nirmala UI", "Noto Serif Devanagari", serif;
+  --sans:  "Segoe UI", -apple-system, "Helvetica Neue", Arial,
+           "Nirmala UI", "Noto Sans Devanagari", sans-serif;
+  --mono:  "Cascadia Mono", Consolas, "SF Mono", Menlo, "DejaVu Sans Mono",
+           "Nirmala UI", "Noto Sans Devanagari", monospace;
+  box-sizing: border-box;
+  -webkit-text-size-adjust: 100%;
+}
+*, *::before, *::after { box-sizing: inherit; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 17px;
+  line-height: 1.66;
+}
+
+/* ------------------------------------------------------------ shirorekha
+   Devanagari hangs its letters from a head-line. So does every heading here. */
+.head {
+  border-top: 1.5px solid var(--ink);
+  padding-top: .5rem;
+  margin: 4.5rem 0 1.5rem;
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.head .num {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: .95rem;
+  color: var(--gold);
+  min-width: 1.6rem;
+}
+.head h2 {
+  margin: 0;
+  font-weight: 500;
+  font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2.1rem);
+  line-height: 1.2;
+  text-wrap: balance;
+  display: flex;
+  align-items: baseline;
+  gap: .75rem;
+  flex-wrap: wrap;
+}
+.head h2 .eng {
+  font-family: var(--sans);
+  font-size: .72em;
+  font-weight: 400;
+  color: var(--ink-soft);
+  letter-spacing: .01em;
+}
+
+/* ------------------------------------------------------------------ shell */
+.wrap { display: grid; grid-template-columns: 16.5rem minmax(0,1fr); gap: 3.5rem;
+        max-width: 74rem; margin: 0 auto; padding: 0 clamp(1.1rem,3vw,2.5rem); }
+main { min-width: 0; padding-bottom: 8rem; }
+section { scroll-margin-top: 1.5rem; }
+p, li { max-width: 40em; }
+
+/* ------------------------------------------------------------------- nav */
+.rail { position: sticky; top: 0; align-self: start; height: 100vh;
+         overflow-y: auto; padding: 2.5rem 0 3rem;
+         border-right: 1px solid var(--rule); }
+.rail .mark { margin: 0 0 .15rem; font-size: 2.6rem; line-height: 1;
+               letter-spacing: -.01em; }
+.rail .sub { margin: 0 0 .35rem; font-family: var(--sans); font-size: .78rem;
+              letter-spacing: .11em; text-transform: uppercase;
+              color: var(--ink-faint); }
+.rail .ver { margin: 0 0 .5rem; font-family: var(--mono); font-size: .74rem;
+              color: var(--gold); }
+.rail .play { margin: 0 0 1.5rem; font-family: var(--sans); font-size: .78rem;
+               line-height: 1.35; }
+.rail ol { list-style: none; margin: 0; padding: 0;
+            display: flex; flex-direction: column; gap: .1rem; }
+.rail a { display: grid; grid-template-columns: 1.5rem 1fr; align-items: baseline;
+           gap: .1rem .5rem; padding: .3rem .5rem .3rem .1rem;
+           text-decoration: none; color: var(--ink-soft); border-radius: 2px; }
+.rail a .n { font-size: .8rem; color: var(--ink-faint); }
+.rail a .d { font-size: .95rem; color: var(--ink); }
+.rail a .e { grid-column: 2; font-family: var(--sans); font-size: .72rem;
+              color: var(--ink-faint); line-height: 1.3; }
+.rail a:hover, .rail a:focus-visible { background: var(--paper-2); }
+.rail a:hover .d, .rail a:focus-visible .d { color: var(--gold); }
+.rail a.on { background: var(--gold-lit); }
+.rail a.on .d { color: var(--gold); }
+
+/* -------------------------------------------------------------- controls */
+.controls { display: flex; gap: .4rem; flex-wrap: wrap; margin: 1.7rem 0 0; }
+button { font: inherit; font-family: var(--sans); font-size: .74rem;
+          letter-spacing: .04em; color: var(--ink-soft); cursor: pointer;
+          background: transparent; border: 1px solid var(--rule);
+          border-radius: 2px; padding: .32rem .6rem; }
+button:hover, button:focus-visible { border-color: var(--gold); color: var(--gold); }
+button[aria-pressed="true"] { background: var(--gold-lit); border-color: var(--gold);
+                               color: var(--gold); }
+
+/* ------------------------------------------------------------------ hero */
+.hero { padding: 4.5rem 0 0; }
+.hero .lead { font-size: clamp(1.35rem, 1.05rem + 1.2vw, 1.85rem); line-height: 1.42;
+               margin: 0 0 1.1rem; max-width: 22em; text-wrap: balance;
+               font-weight: 400; }
+.hero .lead em { font-style: normal; color: var(--gold); }
+.hero p.sub { color: var(--ink-soft); max-width: 38em; }
+.danda { color: var(--gold); }
+
+/* ------------------------------------------------------------------ code */
+figure.code { margin: 1.5rem 0; }
+figure.code pre { margin: 0; overflow-x: auto; background: var(--paper-2);
+                   border: 1px solid var(--rule); border-radius: 3px;
+                   padding: .95rem 1.1rem; }
+figure.code code { font-family: var(--mono); font-size: .855rem; line-height: 1.75;
+                    white-space: pre; }
+figure.code figcaption { margin-top: .5rem; font-family: var(--sans);
+                          font-size: .76rem; color: var(--ink-faint);
+                          max-width: 40em; }
+figure.sh pre { background: transparent; border-style: dashed; }
+code { font-family: var(--mono); font-size: .875em;
+        background: var(--paper-2); padding: .06em .32em; border-radius: 2px; }
+figure.code code { background: none; padding: 0; }
+.k { color: var(--gold); font-weight: 600; font-style: normal; }
+.t { color: var(--indigo); font-weight: 600; font-style: normal; }
+.ka { color: var(--crimson); font-weight: 600; font-style: normal;
+       border-bottom: 1.5px solid currentColor; }
+.s { color: var(--indigo); font-style: normal; }
+.n { font-style: normal; }
+.c { color: var(--ink-faint); font-style: italic; }
+
+/* ----------------------------------------------------------------- tables */
+.scroll { overflow-x: auto; margin: 1.4rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: .93rem; }
+th, td { text-align: left; padding: .45rem .8rem .45rem 0;
+          border-bottom: 1px solid var(--rule); vertical-align: baseline; }
+th { font-family: var(--sans); font-size: .72rem; letter-spacing: .09em;
+      text-transform: uppercase; color: var(--ink-faint); font-weight: 500;
+      border-bottom-color: var(--ink); }
+td .iast, td.iast { font-family: var(--mono); font-size: .82rem;
+                     color: var(--ink-soft); }
+table.kw td:first-child { white-space: nowrap; }
+
+/* ------------------------------------------------------------------ notes */
+.note { margin: 1.6rem 0; padding: .1rem 0 .1rem 1.1rem;
+         border-left: 2px solid var(--gold); }
+.note p { font-size: .93rem; color: var(--ink-soft); }
+.note p:first-child { margin-top: .6rem; }
+.note p:last-child { margin-bottom: .6rem; }
+.note b { color: var(--ink); }
+p.lede { font-size: 1.12rem; color: var(--gold); max-width: 32em; }
+ol.engines { padding-left: 1.2rem; }
+ol.engines li { margin-bottom: .5rem; }
+ol.engines b { font-weight: 600; }
+a { color: var(--gold); text-underline-offset: .18em; }
+
+footer { border-top: 1.5px solid var(--ink); margin-top: 5rem; padding-top: 1rem;
+          font-family: var(--sans); font-size: .78rem; color: var(--ink-faint);
+          display: flex; justify-content: space-between; gap: 1rem;
+          flex-wrap: wrap; }
+footer .verse { font-family: var(--serif); font-size: .95rem; color: var(--ink-soft); }
+
+/* ----------------------------------------------------------------- narrow */
+.railtop { display: none; }
+@media (max-width: 62rem) {
+  .wrap { grid-template-columns: 1fr; gap: 0; }
+  .rail { position: static; height: auto; border-right: 0;
+           border-bottom: 1px solid var(--rule); padding: 2rem 0 1.5rem; }
+  .rail ol { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem,1fr));
+              gap: 0 .5rem; }
+  .rail a .e { display: none; }
+  .hero { padding-top: 2.5rem; }
+  .head { margin-top: 3.25rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+</style>
+
+<div class="wrap">
+<nav class="rail" aria-label="Contents">
+  <p class="mark">वाक्</p>
+  <p class="sub">Vāk · a manual</p>
+  <p class="ver">0.10.0</p>
+  <p class="play"><a href="playground.html">क्रीडाक्षेत्रम् · try it in the browser →</a></p>
+  <ol>
+      <li><a href="#chalanam"><span class="n">१</span><span class="d">चालनम्</span><span class="e">Running Vāk</span></a></li>
+      <li><a href="#vakyani"><span class="n">२</span><span class="d">वाक्यानि</span><span class="e">Statements and the danda</span></a></li>
+      <li><a href="#charah"><span class="n">३</span><span class="d">चराः</span><span class="e">Variables and numerals</span></a></li>
+      <li><a href="#pravahah"><span class="n">४</span><span class="d">प्रवाहः</span><span class="e">Control flow</span></a></li>
+      <li><a href="#karyani"><span class="n">५</span><span class="d">कार्याणि</span><span class="e">Functions</span></a></li>
+      <li><a href="#sangrahah"><span class="n">६</span><span class="d">संग्रहाः</span><span class="e">Lists and dictionaries</span></a></li>
+      <li><a href="#prakarah"><span class="n">७</span><span class="d">प्रकाराः</span><span class="e">Types</span></a></li>
+      <li><a href="#karakani"><span class="n">८</span><span class="d">कारकाणि</span><span class="e">Kāraka roles</span></a></li>
+      <li><a href="#vishleshakah"><span class="n">९</span><span class="d">अर्थविश्लेषकः</span><span class="e">The semantic analyser</span></a></li>
+      <li><a href="#doshah"><span class="n">१०</span><span class="d">दोषनिग्रहः</span><span class="e">Exceptions</span></a></li>
+      <li><a href="#anaya"><span class="n">११</span><span class="d">आनय</span><span class="e">Modules and files</span></a></li>
+      <li><a href="#yantram"><span class="n">१२</span><span class="d">यन्त्रम्</span><span class="e">How Vāk runs</span></a></li>
+      <li><a href="#padakoshah"><span class="n">१३</span><span class="d">पदकोशः</span><span class="e">Every keyword</span></a></li>
+      <li><a href="#antarnihitani"><span class="n">१४</span><span class="d">अन्तर्निहितानि</span><span class="e">The 39 built-ins</span></a></li>
+  </ol>
+  <div class="controls">
+    <button id="canon" aria-pressed="false">देवनागरी → roman</button>
+    <button id="theme">theme</button>
+  </div>
+</nav>
+
+<main>
+  <header class="hero">
+    <p class="lead">A programming language whose keywords, whose type system,
+    and whose <em>own compiler</em> are written in Sanskrit<span class="danda">।</span></p>
+    <p class="sub">Vāk takes Pāṇini's analysis of a sentence — that meaning comes
+    from the <b>role</b> each participant plays, not from where it sits — and
+    makes it a type system. Every stage of the language is written in the
+    language itself.</p>
+    <figure class="code"><pre><code><i class="c"># कारकाणि — a parameter declares the role it plays in the action</i>
+<b class="k" data-r="karyam">कार्यम्</b> छानय(<b class="ka">अपादानम्</b> <b class="t" data-r="suchi">सूची</b> संग्रहः, <b class="ka">करणम्</b> <b class="k" data-r="karyam">कार्यम्</b> परीक्षा) : <b class="t" data-r="suchi">सूची</b> {
+    <b class="t" data-r="suchi">सूची</b> फलम् = []।
+    <b class="k" data-r="pratyekam">प्रत्येकम्</b> (अङ्गम् <b class="k" data-r="antah">अन्तः</b> संग्रहः) {
+        <b class="k" data-r="yadi">यदि</b> (परीक्षा(अङ्गम्)) { योजय(फलम्, अङ्गम्)। }
+    }
+    <b class="k" data-r="pratyagaccha">प्रत्यागच्छ</b> फलम्।
+}
+
+<b class="k" data-r="mudraya">मुद्रय</b> छानय(<b class="ka">करणम्</b>: समः, <b class="ka">अपादानम्</b>: [<i class="n" data-r="1">१</i>, <i class="n" data-r="2">२</i>, <i class="n" data-r="3">३</i>, <i class="n" data-r="4">४</i>, <i class="n" data-r="5">५</i>, <i class="n" data-r="6">६</i>])।</code></pre></figure>
+  </header>
+
+<section id="chalanam">
+  <div class="head">
+    <p class="num">१</p>
+    <h2><span class="dev">चालनम्</span><span class="eng">Running Vāk</span></h2>
+  </div>
+  
+<p>Three ways to run a program, all producing identical output. The first needs
+Python; the last needs nothing at all.</p>
+<figure class="code sh"><pre><code>python -m vak प्रोग्राम.vak          # the tree-walking interpreter
+python -m vak --vm प्रोग्राम.vak     # compile to bytecode, run on the SanskritVM
+./वाक्.exe प्रोग्राम.vak              # the self-hosted toolchain, no Python</code></pre></figure>
+<p>Two more you will want early — the first analyses without running, the second
+starts a REPL:</p>
+<figure class="code sh"><pre><code>./वाक्.exe --परीक्षा प्रोग्राम.vak    # report problems, run nothing
+python -m vak                        # संवादः — the REPL</code></pre></figure>
+<div class="note">
+  <p><b>Writing Devanagari.</b> You do not have to. Every keyword has an ASCII
+  spelling and ASCII numerals work everywhere, so a Vāk program can be typed on
+  a plain keyboard. Use the switch at the top of this page to see any example
+  either way.</p>
+  <p>If you do write Devanagari, note that no monospace coding font contains it —
+  your editor will silently fall back to a proportional face and your columns
+  will drift. Setting <code>editor.fontFamily</code> to a chain ending in
+  <code>Nirmala UI</code> or <code>Noto Sans Devanagari</code> fixes the
+  rendering, though nothing makes Devanagari truly monospaced.</p>
+</div>
+</section>
+<section id="vakyani">
+  <div class="head">
+    <p class="num">२</p>
+    <h2><span class="dev">वाक्यानि</span><span class="eng">Statements and the danda</span></h2>
+  </div>
+  
+<p>A statement ends with a <b>danda</b> — <code>।</code> — the full stop
+Sanskrit has used since manuscripts. <code>॥</code>, the double danda, ends a
+section. A semicolon means the same thing and is easier to type.</p>
+<figure class="code"><pre><code><b class="k" data-r="mudraya">मुद्रय</b> <i class="s">&quot;नमस्ते जगत्&quot;</i>।
+<b class="k" data-r="mana">मान</b> क = <i class="n" data-r="5">५</i>;
+<b class="k" data-r="mudraya">मुद्रय</b> क॥</code></pre></figure>
+<p><code>मुद्रय</code> prints its arguments separated by a space. Comments run
+from <code>#</code> to the end of the line.</p>
+</section>
+<section id="charah">
+  <div class="head">
+    <p class="num">३</p>
+    <h2><span class="dev">चराः</span><span class="eng">Variables and numerals</span></h2>
+  </div>
+  
+<p><code>मान</code> declares a variable, <code>ध्रुव</code> a constant. A type
+may be written in place of <code>मान</code>, and then it binds — the analyser
+and every engine hold you to it.</p>
+<figure class="code"><pre><code><b class="k" data-r="mana">मान</b> नाम = <i class="s">&quot;वाक्&quot;</i>।
+<b class="k" data-r="dhruva">ध्रुव</b> पाई = <i class="n" data-r="3.14159">३.१४१५९</i>।
+<b class="t" data-r="purnankah">पूर्णाङ्कः</b> वर्षम् = <i class="n" data-r="2026">२०२६</i>।
+<b class="t" data-r="shabdah">शब्दः</b> अभिवादनम् = <i class="s">&quot;नमस्ते&quot;</i>।
+
+वर्षम् += <i class="n" data-r="1">१</i>।
+<b class="k" data-r="mudraya">मुद्रय</b> नाम, वर्षम्, पाई।</code></pre></figure>
+<p>Devanagari and ASCII numerals are the same numbers — <code>२०२६</code> and
+<code>2026</code> are one value, and you may mix them freely. Output uses
+whichever form the value was written in where that is knowable, and
+<code>देवनागरी()</code> converts on demand.</p>
+</section>
+<section id="pravahah">
+  <div class="head">
+    <p class="num">४</p>
+    <h2><span class="dev">प्रवाहः</span><span class="eng">Control flow</span></h2>
+  </div>
+  
+<p><code>यदि</code> and <code>अन्यथा</code> branch. Parentheses around the
+condition are optional; the braces are not.</p>
+<figure class="code"><pre><code><b class="k" data-r="yadi">यदि</b> (<b class="t" data-r="ankah">अङ्कः</b> &gt; <i class="n" data-r="100">१००</i>) {
+    <b class="k" data-r="mudraya">मुद्रय</b> <i class="s">&quot;महान्&quot;</i>।
+} <b class="k" data-r="anyatha">अन्यथा</b> <b class="k" data-r="yadi">यदि</b> (<b class="t" data-r="ankah">अङ्कः</b> &gt; <i class="n" data-r="10">१०</i>) {
+    <b class="k" data-r="mudraya">मुद्रय</b> <i class="s">&quot;मध्यमः&quot;</i>।
+} <b class="k" data-r="anyatha">अन्यथा</b> {
+    <b class="k" data-r="mudraya">मुद्रय</b> <i class="s">&quot;अल्पः&quot;</i>।
+}</code></pre></figure>
+<p>Three loops, because three different things are worth saying. <code>यावत्</code>
+repeats while a condition holds, <code>आवृत्तिः</code> repeats a fixed number of
+times, and <code>प्रत्येकम् … अन्तः</code> walks a collection.</p>
+<figure class="code"><pre><code><b class="k" data-r="yavat">यावत्</b> (क &lt; <i class="n" data-r="10">१०</i>) { क += <i class="n" data-r="1">१</i>। }
+
+<b class="k" data-r="avrttih">आवृत्तिः</b> (<i class="n" data-r="3">३</i>) { <b class="k" data-r="mudraya">मुद्रय</b> <i class="s">&quot;ॐ&quot;</i>। }
+
+<b class="k" data-r="pratyekam">प्रत्येकम्</b> (<b class="t" data-r="ankah">अङ्कः</b> <b class="k" data-r="antah">अन्तः</b> [<i class="n" data-r="1">१</i>, <i class="n" data-r="2">२</i>, <i class="n" data-r="3">३</i>, <i class="n" data-r="4">४</i>]) {
+    <b class="k" data-r="yadi">यदि</b> (<b class="t" data-r="ankah">अङ्कः</b> == <i class="n" data-r="3">३</i>) { <b class="k" data-r="anuvarta">अनुवर्त</b>। }
+    <b class="k" data-r="mudraya">मुद्रय</b> <b class="t" data-r="ankah">अङ्कः</b>।
+}</code></pre></figure>
+<p><code>विरम</code> leaves a loop, <code>अनुवर्त</code> starts its next turn.</p>
+
+<h3>विकल्पः · Choosing among alternatives</h3>
+<p>Where a chain of <code>अन्यथा यदि</code> only compares one value over and over,
+<code>विकल्पः</code> says it once. The word is Pāṇini's own: a <i>vikalpa</i> is
+an optional alternative in a rule. Each alternative is introduced by
+<code>पक्षे</code> — the locative, “in this case” — matching
+<code>दोषे</code>, the locative Vāk already uses for catch.</p>
+<figure class="code"><pre><code><b class="k" data-r="karyam">कार्यम्</b> वासरनाम(<b class="ka">कर्म</b> <b class="t" data-r="purnankah">पूर्णाङ्कः</b> वारः) : <b class="t" data-r="shabdah">शब्दः</b> {
+    <b class="k" data-r="vikalpah">विकल्पः</b> (वारः) {
+        <b class="k" data-r="pakshe">पक्षे</b> <i class="n" data-r="1">१</i>: <b class="k" data-r="pratyagaccha">प्रत्यागच्छ</b> <i class="s">&quot;सोमवासरः&quot;</i>।
+        <b class="k" data-r="pakshe">पक्षे</b> <i class="n" data-r="2">२</i>, <i class="n" data-r="3">३</i>: <b class="k" data-r="pratyagaccha">प्रत्यागच्छ</b> <i class="s">&quot;मङ्गलः बुधः वा&quot;</i>।
+        <b class="k" data-r="pakshe">पक्षे</b> <i class="n" data-r="6">६</i>, <i class="n" data-r="7">७</i>: <b class="k" data-r="pratyagaccha">प्रत्यागच्छ</b> <i class="s">&quot;सप्ताहान्तः&quot;</i>।
+        <b class="k" data-r="anyatha">अन्यथा</b>: <b class="k" data-r="pratyagaccha">प्रत्यागच्छ</b> <i class="s">&quot;अज्ञातः&quot;</i>।
+    }
+}</code></pre></figure>
+<p>One <code>पक्षे</code> may carry several values, separated by commas.
+<code>अन्यथा</code> is the fallback, and it is the fallback wherever it is
+written. The subject is evaluated once.</p>
+<div class="note">
+  <p><b>पक्षाः do not fall through.</b> The alternative that matches is the only
+  one that runs, so nothing has to be written to stop it. That frees
+  <code>विरम</code> to keep its ordinary meaning: inside a विकल्पः it leaves the
+  <em>enclosing loop</em>, not the विकल्पः — and outside a loop it is an error,
+  exactly as it always was.</p>
+  <p>The analyser reports a पक्षः whose type could never match the subject, and
+  a value given twice — neither could ever run. A विकल्पः without an
+  <code>अन्यथा</code> is only advice, not an error, but it does mean an
+  unmatched subject does nothing at all.</p>
+</div>
+<p>A विकल्पः also counts as returning on every path, so long as it has an
+<code>अन्यथा</code> and every पक्षः returns — which is why the function above
+needs no closing <code>प्रत्यागच्छ</code>.</p>
+</section>
+<section id="karyani">
+  <div class="head">
+    <p class="num">५</p>
+    <h2><span class="dev">कार्याणि</span><span class="eng">Functions</span></h2>
+  </div>
+  
+<p><code>कार्यम्</code> defines a function. A return type after the colon is
+optional and binding. Functions are values: pass them, return them, close over
+their surroundings.</p>
+<figure class="code"><pre><code><b class="k" data-r="karyam">कार्यम्</b> क्षेत्रफलम्(<b class="t" data-r="purnankah">पूर्णाङ्कः</b> दैर्घ्यम्, <b class="t" data-r="purnankah">पूर्णाङ्कः</b> विस्तारः) : <b class="t" data-r="purnankah">पूर्णाङ्कः</b> {
+    <b class="k" data-r="pratyagaccha">प्रत्यागच्छ</b> दैर्घ्यम् * विस्तारः।
+}
+
+<b class="k" data-r="karyam">कार्यम्</b> योजकः(आधारः) : <b class="k" data-r="karyam">कार्यम्</b> {
+    <b class="k" data-r="pratyagaccha">प्रत्यागच्छ</b> <b class="k" data-r="karyam">कार्यम्</b>(क) : <b class="t" data-r="purnankah">पूर्णाङ्कः</b> { <b class="k" data-r="pratyagaccha">प्रत्यागच्छ</b> आधारः + क। }।
+}
+
+<b class="k" data-r="mana">मान</b> दश = योजकः(<i class="n" data-r="10">१०</i>)।
+<b class="k" data-r="mudraya">मुद्रय</b> क्षेत्रफलम्(<i class="n" data-r="6">६</i>, <i class="n" data-r="7">७</i>), दश(<i class="n" data-r="5">५</i>)।</code></pre></figure>
+<p>Functions are hoisted: a function may call one defined later in the same
+block.</p>
+</section>
+<section id="sangrahah">
+  <div class="head">
+    <p class="num">६</p>
+    <h2><span class="dev">संग्रहाः</span><span class="eng">Lists and dictionaries</span></h2>
+  </div>
+  
+<p><code>सूची</code> is an ordered list, <code>कोशः</code> a dictionary —
+literally a <i>treasury</i>, the word Sanskrit uses for a lexicon. Negative
+indices count from the end.</p>
+<figure class="code"><pre><code><b class="k" data-r="mana">मान</b> अङ्काः = [<i class="n" data-r="1">१</i>, <i class="n" data-r="2">२</i>, <i class="n" data-r="3">३</i>, <i class="n" data-r="4">४</i>, <i class="n" data-r="5">५</i>]।
+<b class="k" data-r="mudraya">मुद्रय</b> अङ्काः[<i class="n" data-r="0">०</i>], अङ्काः[-<i class="n" data-r="1">१</i>], दीर्घता(अङ्काः)।
+योजय(अङ्काः, <i class="n" data-r="6">६</i>)।
+
+<b class="k" data-r="mana">मान</b> छात्रः = { <i class="s">&quot;नाम&quot;</i>: <i class="s">&quot;रामः&quot;</i>, <i class="s">&quot;वयः&quot;</i>: <i class="n" data-r="20">२०</i> }।
+<b class="k" data-r="mudraya">मुद्रय</b> छात्रः.नाम, छात्रः[<i class="s">&quot;वयः&quot;</i>]।
+छात्रः.नगरम् = <i class="s">&quot;काशी&quot;</i>।</code></pre></figure>
+<p>A dictionary key may be reached with a dot or with brackets; the dot form is
+the same lookup written more quietly.</p>
+</section>
+<section id="prakarah">
+  <div class="head">
+    <p class="num">७</p>
+    <h2><span class="dev">प्रकाराः</span><span class="eng">Types</span></h2>
+  </div>
+  
+<p>Typing is gradual. Write no type and nothing is checked; write one and it is
+enforced everywhere — at declaration, at assignment, at every call, and on the
+way out of a function. <code>किमपि</code> flows both ways, so only a provable
+mismatch is an error.</p>
+<div class="scroll"><table>
+  <thead><tr><th>प्रकारः</th><th>what it holds</th></tr></thead>
+  <tbody>
+    <tr><td><code class="ty" data-r="purnankah">पूर्णाङ्कः</code></td><td>whole number — <i>pūrṇāṅkaḥ</i>, “complete-numbered”</td></tr>
+    <tr><td><code class="ty" data-r="dashamshah">दशांशः</code></td><td>a number with a fractional part — <i>daśāṃśaḥ</i>, “tenth-part”</td></tr>
+    <tr><td><code class="ty" data-r="ankah">अङ्कः</code></td><td>either kind of number</td></tr>
+    <tr><td><code class="ty" data-r="shabdah">शब्दः</code></td><td>text — <i>śabdaḥ</i>, the word for <i>word</i></td></tr>
+    <tr><td><code class="ty" data-r="satyata">सत्यता</code></td><td>truth — <code>सत्य</code> or <code>असत्य</code></td></tr>
+    <tr><td><code class="ty" data-r="suchi">सूची</code></td><td>a list</td></tr>
+    <tr><td><code class="ty" data-r="koshah">कोशः</code></td><td>a dictionary</td></tr>
+    <tr><td><code class="ty" data-r="karyam">कार्यम्</code></td><td>a function</td></tr>
+    <tr><td><code class="ty" data-r="kimapi">किमपि</code></td><td>anything at all — <i>kimapi</i>, “whatever”</td></tr>
+    <tr><td><code class="ty" data-r="shunyam">शून्यम्</code></td><td>nothing — <i>śūnyam</i>, the zero India gave the world</td></tr>
+  </tbody>
+</table></div>
+<figure class="code"><pre><code><b class="t" data-r="purnankah">पूर्णाङ्कः</b> आयुः = <i class="n" data-r="25">२५</i>।
+आयुः = <i class="s">&quot;पञ्चविंशतिः&quot;</i>।   <i class="c"># प्रकारदोषः — शब्दः दीयते, पूर्णाङ्कः अपेक्षितः</i></code></pre><figcaption>The analyser reports this before the program runs.</figcaption></figure>
+</section>
+<section id="karakani">
+  <div class="head">
+    <p class="num">८</p>
+    <h2><span class="dev">कारकाणि</span><span class="eng">Kāraka roles</span></h2>
+  </div>
+  
+<p class="lede">This is the part of Vāk that exists nowhere else.</p>
+<p>Pāṇini analysed a sentence not by word order but by <b>kāraka</b> — the role
+each participant plays in the action. Vāk lets a parameter declare its role, and
+then checks the grammar of your function the way Pāṇini checked the grammar of a
+sentence.</p>
+<div class="scroll"><table>
+  <thead><tr><th>कारकम्</th><th>विभक्तिः · what the role means</th></tr></thead>
+  <tbody>
+    <tr><td><code class="ka">कर्ता</code></td><td>प्रथमा (nominative) — the agent, who acts</td></tr>
+    <tr><td><code class="ka">कर्म</code></td><td>द्वितीया (accusative) — the patient, what the action most wants</td></tr>
+    <tr><td><code class="ka">करणम्</code></td><td>तृतीया (instrumental) — the means by which it is done</td></tr>
+    <tr><td><code class="ka">सम्प्रदानम्</code></td><td>चतुर्थी (dative) — the recipient it is given to</td></tr>
+    <tr><td><code class="ka">अपादानम्</code></td><td>पञ्चमी (ablative) — the source it departs from</td></tr>
+    <tr><td><code class="ka">अधिकरणम्</code></td><td>सप्तमी (locative) — the locus it happens in</td></tr>
+  </tbody>
+</table></div>
+<figure class="code"><pre><code><b class="k" data-r="karyam">कार्यम्</b> छानय(<b class="ka">अपादानम्</b> <b class="t" data-r="suchi">सूची</b> संग्रहः, <b class="ka">करणम्</b> <b class="k" data-r="karyam">कार्यम्</b> परीक्षा) : <b class="t" data-r="suchi">सूची</b> {
+    <b class="t" data-r="suchi">सूची</b> फलम् = []।
+    <b class="k" data-r="pratyekam">प्रत्येकम्</b> (अङ्गम् <b class="k" data-r="antah">अन्तः</b> संग्रहः) {
+        <b class="k" data-r="yadi">यदि</b> (परीक्षा(अङ्गम्)) { योजय(फलम्, अङ्गम्)। }
+    }
+    <b class="k" data-r="pratyagaccha">प्रत्यागच्छ</b> फलम्।
+}</code></pre><figcaption>The collection is what we draw <i>from</i>; the test is the means <i>by which</i>.</figcaption></figure>
+<p>Because the roles are marked, the arguments carry their own labels and the
+order stops mattering — exactly the freedom case marking gives a Sanskrit
+sentence. All three of these calls are the same call:</p>
+<figure class="code"><pre><code>छानय(अङ्काः, समः)।
+छानय(<b class="ka">अपादानम्</b>: अङ्काः, <b class="ka">करणम्</b>: समः)।
+छानय(<b class="ka">करणम्</b>: समः, <b class="ka">अपादानम्</b>: अङ्काः)।</code></pre></figure>
+<div class="note">
+  <p><b>What gets checked.</b> Pāṇini's rule that an action has one agent and one
+  patient is enforced: two <code>कर्ता</code> parameters, or two
+  <code>कर्म</code>, is an error. A label that names no declared role is an
+  error, and so is giving the same role twice. Word order is deliberately
+  <em>not</em> enforced — that is the whole point of marking the roles.</p>
+  <p>Softer observations come back as सूचनाः rather than errors: a
+  <code>करणम्</code> that is not a means, an <code>अपादानम्</code> that is not a
+  collection, a function with a <code>कर्म</code> that returns nothing.</p>
+</div>
+</section>
+<section id="vishleshakah">
+  <div class="head">
+    <p class="num">९</p>
+    <h2><span class="dev">अर्थविश्लेषकः</span><span class="eng">The semantic analyser</span></h2>
+  </div>
+  
+<p>Before anything runs, the analyser walks the syntax tree and reports what it
+can prove wrong: undefined names, type mismatches, assignments to constants,
+wrong argument counts, <code>विरम</code> outside a loop, kāraka violations,
+unreachable code, a declared return type some path does not satisfy.</p>
+<figure class="code sh"><pre><code>$ ./वाक्.exe --परीक्षा प्रोग्राम.vak
+अर्थदोषः (Semantic Analysis) — 2 दोषाः, 0 सूचनाः
+  दोषः [ध्रुवदोषः] प्रोग्राम.vak:6 — ध्रुवः &#x27;सीमा&#x27; न परिवर्तनीयः / cannot reassign the constant &#x27;सीमा&#x27;
+         6 | सीमा = ११।
+  दोषः [नामदोषः] प्रोग्राम.vak:7 — अपरिभाषितम् नाम &#x27;अज्ञातम्&#x27; / undefined name &#x27;अज्ञातम्&#x27;
+         7 | मुद्रय बाह्यम्(), अज्ञातम्।</code></pre></figure>
+<p>Every message is bilingual, and every diagnostic carries a Sanskrit code —
+<code>नामदोषः</code>, <code>प्रकारदोषः</code>, <code>कारकदोषः</code>,
+<code>ध्रुवदोषः</code>, <code>प्राचलदोषः</code>, <code>प्रवाहदोषः</code>. Errors
+stop the program; सूचनाः are advice and do not.</p>
+<p>The analyser exists twice: once in Python and once
+<a href="#yantram">written in Vāk itself</a>. The two are compared on sixty-five
+files — every example, the standard library, forty deliberately broken programs,
+and the toolchain's own source — and must produce identical diagnostics, in the
+same order, with the same wording.</p>
+</section>
+<section id="doshah">
+  <div class="head">
+    <p class="num">१०</p>
+    <h2><span class="dev">दोषनिग्रहः</span><span class="eng">Exceptions</span></h2>
+  </div>
+  
+<p><code>प्रयत्नः</code> is the attempt, <code>दोषे</code> the locative — “in
+the event of an error” — and <code>अन्ततः</code> what happens at the end
+regardless. <code>उत्सृज</code> throws.</p>
+<figure class="code"><pre><code><b class="k" data-r="prayatnah">प्रयत्नः</b> {
+    <b class="k" data-r="yadi">यदि</b> (हरः == <i class="n" data-r="0">०</i>) {
+        <b class="k" data-r="utsrja">उत्सृज</b> { <i class="s">&quot;प्रकारः&quot;</i>: <i class="s">&quot;गणितदोषः&quot;</i>, <i class="s">&quot;सन्देशः&quot;</i>: <i class="s">&quot;शून्येन भागः&quot;</i> }।
+    }
+    <b class="k" data-r="mudraya">मुद्रय</b> अंशः / हरः।
+} <b class="k" data-r="doshe">दोषे</b> (द) {
+    <b class="k" data-r="mudraya">मुद्रय</b> <i class="s">&quot;दोषः प्राप्तः:&quot;</i>, द.प्रकारः, <i class="s">&quot;—&quot;</i>, द.सन्देशः।
+} <b class="k" data-r="antatah">अन्ततः</b> {
+    <b class="k" data-r="mudraya">मुद्रय</b> <i class="s">&quot;समाप्तम्&quot;</i>।
+}</code></pre></figure>
+<p>The caught value is an ordinary <code>कोशः</code> carrying at least
+<code>प्रकारः</code> and <code>सन्देशः</code>. Runtime failures from the
+language itself arrive in the same shape, so one handler catches both.</p>
+</section>
+<section id="anaya">
+  <div class="head">
+    <p class="num">११</p>
+    <h2><span class="dev">आनय</span><span class="eng">Modules and files</span></h2>
+  </div>
+  
+<p><code>आनय</code> — <i>bring</i> — imports. A module is any
+<code>.vak</code> file; whatever it declares at the top level is what it
+exports.</p>
+<figure class="code"><pre><code><b class="k" data-r="anaya">आनय</b> <i class="s">&quot;गणितम्&quot;</i>।                    <i class="c"># गणितम्.वर्गमूलम्(...)</i>
+<b class="k" data-r="anaya">आनय</b> <i class="s">&quot;गणितम्&quot;</i> <b class="k" data-r="iti">इति</b> ग।               <i class="c"># ग.वर्गमूलम्(...)</i>
+<b class="k" data-r="anaya">आनय</b> <i class="s">&quot;गणितम्&quot;</i> <b class="k" data-r="tah">तः</b> वर्गमूलम्, ज्या।   <i class="c"># वर्गमूलम्(...)</i></code></pre></figure>
+<p>Modules run once and are cached; a circular import is reported rather than
+hung on. Files are read and written with the built-ins:</p>
+<figure class="code"><pre><code><b class="t" data-r="shabdah">शब्दः</b> विषयम् = सञ्चिकापठ(<i class="s">&quot;काव्यम्.txt&quot;</i>)।
+सञ्चिकालिख(<i class="s">&quot;फलम्.txt&quot;</i>, विषयम्)।
+<b class="k" data-r="yadi">यदि</b> (सञ्चिकास्ति(<i class="s">&quot;फलम्.txt&quot;</i>)) { <b class="k" data-r="mudraya">मुद्रय</b> निर्देशिका(<i class="s">&quot;.&quot;</i>)। }</code></pre></figure>
+</section>
+<section id="yantram">
+  <div class="head">
+    <p class="num">१२</p>
+    <h2><span class="dev">यन्त्रम्</span><span class="eng">How Vāk runs</span></h2>
+  </div>
+  
+<p class="lede">The point of the project is a language that does not depend on a
+host language.</p>
+<p>A Vāk program can be executed by any of five engines, and all five are held to
+byte-identical output on every example:</p>
+<ol class="engines">
+  <li><b>The tree-walking interpreter</b>, in Python — the reference, the
+  definition of what a program means.</li>
+  <li><b>The SanskritVM</b>, in Python — a stack machine over bytecode whose
+  every instruction has a Sanskrit name.</li>
+  <li><b>The SanskritVM written in Vāk</b> — the machine's semantics, expressed
+  in the language it runs.</li>
+  <li><b>The SanskritVM in C</b> — the native runtime, ~2,600 lines.</li>
+  <li><b>वाक्.exe</b> — the whole Vāk-written toolchain compiled natively. No
+  Python anywhere.</li>
+</ol>
+<p>The front end is <b>entirely self-hosted</b>. Lexer, parser, analyser,
+compiler and virtual machine all exist written in Vāk, and each is checked
+against its Python counterpart at the finest granularity that stage allows —
+the lexer on every token's kind, lexeme, value and line; the parser on the whole
+syntax tree node for node; the analyser on every diagnostic's code, line and
+wording; the compiler on every instruction, constant and line number.</p>
+<figure class="code sh"><pre><code>python -m vak --self प्रोग्राम.vak      # compiled by Vāk, run on the Python VM
+python -m vak --self-vm प्रोग्राम.vak   # lexed, parsed, compiled AND run by Vāk
+python -m vak --native प्रोग्राम.vak    # a standalone executable (needs gcc)
+python -m vak --bytecode प्रोग्राम.vak  # disassemble</code></pre></figure>
+<p>Python is used to build <code>वाक्.exe</code> once, exactly as a C compiler is
+used once to build a self-hosting C compiler. After that the language stands on
+its own.</p>
+<div class="note">
+  <p><b>Where it runs.</b> The Python implementation is portable as it stands.
+  The native runtime is C11; the few places that need the operating system —
+  the command line, opening a file by a Devanagari path, listing a directory —
+  have both a Windows branch and a POSIX one, chosen by a single switch that
+  every file shares. Building with <code>VAK_POSIX=1</code> forces the POSIX
+  branch, so the code Linux and macOS will run can be exercised anywhere.</p>
+  <p>And it runs in a browser: the same C machine, compiled to WebAssembly, is
+  what the <a href="playground.html">playground</a> executes. Nothing is sent
+  anywhere — the lexer, parser, analyser, compiler and VM are all in the page.</p>
+</div>
+</section>
+<section id="padakoshah">
+  <div class="head">
+    <p class="num">१३</p>
+    <h2><span class="dev">पदकोशः</span><span class="eng">Every keyword</span></h2>
+  </div>
+  
+<p>Each keyword may be written in Devanagari, in IAST transliteration, or in
+plain ASCII. They are the same word — the lexer holds all three spellings.</p>
+<div class="scroll"><table class="kw">
+  <thead><tr><th>देवनागरी</th><th>IAST · ASCII</th><th>meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>मान</code></td><td class="iast">māna · mana</td><td>declare a variable</td></tr>
+    <tr><td><code>ध्रुव</code></td><td class="iast">dhruva</td><td>declare a constant</td></tr>
+    <tr><td><code>कार्यम् · कार्य</code></td><td class="iast">kāryam · kārya · karyam · karya</td><td>define a function</td></tr>
+    <tr><td><code>प्रत्यागच्छ · प्रतिदा</code></td><td class="iast">pratyāgaccha · pratidā · pratyagaccha · pratida</td><td>return from a function</td></tr>
+    <tr><td><code>मुद्रय</code></td><td class="iast">mudraya</td><td>print</td></tr>
+    <tr><td><code>यदि</code></td><td class="iast">yadi</td><td>if</td></tr>
+    <tr><td><code>अन्यथा</code></td><td class="iast">anyathā · anyatha</td><td>else</td></tr>
+    <tr><td><code>यावत् · यावत</code></td><td class="iast">yāvat · yavat</td><td>while</td></tr>
+    <tr><td><code>आवृत्तिः · आवृत्ति</code></td><td class="iast">āvṛttiḥ · avrttih</td><td>repeat a fixed number of times</td></tr>
+    <tr><td><code>प्रत्येकम् · प्रत्येकम</code></td><td class="iast">pratyekam</td><td>for each</td></tr>
+    <tr><td><code>विकल्पः · विकल्प</code></td><td class="iast">vikalpaḥ · vikalpah</td><td>choose among alternatives</td></tr>
+    <tr><td><code>पक्षे</code></td><td class="iast">pakṣe · pakshe</td><td>in this case</td></tr>
+    <tr><td><code>अन्तः</code></td><td class="iast">antaḥ · antah</td><td>of the collection</td></tr>
+    <tr><td><code>विरम</code></td><td class="iast">virama</td><td>leave the loop</td></tr>
+    <tr><td><code>अनुवर्त</code></td><td class="iast">anuvarta</td><td>next turn of the loop</td></tr>
+    <tr><td><code>प्रयत्नः · प्रयत्न</code></td><td class="iast">prayatnaḥ · prayatnah</td><td>attempt</td></tr>
+    <tr><td><code>दोषे · गृहाण</code></td><td class="iast">doṣe · gṛhāṇa · doshe · grihana</td><td>in the event of an error</td></tr>
+    <tr><td><code>अन्ततः · अन्ते</code></td><td class="iast">antataḥ · antatah</td><td>at the end, regardless</td></tr>
+    <tr><td><code>उत्सृज · क्षिप</code></td><td class="iast">utsṛja · kṣipa · utsrja · kshipa</td><td>throw</td></tr>
+    <tr><td><code>आनय</code></td><td class="iast">ānaya · anaya</td><td>import</td></tr>
+    <tr><td><code>इति</code></td><td class="iast">iti</td><td>under the name</td></tr>
+    <tr><td><code>तः</code></td><td class="iast">taḥ · tah</td><td>taking from</td></tr>
+    <tr><td><code>सत्य</code></td><td class="iast">satya</td><td>true</td></tr>
+    <tr><td><code>असत्य</code></td><td class="iast">asatya</td><td>false</td></tr>
+    <tr><td><code>शून्य</code></td><td class="iast">śūnya · shunya · sunya</td><td>nothing</td></tr>
+    <tr><td><code>च</code></td><td class="iast">ca</td><td>and</td></tr>
+    <tr><td><code>वा</code></td><td class="iast">vā · va</td><td>or</td></tr>
+    <tr><td><code>न</code></td><td class="iast">na</td><td>not</td></tr>
+  </tbody>
+</table></div>
+</section>
+<section id="antarnihitani">
+  <div class="head">
+    <p class="num">१४</p>
+    <h2><span class="dev">अन्तर्निहितानि</span><span class="eng">The 39 built-ins</span></h2>
+  </div>
+  
+<p>Available everywhere without an import. Two more —
+<code>गणितम्</code> and <code>शब्दाः</code> — are libraries written in Vāk and
+brought in with <code>आनय</code>.</p>
+<div class="scroll"><table class="kw">
+  <thead><tr><th>नाम</th><th>roman</th><th>what it does</th></tr></thead>
+  <tbody>
+    <tr><td><code>लिख</code></td><td class="iast">likh</td><td>मुद्रयति / print values</td></tr>
+    <tr><td><code>पठ</code></td><td class="iast">patha</td><td>उपयोक्तुः पङ्क्तिम् पठति / read a line</td></tr>
+    <tr><td><code>प्रकार</code></td><td class="iast">prakara</td><td>मूल्यस्य प्रकारः / type of a value</td></tr>
+    <tr><td><code>संख्या</code></td><td class="iast">sankhya</td><td>अङ्कः करोति / convert to number</td></tr>
+    <tr><td><code>शब्द</code></td><td class="iast">shabda</td><td>शब्दः करोति / convert to string</td></tr>
+    <tr><td><code>देवनागरी</code></td><td class="iast">devanagari</td><td>देवनागरी-अङ्काः / Devanagari digits</td></tr>
+    <tr><td><code>दीर्घता</code></td><td class="iast">dirghata</td><td>दीर्घता / length</td></tr>
+    <tr><td><code>सूची</code></td><td class="iast">suchi</td><td>सूचीम् रचयति / build a list</td></tr>
+    <tr><td><code>परास</code></td><td class="iast">parasa</td><td>अङ्कपरासः / numeric range</td></tr>
+    <tr><td><code>योजय</code></td><td class="iast">yojaya</td><td>सूच्याम् योजयति / append</td></tr>
+    <tr><td><code>निष्कास</code></td><td class="iast">nishkasa</td><td>अपनयति / remove an item</td></tr>
+    <tr><td><code>अस्ति</code></td><td class="iast">asti</td><td>अस्ति वा / membership test</td></tr>
+    <tr><td><code>कुञ्जिकाः</code></td><td class="iast">kunjika</td><td>कोशस्य कुञ्जिकाः / keys of a dict</td></tr>
+    <tr><td><code>मूल्यानि</code></td><td class="iast">mulyani</td><td>कोशस्य मूल्यानि / values of a dict</td></tr>
+    <tr><td><code>क्रम</code></td><td class="iast">krama</td><td>क्रमबद्धा सूची / sorted copy</td></tr>
+    <tr><td><code>विपर्यय</code></td><td class="iast">viparyaya</td><td>विपरीतक्रमः / reversed</td></tr>
+    <tr><td><code>अक्षराणि</code></td><td class="iast">aksharani</td><td>शब्दस्य अक्षराणि / syllables of a string</td></tr>
+    <tr><td><code>संकेतः</code></td><td class="iast">sanketa</td><td>अक्षरस्य संकेतः / code point of a character</td></tr>
+    <tr><td><code>वर्णः</code></td><td class="iast">varna</td><td>संकेतस्य वर्णः / character for a code point</td></tr>
+    <tr><td><code>अंशः</code></td><td class="iast">amsha</td><td>शब्दस्य सूच्याः वा अंशः / a slice</td></tr>
+    <tr><td><code>विभज</code></td><td class="iast">vibhaja</td><td>शब्दम् विभजति / split a string</td></tr>
+    <tr><td><code>संयोज</code></td><td class="iast">samyoja</td><td>सूचीम् संयोजयति / join a list</td></tr>
+    <tr><td><code>योग</code></td><td class="iast">yoga</td><td>योगफलम् / sum</td></tr>
+    <tr><td><code>न्यूनतम</code></td><td class="iast">nyunatama</td><td>न्यूनतमम् / minimum</td></tr>
+    <tr><td><code>अधिकतम</code></td><td class="iast">adhikatama</td><td>अधिकतमम् / maximum</td></tr>
+    <tr><td><code>मूल</code></td><td class="iast">mula</td><td>वर्गमूलम् / square root</td></tr>
+    <tr><td><code>पूर्ण</code></td><td class="iast">purna</td><td>पूर्णाङ्कः / truncate to integer</td></tr>
+    <tr><td><code>यादृच्छिक</code></td><td class="iast">yadrcchika</td><td>यादृच्छिकः अङ्कः / random number</td></tr>
+    <tr><td><code>काल</code></td><td class="iast">kala</td><td>कालः / current time in seconds</td></tr>
+    <tr><td><code>प्राचलाः</code></td><td class="iast">prachalah</td><td>आदेशपङ्क्त्याः प्राचलाः / command-line arguments</td></tr>
+    <tr><td><code>खण्डम्_चालय</code></td><td class="iast">khandam_chalaya</td><td>संकलितम् खण्डम् चालयति / run a compiled chunk</td></tr>
+    <tr><td><code>दोष</code></td><td class="iast">dosha</td><td>दोषम् उत्पादयति / raise an error</td></tr>
+    <tr><td><code>सञ्चिकापठ</code></td><td class="iast">sanchikapatha</td><td>सञ्चिकाम् पठति / read a whole file</td></tr>
+    <tr><td><code>सञ्चिकापङ्क्तयः</code></td><td class="iast">sanchikapanktayah</td><td>सञ्चिकायाः पङ्क्तयः / read a file as lines</td></tr>
+    <tr><td><code>सञ्चिकालिख</code></td><td class="iast">sanchikalikh</td><td>सञ्चिकाम् लिखति / write a file</td></tr>
+    <tr><td><code>सञ्चिकायोजय</code></td><td class="iast">sanchikayojaya</td><td>सञ्चिकायाम् योजयति / append to a file</td></tr>
+    <tr><td><code>सञ्चिकास्ति</code></td><td class="iast">sanchikasti</td><td>सञ्चिका विद्यते वा / does the path exist</td></tr>
+    <tr><td><code>सञ्चिकानाशय</code></td><td class="iast">sanchikanashaya</td><td>सञ्चिकाम् नाशयति / delete a file</td></tr>
+    <tr><td><code>निर्देशिका</code></td><td class="iast">nirdeshika</td><td>निर्देशिकायाः सूची / list a directory</td></tr>
+  </tbody>
+</table></div>
+</section>
+
+  <footer>
+    <p class="verse">वाक् इति भाषा — यत्र संस्कृतम् एव आदेशः<span class="danda">॥</span></p>
+    <p>0.10.0 · 39 built-ins · five engines, one output</p>
+  </footer>
+</main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* द्विलिपिता — every keyword carries its ASCII spelling, so the page can be
+     read in either canon.  Identifiers stay as their author wrote them. */
+  var canon = document.getElementById("canon");
+  var swappable = [].slice.call(document.querySelectorAll("[data-r]"));
+  swappable.forEach(function (el) { el.dataset.d = el.textContent; });
+  var roman = false;
+  canon.addEventListener("click", function () {
+    roman = !roman;
+    swappable.forEach(function (el) {
+      el.textContent = roman ? el.dataset.r : el.dataset.d;
+    });
+    canon.setAttribute("aria-pressed", String(roman));
+    canon.textContent = roman ? "roman → देवनागरी" : "देवनागरी → roman";
+  });
+
+  /* theme: follow the viewer, until they say otherwise */
+  var theme = document.getElementById("theme");
+  theme.addEventListener("click", function () {
+    var now = document.documentElement.dataset.theme;
+    if (!now) {
+      now = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+    document.documentElement.dataset.theme = now === "dark" ? "light" : "dark";
+  });
+
+  /* mark the section being read */
+  var links = {};
+  [].forEach.call(document.querySelectorAll(".rail a"), function (a) {
+    links[a.getAttribute("href").slice(1)] = a;
+  });
+  var seen = new Set();
+  var obs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) seen.add(e.target.id); else seen.delete(e.target.id);
+    });
+    Object.keys(links).forEach(function (id) {
+      links[id].classList.toggle("on", seen.has(id));
+    });
+  }, { rootMargin: "-10% 0px -70% 0px" });
+  [].forEach.call(document.querySelectorAll("section"), function (s) { obs.observe(s); });
+})();
+</script>
