@@ -35,7 +35,7 @@ jobs:
       - name: Build the self-hosted toolchain natively
         shell: bash
         run: |
-          python -m vak --native स्वयंसिद्धिः/मुख्यम्.vak
+          python -m vak --native स्वयंसिद्धिः/वाक्.vak
           ls -la
 
       - name: Collect the binary
@@ -43,7 +43,7 @@ jobs:
         run: |
           mkdir -p out
           # the native back end names the executable after the source
-          found=$(find . -maxdepth 2 -type f \( -name "मुख्यम्" -o -name "मुख्यम्.exe" -o -name "वाक्.exe" \) | head -1)
+          found=$(find . -maxdepth 2 -type f \( -name "वाक्" -o -name "वाक्.exe" \) | head -1)
           if [ -z "$found" ]; then
             echo "::error::no binary produced"; exit 1
           fi

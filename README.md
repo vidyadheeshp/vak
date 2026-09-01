@@ -746,7 +746,7 @@ virtual machine itself — and each is held to the Python implementation exactly
 | Parser | [व्याकरणम्.vak](स्वयंसिद्धिः/व्याकरणम्.vak) | 791 | the Python parser — the whole syntax tree, node for node |
 | **Analyser** | [अर्थविश्लेषकः.vak](स्वयंसिद्धिः/अर्थविश्लेषकः.vak) | 786 | the Python analyser — every diagnostic's code, line and message, in order |
 | Compiler | [संकलकः.vak](स्वयंसिद्धिः/संकलकः.vak) | 618 | the Python compiler — every instruction, constant and line |
-| VM | [यन्त्रम्.vak](स्वयंसिद्धिः/यन्त्रम्.vak) | 1047 | the Python VM — byte-identical output on all fourteen examples |
+| VM | [यन्त्रम्.vak](स्वयंसिद्धिः/यन्त्रम्.vak) | 1047 | the Python VM — byte-identical output on every example |
 | Driver | [वाक्.vak](स्वयंसिद्धिः/वाक्.vak) | 260 | compiled natively it becomes `वाक्.exe`, which runs every example identically |
 
 Only the [native back end](#देशीयसंकलनम्--the-native-back-end) is written in C, on
@@ -866,6 +866,9 @@ removes that layer: it materialises a chunk that arrives as `कोशाः` in
 own structures and runs it there. The same call works under Python (where it feeds the
 Python VM) and in `वाक्.exe` (where it feeds the C VM), so the self-hosted compiler is now
 exactly as fast as the native back end:
+
+The figures below were taken when that change was made, with fourteen
+examples and a smaller binary than today's; they are kept as measured.
 
 | | two VMs | one VM |
 |---|---|---|
