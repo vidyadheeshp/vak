@@ -31,8 +31,15 @@ def _likh(*args: Any) -> None:
 
 
 def _patha(prompt: Any = "") -> str:
-    """पठ — read one line from the user."""
-    return input(stringify(prompt))
+    """पठ — read one line from the user.
+
+    प्रदानम् समाप्तम् चेत् रिक्तः शब्दः — at end of input this returns the empty
+    string, which is what the C runtime does; the engines must not differ.
+    """
+    try:
+        return input(stringify(prompt))
+    except EOFError:
+        return ""
 
 
 # --------------------------------------------------------------------------
