@@ -1,0 +1,128 @@
+{
+  "name": "vak",
+  "displayName": "वाक् · Vāk",
+  "description": "Language support for Vāk — a Sanskrit-native programming language whose type system is Pāṇini's kāraka grammar.",
+  "version": "0.11.0",
+  "publisher": "vidyadheeshp",
+  "license": "MIT",
+  "icon": "images/icon-128.png",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters"
+  ],
+  "keywords": [
+    "vak",
+    "sanskrit",
+    "devanagari",
+    "panini",
+    "संस्कृतम्"
+  ],
+  "activationEvents": [
+    "onLanguage:vak"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "vak",
+        "aliases": [
+          "Vāk",
+          "वाक्",
+          "vak"
+        ],
+        "extensions": [
+          ".vak"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/vak-file-light.svg",
+          "dark": "./icons/vak-file-dark.svg"
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "vak",
+        "scopeName": "source.vak",
+        "path": "./syntaxes/vak.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "vak.run",
+        "title": "Vāk: चालय · Run File",
+        "icon": "$(play)"
+      },
+      {
+        "command": "vak.check",
+        "title": "Vāk: परीक्षा · Analyse File",
+        "icon": "$(checklist)"
+      },
+      {
+        "command": "vak.transliterate",
+        "title": "Vāk: देवनागरी · Convert typed text to Devanagari"
+      },
+      {
+        "command": "vak.toggleTyping",
+        "title": "Vāk: देवनागरी-लेखनम् · Toggle Devanagari typing"
+      }
+    ],
+    "menus": {
+      "editor/title/run": [
+        {
+          "command": "vak.run",
+          "when": "resourceLangId == vak",
+          "group": "navigation@1"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "vak.run",
+        "key": "ctrl+alt+r",
+        "mac": "cmd+alt+r",
+        "when": "resourceLangId == vak"
+      },
+      {
+        "command": "vak.transliterate",
+        "key": "ctrl+alt+d",
+        "mac": "cmd+alt+d",
+        "when": "resourceLangId == vak"
+      },
+      {
+        "command": "vak.toggleTyping",
+        "key": "ctrl+alt+t",
+        "mac": "cmd+alt+t",
+        "when": "resourceLangId == vak"
+      }
+    ],
+    "configuration": {
+      "title": "Vāk",
+      "properties": {
+        "vak.executable": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Path to `वाक्.exe`. Leave empty to use `#vak.pythonPath#` with `-m vak` instead."
+        },
+        "vak.pythonPath": {
+          "type": "string",
+          "default": "python",
+          "description": "Python used to run the toolchain when no executable is configured."
+        },
+        "vak.devanagariTyping": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Convert romanised words to Devanagari as you type. `naama` becomes `नाम` when you finish the word. Toggle with `Ctrl+Alt+T`."
+        },
+        "vak.checkOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Run the semantic analyser on save and show its diagnostics in the editor."
+        }
+      }
+    }
+  }
+}

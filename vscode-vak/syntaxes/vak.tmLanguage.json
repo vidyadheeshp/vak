@@ -1,0 +1,121 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Vāk",
+  "scopeName": "source.vak",
+  "patterns": [
+    {
+      "include": "#comment"
+    },
+    {
+      "include": "#string"
+    },
+    {
+      "include": "#karaka"
+    },
+    {
+      "include": "#declaration"
+    },
+    {
+      "include": "#control"
+    },
+    {
+      "include": "#import"
+    },
+    {
+      "include": "#constant"
+    },
+    {
+      "include": "#operator-word"
+    },
+    {
+      "include": "#print"
+    },
+    {
+      "include": "#type"
+    },
+    {
+      "include": "#builtin"
+    },
+    {
+      "include": "#number"
+    },
+    {
+      "include": "#danda"
+    },
+    {
+      "include": "#function-call"
+    },
+    {
+      "include": "#operator"
+    }
+  ],
+  "repository": {
+    "comment": {
+      "name": "comment.line.number-sign.vak",
+      "match": "#.*$"
+    },
+    "string": {
+      "name": "string.quoted.double.vak",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.vak",
+          "match": "\\\\."
+        }
+      ]
+    },
+    "karaka": {
+      "name": "entity.name.tag.karaka.vak",
+      "match": "(?<![\\w\\u0900-\\u0963\\u0966-\\u097F])(सम्प्रदानम्|अपादानम्|अधिकरणम्|कर्ता|करणम्|कर्म)(?![\\w\\u0900-\\u0963\\u0966-\\u097F])"
+    },
+    "declaration": {
+      "name": "storage.type.vak",
+      "match": "(?<![\\w\\u0900-\\u0963\\u0966-\\u097F])(कार्यम्|dhruva|kāryam|karyam|ध्रुव|कार्य|kārya|karya|māna|mana|मान)(?![\\w\\u0900-\\u0963\\u0966-\\u097F])"
+    },
+    "control": {
+      "name": "keyword.control.vak",
+      "match": "(?<![\\w\\u0900-\\u0963\\u0966-\\u097F])(pratyāgaccha|pratyagaccha|प्रत्यागच्छ|प्रत्येकम्|प्रत्येकम|pratyekam|prayatnaḥ|prayatnah|anuvarta|vikalpaḥ|vikalpah|आवृत्तिः|प्रयत्नः|अनुवर्त|विकल्पः|anyathā|anyatha|आवृत्ति|āvṛttiḥ|avrttih|antataḥ|antatah|प्रयत्न|प्रतिदा|pratidā|pratida|grihana|pakshe|विकल्प|virama|अन्यथा|अन्ततः|उत्सृज|utsṛja|utsrja|kshipa|gṛhāṇa|पक्षे|pakṣe|यावत्|yāvat|yavat|अन्ते|क्षिप|kṣipa|अन्तः|antaḥ|antah|doshe|गृहाण|यावत|विरम|yadi|दोषे|doṣe|यदि)(?![\\w\\u0900-\\u0963\\u0966-\\u097F])"
+    },
+    "import": {
+      "name": "keyword.control.import.vak",
+      "match": "(?<![\\w\\u0900-\\u0963\\u0966-\\u097F])(ānaya|anaya|इति|iti|taḥ|tah|आनय|तः)(?![\\w\\u0900-\\u0963\\u0966-\\u097F])"
+    },
+    "constant": {
+      "name": "constant.language.vak",
+      "match": "(?<![\\w\\u0900-\\u0963\\u0966-\\u097F])(asatya|shunya|satya|असत्य|शून्य|śūnya|sunya|सत्य)(?![\\w\\u0900-\\u0963\\u0966-\\u097F])"
+    },
+    "operator-word": {
+      "name": "keyword.operator.word.vak",
+      "match": "(?<![\\w\\u0900-\\u0963\\u0966-\\u097F])(वा|vā|va|ca|na|च|न)(?![\\w\\u0900-\\u0963\\u0966-\\u097F])"
+    },
+    "print": {
+      "name": "keyword.other.print.vak",
+      "match": "(?<![\\w\\u0900-\\u0963\\u0966-\\u097F])(mudraya|मुद्रय)(?![\\w\\u0900-\\u0963\\u0966-\\u097F])"
+    },
+    "type": {
+      "name": "support.type.vak",
+      "match": "(?<![\\w\\u0900-\\u0963\\u0966-\\u097F])(dashamshah|पूर्णाङ्कः|purnankah|pūrṇāṅkaḥ|पूर्णाङ्क|satyata|shabdah|shunyam|शून्यम्|kimapi|koshah|दशांशः|सत्यता|ankah|suchi|अङ्कः|किमपि|दशांश|शब्दः|अङ्क|कोशः|सूची|कोश)(?![\\w\\u0900-\\u0963\\u0966-\\u097F])"
+    },
+    "builtin": {
+      "name": "support.function.builtin.vak",
+      "match": "(?<![\\w\\u0900-\\u0963\\u0966-\\u097F])(sanchikapanktayah|khandam_chalaya|sanchikanashaya|सञ्चिकापङ्क्तयः|sanchikayojaya|sanchikapatha|sanchikalikh|sanchikasti|खण्डम्_चालय|सञ्चिकानाशय|सञ्चिकायोजय|सञ्चिकास्ति|adhikatama|devanagari|nirdeshika|yadrcchika|निर्देशिका|सञ्चिकालिख|aksharani|nyunatama|prachalah|viparyaya|कुञ्जिकाः|यादृच्छिक|सञ्चिकापठ|dirghata|nishkasa|अक्षराणि|देवनागरी|प्राचलाः|मूल्यानि|kunjika|mulyani|prakara|samyoja|sanketa|sankhya|vibhaja|दीर्घता|निष्कास|न्यूनतम|विपर्यय|parasa|shabda|yojaya|अधिकतम|प्रकार|संकेतः|संख्या|amsha|dosha|krama|patha|purna|suchi|varna|अस्ति|पूर्ण|वर्णः|संयोज|asti|kala|likh|mula|yoga|अंशः|क्रम|परास|योजय|विभज|शब्द|सूची|काल|दोष|मूल|योग|लिख|पठ)(?![\\w\\u0900-\\u0963\\u0966-\\u097F])(?=\\s*\\()"
+    },
+    "number": {
+      "name": "constant.numeric.vak",
+      "match": "(?<![\\w\\u0900-\\u0963\\u0966-\\u097F])[०-९0-9][०-९0-9._]*"
+    },
+    "danda": {
+      "name": "punctuation.terminator.danda.vak",
+      "match": "[।॥;]"
+    },
+    "function-call": {
+      "name": "entity.name.function.vak",
+      "match": "[\\w\\u0900-\\u0963\\u0966-\\u097F]+(?=\\s*\\()"
+    },
+    "operator": {
+      "name": "keyword.operator.vak",
+      "match": "\\+=|-=|\\*=|/=|%=|\\^=|==|!=|<=|>=|[+\\-*/%^<>=]"
+    }
+  }
+}
