@@ -1,0 +1,91 @@
+name: विमोचनम् · release
+
+# Runs when a version tag is pushed. Builds the standalone binary on all three
+# desktop platforms and attaches them to the GitHub release, so the "Windows
+# only" limitation goes away for anyone downloading a release.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  binaries:
+    name: वाक् binary · ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            asset: vak-linux-x86_64
+          - os: macos-latest
+            asset: vak-macos-arm64
+          - os: windows-latest
+            asset: vak-windows-x86_64.exe
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: python -m pip install -e .
+
+      - name: Build the self-hosted toolchain natively
+        shell: bash
+        run: |
+          python -m vak --native स्वयंसिद्धिः/मुख्यम्.vak
+          ls -la
+
+      - name: Collect the binary
+        shell: bash
+        run: |
+          mkdir -p out
+          # the native back end names the executable after the source
+          found=$(find . -maxdepth 2 -type f \( -name "मुख्यम्" -o -name "मुख्यम्.exe" -o -name "वाक्.exe" \) | head -1)
+          if [ -z "$found" ]; then
+            echo "::error::no binary produced"; exit 1
+          fi
+          cp "$found" "out/${{ matrix.asset }}"
+          ls -la out/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: out/${{ matrix.asset }}
+
+  wheel:
+    name: वितरणम् · wheel and sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: |
+          python -m pip install --upgrade pip build
+          python -m build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python-dist
+          path: dist/*
+
+  publish:
+    name: विमोचनम् · attach everything to the release
+    needs: [binaries, wheel]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Flatten
+        run: |
+          mkdir -p release
+          find artifacts -type f -exec cp {} release/ \;
+          ls -la release/
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          generate_release_notes: true

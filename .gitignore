@@ -17,3 +17,9 @@ docs/*.data
 examples/*.c
 स्वयंसिद्धिः/*.c
 
+_wasm/
+
+# packaging
+dist/
+*.whl
+*.tar.gz

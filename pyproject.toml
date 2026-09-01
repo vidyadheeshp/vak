@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vak-lang"
+version = "0.11.0"
+description = "वाक् — a Sanskrit-native programming language whose type system is Pāṇini's kāraka grammar, and whose own front end is written in itself"
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Vidyadheesh Pandurangi" }]
+keywords = [
+    "sanskrit", "programming-language", "compiler", "interpreter",
+    "panini", "karaka", "devanagari", "bytecode", "self-hosting",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "Natural Language :: Sanskrit",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Compilers",
+    "Topic :: Software Development :: Interpreters",
+    "Topic :: Education",
+    "Typing :: Typed",
+]
+# वाक् deliberately has no third-party dependencies: a standard Python is all
+# it needs, and the native and WebAssembly builds need no Python at all.
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/vidyadheeshp/vak"
+Documentation = "https://vidyadheeshp.github.io/vak/manual.html"
+Playground = "https://vidyadheeshp.github.io/vak/playground.html"
+Source = "https://github.com/vidyadheeshp/vak"
+Issues = "https://github.com/vidyadheeshp/vak/issues"
+
+[project.scripts]
+vak = "vak.cli:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[tool.setuptools]
+# Only the Python implementation is packaged.  The C runtime, the Vāk-written
+# toolchain and the documentation generators are part of the repository, not of
+# the installed library — see CONTRIBUTING.md for what a clone gives you that a
+# wheel does not.
+packages = ["vak"]
+
+[tool.setuptools.package-data]
+# the standard library, written in Vāk
+vak = ["पुस्तकालयः/*.vak"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -22,7 +22,31 @@ from typing import Any
 from .interpreter import Interpreter
 from .kosha import kosha_to_chunk
 
+# The Vāk-written toolchain lives beside the package in a clone.  A wheel does
+# not carry it — it is the repository's source, not the library's — so the
+# self-hosted engines are a clone-only capability and say so plainly rather
+# than failing with a confusing missing-file error.
 BOOTSTRAP = Path(__file__).resolve().parent.parent / "स्वयंसिद्धिः"
+
+
+def bootstrap_available() -> bool:
+    return (BOOTSTRAP / "शब्दविभाजकः.vak").is_file()
+
+
+def require_bootstrap() -> None:
+    """Raised as a VakError, not SystemExit: the self-hosted engines run on a
+    deep-stack worker thread, and a SystemExit raised there is swallowed by
+    threading, which is how this failed silently the first time."""
+    if not bootstrap_available():
+        from .errors import VakError
+        raise VakError(
+            "स्वयंसिद्धिः न प्राप्ता / the Vāk-written toolchain is not present.\n"
+            "    --self and --self-vm read स्वयंसिद्धिः/*.vak, which ship with the\n"
+            "    repository rather than with the wheel. To use them, clone it:\n"
+            "        git clone https://github.com/vidyadheeshp/vak.git",
+            code="स्वयंसिद्धिदोषः",
+        )
+
 
 _LOADER = (
     'आनय "शब्दविभाजकः"। '
@@ -37,6 +61,7 @@ def toolchain() -> dict[str, Any]:
     """Load शब्दविभाजकः, व्याकरणम् and संकलकः once, and hand back their entry points."""
     from . import run_source
 
+    require_bootstrap()
     driver = str(BOOTSTRAP / "चालकः.vak")
     interpreter = Interpreter(driver)
     run_source(_LOADER, driver, interpreter)
