@@ -27,6 +27,8 @@ _combined = (
     + [[k, "M", v] for k, v in _t["marks"].items()]
 )
 _combined.sort(key=lambda e: len(e[0]), reverse=True)
+TR_KEYWORDS = "const TR_KEYWORDS = " + _json.dumps(_t["keywords"], ensure_ascii=False) + ";"
+
 TRANSLIT = (
     "const TR_TABLE = " + _json.dumps(_combined, ensure_ascii=False) + ";\n"
     "const TR_DIGITS = " + _json.dumps(_t["digits"], ensure_ascii=False) + ";\n"
@@ -267,8 +269,8 @@ footer b { color:var(--ink-soft); font-weight:500; }
       <span class="label">प्रोग्रामः</span>
       <select id="samples" aria-label="Load an example"></select>
       <span class="spacer"></span>
-      <button id="typing" type="button" aria-pressed="false"
-              title="Type romanised, get Devanagari (ITRANS: aa A T D N S ~N H M)">देवनागरी</button>
+      <button id="typing" type="button" aria-pressed="true"
+              title="Type romanised, get Devanagari in code (ITRANS: aa A T D N S ~N H M)">देवनागरी ✓</button>
       <button id="check" type="button">परीक्षा · check</button>
       <button id="run" class="go" type="button">चालय · run ⏎</button>
     </div>
@@ -363,7 +365,7 @@ footer b { color:var(--ink-soft); font-weight:500; }
   var handed = fromHash();
   src.value = handed || SAMPLES[names[0]];
   /* the reading sample is useless without something to read */
-  var SAMPLE_INPUT = { "प्रदानम्": "विद्याधीश\n38" };
+  var SAMPLE_INPUT = { "प्रदानम्": "विद्याधीश\\n38" };
   picker.addEventListener("change", function () {
     src.value = SAMPLES[picker.value];
     document.getElementById("stdin").value = SAMPLE_INPUT[picker.value] || "";
@@ -395,7 +397,7 @@ footer b { color:var(--ink-soft); font-weight:500; }
 
   function boot() {
     var given = document.getElementById("stdin").value;
-    if (given && !/\n$/.test(given)) given += "\n";   // पठ wants a full line
+    if (given && !/\\n$/.test(given)) given += "\\n";   // पठ wants a full line
     return VakModule({
       noInitialRun: true,
       stdin: feeder(given),
@@ -437,6 +439,11 @@ footer b { color:var(--ink-soft); font-weight:500; }
   checkBtn.addEventListener("click", function () { go(true); });
   src.addEventListener("keydown", function (e) {
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); go(false); }
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "D" || e.key === "d")) {
+      e.preventDefault();
+      convertSelection();
+      return;
+    }
     if (e.key === "Tab") {
       e.preventDefault();
       var a = src.selectionStart, b = src.selectionEnd;
@@ -445,13 +452,60 @@ footer b { color:var(--ink-soft); font-weight:500; }
     }
   });
 
-  var typingOn = false;
+  /* सन्दर्भः — where the caret sits decides whether romanised input converts.
+     Code becomes Devanagari; the inside of a string or a comment does not,
+     because मुद्रय "Hello, world" is the author's own text and converting it
+     would be wrong.  Vāk's own rules: "..." and '...' with backslash escapes,
+     hash and double-slash to end of line, and slash-star block comments. */
+  function contextAt(text, index) {
+    var i = 0;
+    while (i < index) {
+      var c = text.charAt(i), d = text.charAt(i + 1);
+      if (c === '"' || c === "'") {
+        var quote = c, closed = false;
+        i++;
+        while (i < index) {
+          if (text.charAt(i) === "\\\\") { i += 2; continue; }
+          if (text.charAt(i) === quote) { i++; closed = true; break; }
+          i++;
+        }
+        if (!closed) return "string";
+        continue;
+      }
+      if (c === "#" || (c === "/" && d === "/")) {
+        while (i < index && text.charAt(i) !== "\\n") i++;
+        if (i >= index) return "comment";
+        continue;
+      }
+      if (c === "/" && d === "*") {
+        i += 2;
+        while (i < index && !(text.charAt(i) === "*" && text.charAt(i + 1) === "/")) i++;
+        if (i >= index) return "comment";
+        i += 2;
+        continue;
+      }
+      i++;
+    }
+    return "code";
+  }
+
+  /* On by default: this page exists to be tried, and most people arriving at it
+     have no Devanagari keyboard. */
+  var typingOn = true;
   var typingBtn = document.getElementById("typing");
+  function setTyping(on) {
+    typingOn = on;
+    typingBtn.setAttribute("aria-pressed", String(on));
+    typingBtn.textContent = on ? "देवनागरी ✓" : "देवनागरी";
+    typingBtn.title = on
+      ? 'Romanised typing becomes Devanagari in code. Inside strings and comments your text is left alone — select it and press Ctrl+Shift+D to convert it anyway.'
+      : 'Romanised typing is off; what you type is left as it is.';
+  }
   typingBtn.addEventListener("click", function () {
-    typingOn = !typingOn;
-    typingBtn.setAttribute("aria-pressed", String(typingOn));
+    setTyping(!typingOn);
     src.focus();
   });
+  setTyping(true);
 
   var ROMAN_TAIL = /[A-Za-z~^.]+$/;
   src.addEventListener("input", function (e) {
@@ -462,14 +516,41 @@ footer b { color:var(--ink-soft); font-weight:500; }
     var before = src.value.slice(0, at);
     var m = ROMAN_TAIL.exec(before);
     if (!m) return;
-    var out = devanagari(m[0], true);
-    if (out === m[0]) return;
     var start = at - m[0].length;
+    // the word's own position decides, not the caret's: by now the caret may
+    // already have crossed a closing quote
+    if (contextAt(src.value, start) !== "code") return;
+    // A language word is not a phonetic problem: `mana` transliterates to मन,
+    // but the keyword is मान, and converting it phonetically would turn valid
+    // ASCII Vāk into Devanagari that does not compile.
+    var out = TR_KEYWORDS[m[0]] || devanagari(m[0], true);
+    if (out === m[0]) return;
     var after = src.selectionStart;
     src.value = src.value.slice(0, start) + out + src.value.slice(at, after)
               + src.value.slice(after);
     src.selectionStart = src.selectionEnd = start + out.length + e.data.length;
   });
+
+  /* The deliberate escape hatch, both ways: select any text and convert it,
+     wherever it sits.  This is how you put Devanagari inside a string. */
+  function convertSelection() {
+    var a = src.selectionStart, b = src.selectionEnd;
+    if (a === b) {
+      write("चयनम् नास्ति / select some text first, then Ctrl+Shift+D", "dim");
+      return;
+    }
+    var chosen = src.value.slice(a, b);
+    var out = TR_KEYWORDS[chosen] || devanagari(chosen, true);
+    if (out === chosen) {
+      write("अपरिवर्तितम् / nothing in the selection is romanised Vāk", "dim");
+      return;
+    }
+    src.value = src.value.slice(0, a) + out + src.value.slice(b);
+    src.selectionStart = a;
+    src.selectionEnd = a + out.length;
+    src.focus();
+    write("लिप्यन्तरितम् / converted: " + chosen + " → " + out, "ok");
+  }
 
   document.getElementById("theme").addEventListener("click", function () {
     var now = document.documentElement.dataset.theme;
@@ -494,8 +575,33 @@ page = (PAGE
         .replace("__ENGINE__", engine)
         .replace("__SAMPLES__", json.dumps(SAMPLES, ensure_ascii=False))
         .replace("__LIBRARY__", json.dumps(library, ensure_ascii=False))
-        .replace("__TRANSLIT__", TRANSLIT)
+        .replace("__TRANSLIT__", TR_KEYWORDS + "\n  " + TRANSLIT)
         .replace("__VERSION__", __version__))
+
+# ------------------------------------------------------------------ परीक्षा
+# This page shipped with a raw newline inside a JS string literal, which is a
+# syntax error that kills the whole script — the playground was dead and the
+# generator reported success. Nothing here is worth trusting to inspection, so
+# the emitted script is parsed before it is written.
+def _syntax_check(page_html: str) -> None:
+    import re as _re, shutil as _shutil, subprocess as _sp, tempfile as _tf
+
+    script = _re.findall(r"<script>(.*?)</script>", page_html, _re.S)[-1]
+    node = _shutil.which("node")
+    if node is None:
+        print("  note: node not found — the page's JS was NOT syntax-checked")
+        return
+    tmp = pathlib.Path(_tf.mkdtemp()) / "page.js"
+    tmp.write_text(script, encoding="utf-8")
+    result = _sp.run([node, "--check", str(tmp)], capture_output=True,
+                     encoding="utf-8", errors="replace")
+    if result.returncode:
+        raise SystemExit("the generated JavaScript does not parse:\n"
+                         + (result.stderr or "")[:1200])
+    print(f"  javascript: parses ({len(script):,} chars)")
+
+
+_syntax_check(page)
 
 out = ROOT / "docs" / "playground.html"
 out.write_text(page, encoding="utf-8")

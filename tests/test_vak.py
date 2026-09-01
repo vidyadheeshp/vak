@@ -1660,6 +1660,82 @@ class TestByteOrderMark(unittest.TestCase):
         except UnicodeDecodeError as exc:
             self.fail(f"vak.cmd must be ASCII for cmd.exe to parse it: {exc}")
 
+class TestTypingAid(unittest.TestCase):
+    """The romanised typing aid must never turn a valid Vāk program into an
+    invalid one. Phonetic rules are right for names the author invents and
+    wrong for the language's own words: `mana` transliterates to मन, but the
+    keyword is मान."""
+
+    @staticmethod
+    def _is_devanagari(word: str) -> bool:
+        return any("ऀ" <= c <= "ॿ" for c in word)
+
+    def test_every_romanised_keyword_maps_to_a_real_keyword(self):
+        from vak.tokens import KEYWORDS
+        from vak.translit import keyword_map
+
+        mapping = keyword_map()
+        devanagari_keywords = {w for w in KEYWORDS if self._is_devanagari(w)}
+        for roman, dev in mapping.items():
+            if roman in KEYWORDS:
+                self.assertIn(dev, devanagari_keywords,
+                              f"{roman!r} maps to {dev!r}, which is not a keyword")
+
+    def test_the_map_covers_every_romanised_keyword(self):
+        from vak.tokens import KEYWORDS
+        from vak.translit import keyword_map
+
+        mapping = keyword_map()
+        missing = [w for w in KEYWORDS
+                   if not self._is_devanagari(w) and w not in mapping]
+        self.assertEqual(missing, [], f"not in the typing map: {missing}")
+
+    def test_the_map_is_needed(self):
+        """If phonetic transliteration ever became correct for every keyword
+        this test would fail, and the map could go. It is not: 22 of the 33
+        ASCII keywords differ."""
+        from vak.tokens import KEYWORDS
+        from vak.translit import devanagari, keyword_map
+
+        mapping = keyword_map()
+        differ = [w for w in KEYWORDS
+                  if w in mapping and not self._is_devanagari(w)
+                  and devanagari(w) != mapping[w]]
+        self.assertTrue(differ, "the keyword map no longer changes anything")
+
+    def test_converted_keywords_still_lex_as_keywords(self):
+        """The point of the map, end to end: what it produces must tokenise as
+        the same keyword the romanised form did."""
+        from vak.lexer import tokenize
+        from vak.tokens import KEYWORDS
+        from vak.translit import keyword_map
+
+        for roman, dev in keyword_map().items():
+            if roman not in KEYWORDS:
+                continue
+            with self.subTest(keyword=roman):
+                self.assertEqual(tokenize(dev)[0].type, tokenize(roman)[0].type)
+
+    def test_a_typed_program_still_runs_after_conversion(self):
+        from vak.translit import keyword_map
+
+        mapping = keyword_map()
+        words = "mana x = 5. mudraya x.".replace(".", "।").split()
+        converted = " ".join(mapping.get(w, w) for w in words)
+        out = io.StringIO()
+        with redirect_stdout(out):
+            run_source(converted)
+        self.assertEqual(out.getvalue().strip(), "5")
+
+    def test_ordinary_names_are_still_phonetic(self):
+        """Names the author invents are not in the map and must fall through
+        to the phonetic rules."""
+        from vak.translit import devanagari, keyword_map
+
+        mapping = keyword_map()
+        self.assertNotIn("naama", mapping)
+        self.assertEqual(devanagari("naama"), "नाम")
+
 class TestDocumentation(unittest.TestCase):
     """The manual is generated, but generation only helps if the generator is
     made to notice what it has not covered.  These hold it to the language."""

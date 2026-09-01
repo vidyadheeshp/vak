@@ -75,7 +75,7 @@
     },
     "control": {
       "name": "keyword.control.vak",
-      "match": "(?<![\\w\\u0900-\\u0963\\u0966-\\u097F])(pratyāgaccha|pratyagaccha|प्रत्यागच्छ|प्रत्येकम्|प्रत्येकम|pratyekam|prayatnaḥ|prayatnah|anuvarta|vikalpaḥ|vikalpah|आवृत्तिः|प्रयत्नः|अनुवर्त|विकल्पः|anyathā|anyatha|आवृत्ति|āvṛttiḥ|avrttih|antataḥ|antatah|प्रयत्न|प्रतिदा|pratidā|pratida|grihana|pakshe|विकल्प|virama|अन्यथा|अन्ततः|उत्सृज|utsṛja|utsrja|kshipa|gṛhāṇa|पक्षे|pakṣe|यावत्|yāvat|yavat|अन्ते|क्षिप|kṣipa|अन्तः|antaḥ|antah|doshe|गृहाण|यावत|विरम|yadi|दोषे|doṣe|यदि)(?![\\w\\u0900-\\u0963\\u0966-\\u097F])"
+      "match": "(?<![\\w\\u0900-\\u0963\\u0966-\\u097F])(pratyāgaccha|pratyagaccha|प्रत्यागच्छ|प्रत्येकम्|प्रत्येकम|pratyekam|prayatnaḥ|prayatnah|anuvarta|vikalpaḥ|vikalpah|प्रयत्नः|आवृत्तिः|अनुवर्त|विकल्पः|grihana|प्रयत्न|antataḥ|antatah|आवृत्ति|āvṛttiḥ|avrttih|anyathā|anyatha|प्रतिदा|pratidā|pratida|उत्सृज|utsṛja|utsrja|kshipa|विकल्प|pakshe|gṛhāṇa|अन्ततः|virama|अन्यथा|क्षिप|kṣipa|अन्तः|antaḥ|antah|पक्षे|pakṣe|doshe|गृहाण|अन्ते|यावत्|yāvat|yavat|दोषे|doṣe|yadi|यावत|विरम|यदि)(?![\\w\\u0900-\\u0963\\u0966-\\u097F])"
     },
     "import": {
       "name": "keyword.control.import.vak",
@@ -83,11 +83,11 @@
     },
     "constant": {
       "name": "constant.language.vak",
-      "match": "(?<![\\w\\u0900-\\u0963\\u0966-\\u097F])(asatya|shunya|satya|असत्य|शून्य|śūnya|sunya|सत्य)(?![\\w\\u0900-\\u0963\\u0966-\\u097F])"
+      "match": "(?<![\\w\\u0900-\\u0963\\u0966-\\u097F])(asatya|shunya|असत्य|शून्य|śūnya|sunya|satya|सत्य)(?![\\w\\u0900-\\u0963\\u0966-\\u097F])"
     },
     "operator-word": {
       "name": "keyword.operator.word.vak",
-      "match": "(?<![\\w\\u0900-\\u0963\\u0966-\\u097F])(वा|vā|va|ca|na|च|न)(?![\\w\\u0900-\\u0963\\u0966-\\u097F])"
+      "match": "(?<![\\w\\u0900-\\u0963\\u0966-\\u097F])(na|ca|वा|vā|va|न|च)(?![\\w\\u0900-\\u0963\\u0966-\\u097F])"
     },
     "print": {
       "name": "keyword.other.print.vak",

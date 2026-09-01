@@ -124,6 +124,44 @@ def devanagari(text: str, digits: bool = False) -> str:
     return "".join(out)
 
 
+# ------------------------------------------------------------- कीलकानि
+# Phonetic transliteration is right for names the author invents and wrong for
+# the language's own words: `mana` transliterates to मन, but the keyword is
+# मान, and quietly turning valid ASCII Vāk into invalid Devanagari Vāk is worse
+# than not helping at all.  22 of the 33 ASCII keywords are affected, so a
+# typing aid consults this first and falls back to the phonetic rules.
+def keyword_map() -> dict[str, str]:
+    """Every romanised spelling of a keyword or built-in, mapped to the
+    Devanagari it must become.  Built from the language's own tables."""
+    from collections import defaultdict
+
+    from .builtins import BUILTIN_DOCS
+    from .tokens import KEYWORDS
+
+    def is_devanagari(word: str) -> bool:
+        return any("ऀ" <= c <= "ॿ" for c in word)
+
+    by_kind: dict[str, list[str]] = defaultdict(list)
+    for word, kind in KEYWORDS.items():
+        by_kind[kind.name].append(word)
+
+    out: dict[str, str] = {}
+    for words in by_kind.values():
+        devanagari_forms = [w for w in words if is_devanagari(w)]
+        if not devanagari_forms:
+            continue
+        # the first Devanagari spelling is the canonical one
+        canonical = devanagari_forms[0]
+        for word in words:
+            if not is_devanagari(word):
+                out[word] = canonical
+
+    for dev, roman, _doc in BUILTIN_DOCS:
+        if roman and not is_devanagari(roman):
+            out[roman] = dev
+    return out
+
+
 def tables_for_js() -> dict:
     """The same tables, for the editor to use — so the transliteration a
     student types with is the one documented here."""
@@ -133,6 +171,7 @@ def tables_for_js() -> dict:
         "marks": MARKS,
         "digits": DIGITS,
         "virama": VIRAMA,
+        "keywords": keyword_map(),
     }
 
 

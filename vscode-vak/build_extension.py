@@ -527,6 +527,10 @@ def translit_js() -> str:
         "const TABLE = " + json.dumps(combined, ensure_ascii=False) + ";\n"
         "const DIGITS = " + json.dumps(t["digits"], ensure_ascii=False) + ";\n"
         "const VIRAMA = " + json.dumps(t["virama"], ensure_ascii=False) + ";\n"
+        # `mana` transliterates to मन, but the keyword is मान: converting the
+        # language's own words phonetically turns valid ASCII Vāk into
+        # Devanagari that does not compile, so they are looked up, not guessed.
+        "const KEYWORDS = " + json.dumps(t["keywords"], ensure_ascii=False) + ";\n"
         + r"""
 function devanagari(text, digits) {
   let out = "", i = 0, pending = false;
@@ -559,7 +563,11 @@ function devanagari(text, digits) {
   return out;
 }
 
-module.exports = { devanagari };
+function convert(word, digits) {
+  return KEYWORDS[word] || devanagari(word, digits);
+}
+
+module.exports = { devanagari, convert };
 """
     )
 
