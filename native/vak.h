@@ -84,7 +84,9 @@ struct Vastu { int nirdeshah; Prakara prakara; };   /* निर्देशा�
 typedef struct {                /* शब्दः — a UTF-8 string */
     Vastu vastu;
     int baits;                  /* bytes, excluding the NUL */
+    int avakasha;               /* bytes allocated, so growth is amortised */
     int akshara;                /* code points (cached, -1 = not counted) */
+    unsigned sanjna;            /* hash (cached, 0 = not computed yet) */
     char *paatha;
 } Shabda;
 
@@ -177,6 +179,8 @@ Mulyam purnanka_mulyam(int64_t n);
 Mulyam dashamsha_mulyam(double d);
 Mulyam shabda_mulyam(const char *bytes, int len);
 Mulyam shabda_mulyam_c(const char *bytes);
+Mulyam shabda_yugmam(const char *a, int na, const char *b, int nb);
+bool shabda_vardhaya(Mulyam m, const char *b, int nb);
 Mulyam suchi_mulyam(void);
 Mulyam kosha_mulyam(void);
 Mulyam avarana_mulyam(const SankalitaKaryam *karyam, Parivesha *parivesha);
@@ -251,6 +255,9 @@ Parivesha *parivesha_sthanam(Parivesha *p, int uttarah, int sthanam,
 Mulyam parivesha_sthanat(Parivesha *p, int sthanam);
 bool parivesha_nyasaya(Parivesha *p, const char *nama, Mulyam m);
 bool parivesha_asti(Parivesha *p, const char *nama);
+bool parivesha_vardhaniyam(Parivesha *p, const char *nama, Mulyam m);
+void parivesha_prachalam_dhara(Parivesha *p, const char *nama, Mulyam m,
+                               const char *prakara);
 int  parivesha_ganana(Parivesha *p);
 const char *parivesha_nama_at(Parivesha *p, int i);
 Mulyam parivesha_mulyam_at(Parivesha *p, int i);

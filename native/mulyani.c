@@ -35,11 +35,48 @@ static Vastu *vastu_rachaya(size_t size, Prakara prakara) {
 Mulyam shabda_mulyam(const char *bytes, int len) {
     Shabda *s = (Shabda *)vastu_rachaya(sizeof(Shabda), P_SHABDA);
     s->baits = len;
+    s->avakasha = len + 1;
     s->akshara = -1;
+    s->sanjna = 0;              /* computed when first used as a कोशकुञ्जिका */
     s->paatha = (char *)smrti((size_t)len + 1);
     if (len) memcpy(s->paatha, bytes, (size_t)len);
     s->paatha[len] = '\0';
     Mulyam m; m.prakara = P_SHABDA; m.as.vastu = (Vastu *)s; return m;
+}
+
+/* द्वयोः शब्दयोः योजनम् एकेन एव आयाचनेन — join two runs of bytes with one
+   allocation and one pass, instead of rendering each side to a buffer first. */
+Mulyam shabda_yugmam(const char *a, int na, const char *b, int nb) {
+    Shabda *s = (Shabda *)vastu_rachaya(sizeof(Shabda), P_SHABDA);
+    s->baits = na + nb;
+    s->avakasha = na + nb + 1;
+    s->akshara = -1;
+    s->sanjna = 0;
+    s->paatha = (char *)smrti((size_t)(na + nb) + 1);
+    if (na) memcpy(s->paatha, a, (size_t)na);
+    if (nb) memcpy(s->paatha + na, b, (size_t)nb);
+    s->paatha[na + nb] = '\0';
+    Mulyam m; m.prakara = P_SHABDA; m.as.vastu = (Vastu *)s; return m;
+}
+
+/* स्थाने वर्धनम् — grow a string in place.  Only the machine calls this, and
+   only once it has established that nothing else can see the string. */
+bool shabda_vardhaya(Mulyam m, const char *b, int nb) {
+    if (m.prakara != P_SHABDA) return false;
+    Shabda *s = as_shabda(m);
+    if (s->baits + nb + 1 > s->avakasha) {
+        int want = (s->baits + nb + 1) * 2;
+        char *bigger = (char *)realloc(s->paatha, (size_t)want);
+        if (!bigger) return false;
+        s->paatha = bigger;
+        s->avakasha = want;
+    }
+    if (nb) memcpy(s->paatha + s->baits, b, (size_t)nb);
+    s->baits += nb;
+    s->paatha[s->baits] = '\0';
+    s->akshara = -1;            /* both caches are now stale */
+    s->sanjna = 0;
+    return true;
 }
 
 Mulyam shabda_mulyam_c(const char *bytes) {
@@ -135,10 +172,48 @@ Mulyam suchi_grihana(Mulyam suchi, int index) {
     return as_suchi(suchi)->angani[index];
 }
 
+/* शब्दस्य संज्ञा — एकवारम् एव गण्यते, ततः स्मर्यते।  शून्यम् इति 'अगणिता'
+   इति अर्थः, अतः फलम् कदापि शून्यम् न भवति। */
+static unsigned shabda_sanjna(Shabda *s) {
+    if (s->sanjna) return s->sanjna;
+    unsigned h = 2166136261u;                    /* FNV-1a */
+    for (int i = 0; i < s->baits; i++) {
+        h ^= (unsigned char)s->paatha[i];
+        h *= 16777619u;
+    }
+    s->sanjna = h ? h : 1u;                      /* 0 means "not computed" */
+    return s->sanjna;
+}
+
+/* कोशस्य कुञ्जिकाः प्रायः शब्दाः — वाक्-लिखितस्य साधनस्य प्रत्येकः वाक्यरचनाङ्गः
+   कोशः, तस्य च प्रत्येकम् क्षेत्रम् अत्र अन्विष्यते।  अतः शब्दार्थम् विशिष्टः
+   मार्गः, येन samam() इत्यस्य प्रकारविचारः सर्वथा परिहृतः।
+   A dictionary's keys are nearly always strings — every AST node in the
+   Vāk-written toolchain is a कोशः and every field access comes through here.
+   So the string case gets its own path, skipping samam()'s type dispatch, and
+   settles most comparisons with one integer. */
 int kosha_sthanam(Mulyam kosha, Mulyam key) {
     Kosha *k = as_kosha(kosha);
+    const KoshaYugma *y = k->yugmani;
+
+    if (key.prakara == P_SHABDA) {
+        Shabda *want = as_shabda(key);
+        unsigned sanjna = shabda_sanjna(want);
+        for (int i = 0; i < k->dirghata; i++) {
+            if (y[i].kunjika.prakara != P_SHABDA) continue;
+            Shabda *have = as_shabda(y[i].kunjika);
+            /* एकः एव शब्दः — the same constant, and so the same object */
+            if (have == want) return i;
+            if (shabda_sanjna(have) != sanjna || have->baits != want->baits)
+                continue;
+            if (memcmp(have->paatha, want->paatha, (size_t)want->baits) == 0)
+                return i;
+        }
+        return -1;
+    }
+
     for (int i = 0; i < k->dirghata; i++)
-        if (samam(k->yugmani[i].kunjika, key)) return i;
+        if (samam(y[i].kunjika, key)) return i;
     return -1;
 }
 
@@ -367,13 +442,58 @@ char *shabdakr(Mulyam m, bool uddhrta) {
 }
 
 /* ------------------------------------------------------------ प्रकारपरीक्षा */
+/* प्रकारनाम्नः सङ्केतः — एकवारम् एव गण्यते, ततः सूचकेन एव स्मर्यते।
+   प्रकारनामानि खण्डस्य ध्रुवेषु स्थिराणि, अल्पानि च, अतः सूचकतुलना पर्याप्ता।
+   A parameter's declared type is a Devanagari name in the chunk's constants —
+   the same pointer every call, and there are barely a dozen of them.  So the
+   name is resolved to a code once and remembered against its pointer; after
+   that the check is an integer comparison instead of up to four strcmp of
+   text that all begins with the same byte. */
+#define PRAKARA_KIMAPI   (-1)     /* accepts anything */
+#define PRAKARA_ANKA     (-2)     /* either kind of number */
+#define PRAKARA_DASHA    (-3)     /* दशांशः, and पूर्णाङ्कः widens into it */
+#define PRAKARA_ANYA     (-4)     /* not one we know — compare by name */
+#define PRAKARA_SMRTI_SIMA 32
+
+static const char *PRAKARA_KUNJIKAH[PRAKARA_SMRTI_SIMA];
+static int PRAKARA_SANKETAH[PRAKARA_SMRTI_SIMA];
+static int PRAKARA_SMRTI_GANANA = 0;
+
+static int prakara_sanketa_ganaya(const char *prakara) {
+    if (strcmp(prakara, "किमपि") == 0)    return PRAKARA_KIMAPI;
+    if (strcmp(prakara, "अङ्कः") == 0)    return PRAKARA_ANKA;
+    if (strcmp(prakara, "दशांशः") == 0)   return PRAKARA_DASHA;
+    if (strcmp(prakara, "पूर्णाङ्कः") == 0) return P_PURNANKA;
+    if (strcmp(prakara, "शब्दः") == 0)    return P_SHABDA;
+    if (strcmp(prakara, "सत्यता") == 0)   return P_SATYATA;
+    if (strcmp(prakara, "सूची") == 0)     return P_SUCHI;
+    if (strcmp(prakara, "कोशः") == 0)     return P_KOSHA;
+    if (strcmp(prakara, "शून्यम्") == 0)   return P_SHUNYAM;
+    return PRAKARA_ANYA;
+}
+
+static int prakara_sanketa(const char *prakara) {
+    for (int i = 0; i < PRAKARA_SMRTI_GANANA; i++)
+        if (PRAKARA_KUNJIKAH[i] == prakara) return PRAKARA_SANKETAH[i];
+    int sanketa = prakara_sanketa_ganaya(prakara);
+    if (PRAKARA_SMRTI_GANANA < PRAKARA_SMRTI_SIMA) {
+        PRAKARA_KUNJIKAH[PRAKARA_SMRTI_GANANA] = prakara;
+        PRAKARA_SANKETAH[PRAKARA_SMRTI_GANANA] = sanketa;
+        PRAKARA_SMRTI_GANANA++;
+    }
+    return sanketa;
+}
+
 bool prakara_melati(Mulyam m, const char *prakara) {
-    if (!prakara || strcmp(prakara, "किमपि") == 0) return true;
-    const char *vastavika = prakara_nama(m);
-    if (strcmp(prakara, vastavika) == 0) return true;
-    if (strcmp(prakara, "अङ्कः") == 0) return anka(m);
-    if (strcmp(prakara, "दशांशः") == 0) return m.prakara == P_PURNANKA;
-    return false;
+    if (!prakara) return true;
+    int sanketa = prakara_sanketa(prakara);
+    switch (sanketa) {
+    case PRAKARA_KIMAPI: return true;
+    case PRAKARA_ANKA:   return anka(m);
+    case PRAKARA_DASHA:  return m.prakara == P_DASHAMSHA || m.prakara == P_PURNANKA;
+    case PRAKARA_ANYA:   return strcmp(prakara, prakara_nama(m)) == 0;
+    default:             return m.prakara == (Prakara)sanketa;
+    }
 }
 
 bool prakaram_pariksaya(Mulyam m, const char *prakara, const char *kasya) {
@@ -385,7 +505,19 @@ bool prakaram_pariksaya(Mulyam m, const char *prakara, const char *kasya) {
 }
 
 /* -------------------------------------------------------------- परिवेशः */
-typedef struct { char *nama; Mulyam mulyam; char *prakara; bool dhruva; } Bandha;
+/* नाम च प्रकारः च खण्डस्य ध्रुवेभ्यः आगच्छतः, ये प्रोग्रामेण सह एव जीवन्ति —
+   अतः बन्धः तौ न प्रतिलिखति, केवलम् दर्शयति।  पूर्वम् प्रतिबन्धम् द्वौ
+   स्मृत्यायाचनौ आस्ताम्; तौ अपगतौ।
+   A binding's name and type come from the chunk's constants, which outlive
+   every environment — statically for a compiled program, and for one built at
+   run time by खण्डम्_चालय because those are never freed.  So the binding
+   borrows them.  This removed two allocations and two frees per binding. */
+typedef struct {
+    const char *nama;
+    Mulyam mulyam;
+    const char *prakara;
+    bool dhruva;
+} Bandha;
 
 struct Parivesha {
     int nirdeshah;
@@ -394,12 +526,31 @@ struct Parivesha {
     int dirghata, avakasha;
 };
 
+/* परिवेशनिधिः — प्रत्येकम् आह्वानम् परिवेशम् इच्छति, ते च समानपरिमाणाः।
+   मुक्तान् निधौ स्थापयित्वा पुनः प्रयुज्यन्ते; बन्धसूची अपि रक्ष्यते, येन
+   पुनरायोजनम् अपि न आवश्यकम्।
+   Every call needs a scope and they are all the same size, so a freed one goes
+   into a pool rather than back to the allocator.  Its bindings array is kept
+   too, which saves the regrowth as well.  The pool is capped so a long-running
+   program does not hoard. */
+#define PARIVESHA_NIDHI_SIMA 256
+static Parivesha *PARIVESHA_NIDHI = NULL;
+static int PARIVESHA_NIDHI_GANANA = 0;
+
 Parivesha *parivesha_rachaya(Parivesha *janaka) {
-    Parivesha *p = (Parivesha *)smrti(sizeof(Parivesha));
+    Parivesha *p;
+    if (PARIVESHA_NIDHI) {
+        p = PARIVESHA_NIDHI;
+        PARIVESHA_NIDHI = p->janaka;        /* janaka links the free list */
+        PARIVESHA_NIDHI_GANANA--;
+    } else {
+        p = (Parivesha *)smrti(sizeof(Parivesha));
+        p->bandhah = NULL;
+        p->avakasha = 0;
+    }
     p->nirdeshah = 1;
     p->janaka = janaka ? parivesha_grah(janaka) : NULL;
-    p->bandhah = NULL;
-    p->dirghata = p->avakasha = 0;
+    p->dirghata = 0;
     return p;
 }
 
@@ -408,28 +559,52 @@ Parivesha *parivesha_janaka(Parivesha *p) { return p ? p->janaka : NULL; }
 
 void parivesha_muncha(Parivesha *p) {
     if (!p || --p->nirdeshah > 0) return;
-    for (int i = 0; i < p->dirghata; i++) {
-        free(p->bandhah[i].nama);
-        free(p->bandhah[i].prakara);
-        muncha(p->bandhah[i].mulyam);
+    for (int i = 0; i < p->dirghata; i++)
+        muncha(p->bandhah[i].mulyam);       /* नामानि उधृतानि — names are borrowed */
+
+    /* जनकम् पूर्वम् गृह्णीयात्, यतः निधौ स्थापने janaka इति क्षेत्रम् अन्यथा प्रयुज्यते */
+    Parivesha *janaka = p->janaka;
+    p->dirghata = 0;
+    if (PARIVESHA_NIDHI_GANANA < PARIVESHA_NIDHI_SIMA) {
+        p->janaka = PARIVESHA_NIDHI;
+        PARIVESHA_NIDHI = p;
+        PARIVESHA_NIDHI_GANANA++;
+    } else {
+        free(p->bandhah);
+        free(p);
     }
-    free(p->bandhah);
-    if (p->janaka) parivesha_muncha(p->janaka);
-    free(p);
+    if (janaka) parivesha_muncha(janaka);
 }
 
-static char *nakala(const char *s) {
-    if (!s) return NULL;
-    size_t n = strlen(s) + 1;
-    char *d = (char *)smrti(n);
-    memcpy(d, s, n);
-    return d;
-}
 
 static Bandha *bandha_anvishya(Parivesha *p, const char *nama) {
     for (int i = 0; i < p->dirghata; i++)
         if (strcmp(p->bandhah[i].nama, nama) == 0) return &p->bandhah[i];
     return NULL;
+}
+
+/* 'किमपि' इति प्रकारः स्मर्तुम् न योग्यः — a declared type of किमपि constrains
+   nothing, so it is stored as none at all.  Asking that question with strcmp
+   meant comparing Devanagari text on every binding; the code is already known. */
+static bool prakara_smartavyah(const char *prakara) {
+    return prakara && prakara_sanketa(prakara) != PRAKARA_KIMAPI;
+}
+
+/* आह्वानस्य प्राचलः — नूतने परिवेशे, परीक्षितेन प्रकारेण, असाधारणेन नाम्ना।
+   A call's parameter: the type has just been checked by the caller, the scope
+   is new, and the names are distinct — so no check, no search, just append. */
+void parivesha_prachalam_dhara(Parivesha *p, const char *nama, Mulyam m,
+                               const char *prakara) {
+    if (p->dirghata == p->avakasha) {
+        p->avakasha = p->avakasha ? p->avakasha * 2 : 8;
+        p->bandhah = (Bandha *)realloc(p->bandhah, sizeof(Bandha) * (size_t)p->avakasha);
+        if (!p->bandhah) { fputs("स्मृतिः क्षीणा\n", stderr); exit(70); }
+    }
+    Bandha *b = &p->bandhah[p->dirghata++];
+    b->nama = nama;
+    b->mulyam = grah(m);
+    b->dhruva = false;
+    b->prakara = prakara_smartavyah(prakara) ? prakara : NULL;
 }
 
 bool parivesha_ghoshaya(Parivesha *p, const char *nama, Mulyam m,
@@ -440,8 +615,7 @@ bool parivesha_ghoshaya(Parivesha *p, const char *nama, Mulyam m,
         Mulyam purva = b->mulyam;
         b->mulyam = grah(m);
         b->dhruva = dhruva;
-        free(b->prakara);
-        b->prakara = (prakara && strcmp(prakara, "किमपि") != 0) ? nakala(prakara) : NULL;
+        b->prakara = prakara_smartavyah(prakara) ? prakara : NULL;
         muncha(purva);
         return true;
     }
@@ -450,11 +624,11 @@ bool parivesha_ghoshaya(Parivesha *p, const char *nama, Mulyam m,
         p->bandhah = (Bandha *)realloc(p->bandhah, sizeof(Bandha) * (size_t)p->avakasha);
         if (!p->bandhah) { fputs("स्मृतिः क्षीणा\n", stderr); exit(70); }
     }
-    p->bandhah[p->dirghata].nama = nakala(nama);
+    p->bandhah[p->dirghata].nama = nama;
     p->bandhah[p->dirghata].mulyam = grah(m);
     p->bandhah[p->dirghata].dhruva = dhruva;
     p->bandhah[p->dirghata].prakara =
-        (prakara && strcmp(prakara, "किमपि") != 0) ? nakala(prakara) : NULL;
+        prakara_smartavyah(prakara) ? prakara : NULL;
     p->dirghata++;
     return true;
 }
@@ -479,6 +653,24 @@ Parivesha *parivesha_sthanam(Parivesha *p, int uttarah, int sthanam,
 
 Mulyam parivesha_sthanat(Parivesha *p, int sthanam) {
     return p->bandhah[sthanam].mulyam;
+}
+
+/* एषः बन्धः एतत् एव वस्तु धारयति, ध्रुवः न, प्रकारश्च शब्दम् स्वीकरोति वा?
+   Does this binding hold exactly this object, and would it accept a string
+   back?  The machine grows a string in place only when the assignment that
+   follows is certain to succeed — a ध्रुव or a mismatched प्रकारः must not be
+   left holding a value it rejected. */
+bool parivesha_vardhaniyam(Parivesha *p, const char *nama, Mulyam m) {
+    for (Parivesha *q = p; q; q = q->janaka) {
+        Bandha *b = bandha_anvishya(q, nama);
+        if (!b) continue;
+        if (b->dhruva) return false;
+        if (b->mulyam.prakara != m.prakara) return false;
+        if (b->mulyam.as.vastu != m.as.vastu) return false;
+        if (b->prakara && !prakara_melati(m, b->prakara)) return false;
+        return true;
+    }
+    return false;
 }
 
 bool parivesha_asti(Parivesha *p, const char *nama) {

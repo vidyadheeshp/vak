@@ -41,9 +41,21 @@ typedef struct { const Khanda *khanda; Mulyam *mulyani; } DhruvaSmrti;
 static DhruvaSmrti *SMRTAYAH = NULL;
 static int SMRTI_GANANA = 0, SMRTI_AVAKASHA = 0;
 
+/* अन्तिमम् स्मृतम् — आवर्तने सः एव खण्डः पुनः पुनः, अतः एकपदिका स्मृतिः
+   प्रायः पर्याप्ता, अन्यथा पूर्णा सूची अन्विष्यते।
+   A recursive function pushes a frame for the same chunk over and over, so
+   remembering the last one answers almost every call without the scan. */
+static const Khanda *SMRTA_ANTIMA_KHANDA = NULL;
+static Mulyam *SMRTA_ANTIMA_MULYANI = NULL;
+
 static Mulyam *dhruvan_nirmaya(const Khanda *k) {
+    if (k == SMRTA_ANTIMA_KHANDA) return SMRTA_ANTIMA_MULYANI;
     for (int i = 0; i < SMRTI_GANANA; i++)
-        if (SMRTAYAH[i].khanda == k) return SMRTAYAH[i].mulyani;
+        if (SMRTAYAH[i].khanda == k) {
+            SMRTA_ANTIMA_KHANDA = k;
+            SMRTA_ANTIMA_MULYANI = SMRTAYAH[i].mulyani;
+            return SMRTAYAH[i].mulyani;
+        }
     Mulyam *arr = (Mulyam *)malloc(sizeof(Mulyam) * (size_t)(k->dhruva_ganana ? k->dhruva_ganana : 1));
     for (int i = 0; i < k->dhruva_ganana; i++) {
         const Dhruva *d = &k->dhruvah[i];
@@ -62,6 +74,8 @@ static Mulyam *dhruvan_nirmaya(const Khanda *k) {
     SMRTAYAH[SMRTI_GANANA].khanda = k;
     SMRTAYAH[SMRTI_GANANA].mulyani = arr;
     SMRTI_GANANA++;
+    SMRTA_ANTIMA_KHANDA = k;
+    SMRTA_ANTIMA_MULYANI = arr;
     return arr;
 }
 
@@ -160,7 +174,35 @@ static const char *adesha_chihna(int adesha) {
     }
 }
 
+/* अग्रिमः आदेशः किम् एतम् एव बन्धम् प्रति न्यस्यति? — does the instruction
+   after this one assign back to a binding that currently holds `m`, and would
+   that assignment succeed?  The name is read from the same constant table the
+   assignment will read it from, the value is compared by identity, and a ध्रुव
+   or a refusing प्रकारः disqualifies it — because the growth happens first and
+   a failed assignment must leave nothing behind. */
+static bool vardhitum_shakyate(const Chaukati *c, Mulyam m) {
+    const int *s = c->khanda->sanketah;
+    int at = c->sthanam;
+    if (at >= c->khanda->sanketa_ganana) return false;
+    const char *nama = NULL;
+    if (s[at] == A_NYASAYA) {
+        if (at + 1 >= c->khanda->sanketa_ganana) return false;
+        nama = c->khanda->dhruvah[s[at + 1]].shabda;
+    } else if (s[at] == A_STHANE_NYASAYA) {
+        if (at + 3 >= c->khanda->sanketa_ganana) return false;
+        nama = c->khanda->dhruvah[s[at + 3]].shabda;
+    } else {
+        return false;
+    }
+    return nama && parivesha_vardhaniyam(c->parivesha, nama, m);
+}
+
 static Mulyam yojanam(Mulyam vama, Mulyam dakshina) {
+    /* उभौ शब्दौ चेत् — the common case, and the one that must not copy thrice */
+    if (vama.prakara == P_SHABDA && dakshina.prakara == P_SHABDA) {
+        Shabda *a = as_shabda(vama), *b = as_shabda(dakshina);
+        return shabda_yugmam(a->paatha, a->baits, b->paatha, b->baits);
+    }
     if (vama.prakara == P_SHABDA || dakshina.prakara == P_SHABDA) {
         char *a = shabdakr(vama, false), *b = shabdakr(dakshina, false);
         int na = (int)strlen(a), nb = (int)strlen(b);
@@ -455,18 +497,48 @@ static void ahvanam_kuru(Mulyam ahveyam, Mulyam *prachalah, int ganana,
 
     Parivesha *p = parivesha_rachaya(a->parivesha);
     for (int i = 0; i < k->prachala_ganana; i++) {
-        char kasya[256];
-        snprintf(kasya, sizeof kasya, "%s इत्यस्य प्राचलः '%s'", k->nama, k->prachalah[i].nama);
-        if (!prakaram_pariksaya(kramitah[i], k->prachalah[i].prakara, kasya)) {
+        /* सन्देशः तदा एव रच्यते यदा दोषः — the message that names the parameter
+           is only worth building once the check has actually failed.  Formatting
+           it first cost an snprintf per argument per call, always discarded. */
+        if (!prakara_melati(kramitah[i], k->prachalah[i].prakara)) {
+            char kasya[256];
+            snprintf(kasya, sizeof kasya, "%s इत्यस्य प्राचलः '%s'",
+                     k->nama, k->prachalah[i].nama);
+            prakaram_pariksaya(kramitah[i], k->prachalah[i].prakara, kasya);
             for (int j = 0; j < k->prachala_ganana; j++) muncha(kramitah[j]);
             parivesha_muncha(p);
             return;
         }
-        parivesha_ghoshaya(p, k->prachalah[i].nama, kramitah[i], false,
-                           k->prachalah[i].prakara);
+        parivesha_prachalam_dhara(p, k->prachalah[i].nama, kramitah[i],
+                                  k->prachalah[i].prakara);
     }
     for (int i = 0; i < k->prachala_ganana; i++) muncha(kramitah[i]);
     chaukatim_yojaya(k->khanda, p, a, Y.stupa_dirghata);
+}
+
+/* नामनिधिः — बन्धः नाम न प्रतिलिखति, अतः यत् नाम अत्र गण्यते तत् आह्वानात्
+   परम् अपि जीवेत्।  आयाताः अल्पाः, विभागाः च स्मर्यन्ते, अतः एतत् एकवारम्
+   स्थाप्यते, न च कदापि मुच्यते — तत् एव अभिप्रेतम्।
+   A binding borrows its name, so a name *derived* at run time must outlive the
+   call that derived it.  The only such name is a module's, worked out from its
+   path when no alias was given.  Imports are few and modules are cached, so it
+   is interned once here and deliberately never freed. */
+static const char *nama_sthapaya(const char *s) {
+    static char **nidhi = NULL;
+    static int ganana = 0, avakasha = 0;
+    for (int i = 0; i < ganana; i++)
+        if (strcmp(nidhi[i], s) == 0) return nidhi[i];
+    if (ganana == avakasha) {
+        avakasha = avakasha ? avakasha * 2 : 8;
+        nidhi = (char **)realloc(nidhi, sizeof(char *) * (size_t)avakasha);
+        if (!nidhi) { fputs("स्मृतिः क्षीणा\n", stderr); exit(70); }
+    }
+    size_t n = strlen(s) + 1;
+    char *d = (char *)malloc(n);
+    if (!d) { fputs("स्मृतिः क्षीणा\n", stderr); exit(70); }
+    memcpy(d, s, n);
+    nidhi[ganana++] = d;
+    return d;
 }
 
 /* ---------------------------------------------------------------- आयातः */
@@ -499,7 +571,7 @@ static void ayatam_kuru(Chaukati *c, const Dhruva *d) {
         snprintf(mula, sizeof mula, "%s", base);
         char *dot = strrchr(mula, '.');
         if (dot && strcmp(dot, ".vak") == 0) *dot = '\0';
-        bandhanam = mula;
+        bandhanam = nama_sthapaya(mula);
     }
     parivesha_ghoshaya(c->parivesha, bandhanam, vibhaga, false, "किमपि");
 }
@@ -669,6 +741,21 @@ static Mulyam adeshan_chalaya(int virama_gabhirata) {
 
         case A_YOGAH: {
             Mulyam b = grihana_stupat(), a = grihana_stupat();
+            /* `x = x + y` — यदि अग्रिमः आदेशः तम् एव बन्धम् प्रति न्यस्यति, तर्हि
+               तस्य निर्देशः शीघ्रम् त्यक्ष्यते, अतः स्थाने वर्धयितुम् शक्यते।
+               If the next instruction assigns back to a binding that holds this
+               very string, that reference is about to be dropped — so this is
+               the only other holder, and the string may be grown in place.
+               Both facts are checked; anything else falls through. */
+            if (a.prakara == P_SHABDA && b.prakara == P_SHABDA &&
+                a.as.vastu->nirdeshah == 2 && vardhitum_shakyate(c, a)) {
+                Shabda *sb = as_shabda(b);
+                if (shabda_vardhaya(a, sb->paatha, sb->baits)) {
+                    muncha(b);
+                    sthapaya(a);          /* the reference from the stack pop */
+                    break;
+                }
+            }
             Mulyam r = yojanam(a, b);
             muncha(a); muncha(b);
             sthapaya(r);
