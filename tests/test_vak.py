@@ -1455,5 +1455,273 @@ class TestSwitch(unittest.TestCase):
                     chunk_to_kosha(compile_program(tree, "<प>")))
 
 
+
+class TestInput(unittest.TestCase):
+    """पठ — reading from the user.
+
+    The engines must agree here too, and the case that catches them out is the
+    end of input: the C runtime returns the empty string, so every other engine
+    has to as well.  Before this test existed, Python raised EOFError and
+    printed a bare traceback.
+    """
+
+    def run_with_input(self, source: str, given: str, *extra: str) -> str:
+        path = pathlib.Path(tempfile.mkdtemp()) / "प्रदानम्.vak"
+        path.write_text(source, encoding="utf-8")
+        result = subprocess.run(
+            [sys.executable, "-m", "vak", *extra, str(path)],
+            input=given.encode("utf-8"), capture_output=True, cwd=str(ROOT),
+            env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+        )
+        self.assertEqual(result.returncode, 0,
+                         result.stderr.decode("utf-8", "replace"))
+        return result.stdout.decode("utf-8", "replace").replace("\r\n", "\n").strip()
+
+    def test_reads_a_line(self):
+        self.assertEqual(
+            self.run_with_input('मुद्रय "नमस्ते," + पठ()।', "विद्याधीश\n"),
+            "नमस्ते,विद्याधीश")
+
+    def test_prompt_is_printed(self):
+        self.assertEqual(
+            self.run_with_input('शब्दः क = पठ("नाम? ")। मुद्रय क।', "राम\n"),
+            "नाम? राम")
+
+    def test_reads_a_number(self):
+        self.assertEqual(
+            self.run_with_input("पूर्णाङ्कः क = संख्या(पठ())। मुद्रय क * २।", "२१\n"),
+            "42")
+
+    def test_devanagari_numerals_are_read(self):
+        self.assertEqual(
+            self.run_with_input("मुद्रय संख्या(पठ()) + १।", "९९\n"), "100")
+
+    def test_end_of_input_gives_the_empty_string(self):
+        """The C runtime returns "" here, so the others must too."""
+        self.assertEqual(
+            self.run_with_input('मुद्रय "[" + पठ() + "]"।', ""), "[]")
+
+    def test_reading_past_the_end_does_not_crash(self):
+        source = 'शब्दः अ = पठ()। शब्दः ब = पठ()। मुद्रय अ, "|", दीर्घता(ब)।'
+        self.assertEqual(self.run_with_input(source, "एकम्\n"), "एकम् | 0")
+
+    def test_every_engine_reads_the_same(self):
+        source = ('शब्दः नाम = पठ()। पूर्णाङ्कः वयः = संख्या(पठ())।\n'
+                  'मुद्रय नाम, वयः + १, दीर्घता(पठ())।')
+        given = "राम\n४१\n"
+        expected = self.run_with_input(source, given)
+        for engine in (["--vm"], ["--self-vm"]):
+            with self.subTest(engine=engine[0]):
+                self.assertEqual(self.run_with_input(source, given, *engine),
+                                 expected)
+
+
+
+class TestStringGrowth(unittest.TestCase):
+    """`x = x + y` grows the string in place when it is safe to.
+
+    Building a string of n characters used to copy n²/2 bytes.  The machine now
+    grows it in place, but only after proving that nothing else can see the
+    string and that the assignment which follows will be accepted.  These tests
+    are mostly about the second half of that: a ध्रुव and an alias must both come
+    out untouched, because the growth happens before the assignment does.
+    """
+
+    def native(self, source: str) -> str:
+        """Run it on वाक्.exe, where the optimisation lives."""
+        exe = ROOT / "वाक्.exe"
+        if not exe.exists():
+            self.skipTest("वाक्.exe not built")
+        path = pathlib.Path(tempfile.mkdtemp()) / "वर्धनम्.vak"
+        path.write_text(source, encoding="utf-8")
+        r = subprocess.run([str(exe), str(path)], capture_output=True, cwd=str(ROOT))
+        return r.stdout.decode("utf-8", "replace").replace("\r\n", "\n").strip()
+
+    def both(self, source: str) -> str:
+        """The interpreter and वाक्.exe must agree — that is the whole point."""
+        walked = output(source)
+        self.assertEqual(self.native(source), walked)
+        return walked
+
+    def test_builds_a_string(self):
+        self.assertEqual(
+            self.both('शब्दः अ = ""। आवृत्तिः (५) { अ = अ + "क"। } मुद्रय अ।'),
+            "ककककक")
+
+    def test_compound_assignment_too(self):
+        self.assertEqual(
+            self.both('शब्दः अ = "क"। अ += "ख"। अ += "ग"। मुद्रय अ।'), "कखग")
+
+    def test_an_alias_is_not_disturbed(self):
+        """ब holds the same string, so अ must not grow in place."""
+        self.assertEqual(
+            self.both('शब्दः अ = "क"। शब्दः ब = अ। अ = अ + "ख"। मुद्रय अ, ब।'),
+            "कख क")
+
+    def test_a_string_in_a_list_is_not_disturbed(self):
+        self.assertEqual(
+            self.both('शब्दः अ = "क"। सूची स = [अ]। अ = अ + "ख"। मुद्रय अ, स।'),
+            'कख ["क"]')
+
+    def test_a_constant_is_not_damaged_by_a_refused_assignment(self):
+        """The growth happens before the assignment; a ध्रुव refuses it, and must
+        be left exactly as it was."""
+        source = ('कार्यम् रचय() : शब्दः { प्रत्यागच्छ "अ" + "ब"। }\n'
+                  'ध्रुव शब्दः क = रचय()।\n'
+                  'प्रयत्नः { क = क + "ग"। } दोषे (द) { मुद्रय द.प्रकारः। }\n'
+                  'मुद्रय क।')
+        self.assertEqual(self.native(source), "ध्रुवदोषः\nअब")
+
+    def test_a_grown_string_still_works_as_a_dictionary_key(self):
+        """Growing invalidates the cached hash — if it did not, the lookup
+        would silently miss."""
+        self.assertEqual(
+            self.both('शब्दः कुं = "अ"। कुं = कुं + "ब"।\n'
+                      'कोशः को = {}। को[कुं] = ४२।\n'
+                      'मुद्रय को["अब"], अस्ति(को, "अब")।'),
+            "42 सत्य")
+
+    def test_a_grown_string_still_counts_its_aksharas(self):
+        """The akṣara count is cached too."""
+        self.assertEqual(
+            self.both('शब्दः द = "क"। द = द + "ष्ण"। मुद्रय अक्षराणि(द), दीर्घता(द)।'),
+            '["क", "ष्ण"] 4')
+
+    def test_other_operands_are_untouched(self):
+        self.assertEqual(self.both('मुद्रय १ + २, "x" + "y", [१] + [२]।'),
+                         "3 xy [1, 2]")
+
+    def test_growth_is_linear(self):
+        """Twice the work should take about twice the time, not four times.
+        The bound is loose because this is a wall clock on a shared machine —
+        it is here to catch a return to quadratic, not to measure anything."""
+        import time
+        exe = ROOT / "वाक्.exe"
+        if not exe.exists():
+            self.skipTest("वाक्.exe not built")
+
+        def seconds(n: int) -> float:
+            source = (f'शब्दः अ = ""। पूर्णाङ्कः क = ०।\n'
+                      f'यावत् (क < {n}) {{ अ = अ + "क"। क += १। }}\n'
+                      f'मुद्रय दीर्घता(अ)।')
+            path = pathlib.Path(tempfile.mkdtemp()) / "प.vak"
+            path.write_text(source, encoding="utf-8")
+            best = 9e9
+            for _ in range(3):
+                start = time.perf_counter()
+                r = subprocess.run([str(exe), str(path)], capture_output=True)
+                best = min(best, time.perf_counter() - start)
+                self.assertEqual(r.returncode, 0)
+            return best
+
+        small, large = seconds(20_000), seconds(80_000)
+        # quadratic would be ~16×; linear is ~4×.  Anything under 8× is not
+        # quadratic, and the slack absorbs process startup and a noisy machine.
+        self.assertLess(large, small * 8,
+                        f"string building looks quadratic again: "
+                        f"20k took {small:.3f}s, 80k took {large:.3f}s")
+
+
+class TestByteOrderMark(unittest.TestCase):
+    """Notepad and PowerShell write a UTF-8 BOM by default, so a beginner's
+    very first .vak file is likely to carry one.  It used to be reported as an
+    unknown character, which is true and useless."""
+
+    SOURCE = 'मुद्रय "नमस्ते जगत्"।'
+    BOM = "﻿"
+
+    def test_leading_bom_is_ignored(self):
+        out = io.StringIO()
+        with redirect_stdout(out):
+            run_source(self.BOM + self.SOURCE)
+        self.assertEqual(out.getvalue().strip(), "नमस्ते जगत्")
+
+    def test_bom_only_stripped_at_the_start(self):
+        """A BOM in the middle is still a real error — it is not whitespace."""
+        with self.assertRaises(LexError):
+            run_source(self.SOURCE + self.BOM + self.SOURCE)
+
+    def test_bom_file_runs_through_the_cli(self):
+        path = pathlib.Path(tempfile.mkdtemp()) / "परीक्षा.vak"
+        path.write_text(self.SOURCE, encoding="utf-8-sig")
+        self.assertTrue(path.read_bytes().startswith(b"\xef\xbb\xbf"))
+        out = io.StringIO()
+        with redirect_stdout(out):
+            run_source(path.read_text(encoding="utf-8"))
+        self.assertEqual(out.getvalue().strip(), "नमस्ते जगत्")
+
+    def test_launcher_scripts_are_ascii(self):
+        """cmd.exe reads a .cmd in the console's OEM codepage, so Devanagari in
+        a REM line comes back as bytes it then tries to execute."""
+        root = pathlib.Path(__file__).resolve().parent.parent
+        raw = (root / "vak.cmd").read_bytes()
+        try:
+            raw.decode("ascii")
+        except UnicodeDecodeError as exc:
+            self.fail(f"vak.cmd must be ASCII for cmd.exe to parse it: {exc}")
+
+class TestDocumentation(unittest.TestCase):
+    """The manual is generated, but generation only helps if the generator is
+    made to notice what it has not covered.  These hold it to the language."""
+
+    @staticmethod
+    def _reference():
+        import sys
+        docs = pathlib.Path(__file__).resolve().parent.parent / "docs"
+        if str(docs) not in sys.path:
+            sys.path.insert(0, str(docs))
+        import reference
+        return reference
+
+    @staticmethod
+    def _manual() -> str:
+        page = pathlib.Path(__file__).resolve().parent.parent / "docs" / "manual.html"
+        return page.read_text(encoding="utf-8")
+
+    def test_reference_tables_have_not_drifted(self):
+        problems = self._reference().check()
+        self.assertEqual(problems, [], "; ".join(problems))
+
+    def test_every_standard_library_name_is_documented(self):
+        missing = [n for n in self._reference().library_names()
+                   if n not in self._manual()]
+        self.assertEqual(missing, [], f"undocumented library names: {missing}")
+
+    def test_every_diagnostic_is_documented(self):
+        man = self._manual()
+        ref = self._reference()
+        missing = [c for c in ref.diagnostic_codes() if c not in man]
+        self.assertEqual(missing, [], f"undocumented diagnostics: {missing}")
+        kinds = [k for k, _ in ref.error_kinds() if k not in man]
+        self.assertEqual(kinds, [], f"undocumented error kinds: {kinds}")
+
+    def test_every_command_line_flag_is_documented(self):
+        man = self._manual()
+        missing = [f for f, _, _ in self._reference().cli_flags() if f not in man]
+        self.assertEqual(missing, [], f"undocumented flags: {missing}")
+
+    def test_every_keyword_and_builtin_is_documented(self):
+        from vak.builtins import BUILTIN_DOCS
+        from vak.tokens import KEYWORDS
+        man = self._manual()
+        dev = [w for w in KEYWORDS
+               if any("ऀ" <= c <= "ॿ" for c in w)]
+        self.assertEqual([w for w in dev if w not in man], [])
+        self.assertEqual([b[0] for b in BUILTIN_DOCS if b[0] not in man], [])
+
+    def test_manual_samples_only_call_names_that_exist(self):
+        """A sample that parses can still call a function nobody wrote — the
+        manual shipped गणितम्.वर्गमूलम् for a while, which never existed."""
+        import re
+        from vak.builtins import BUILTIN_DOCS
+        known = {b[0] for b in BUILTIN_DOCS} | self._reference().library_names()
+        man = self._manual()
+        called = set()
+        for mod in ("गणितम्", "शब्दाः"):
+            called |= set(re.findall(re.escape(mod) + r"\.([^\s(<]+)\(", man))
+        unknown = sorted(called - known)
+        self.assertEqual(unknown, [],
+                         f"the manual calls names that do not exist: {unknown}")
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
