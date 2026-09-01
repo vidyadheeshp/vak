@@ -38,6 +38,12 @@ _SINGLE = {
 
 class Lexer:
     def __init__(self, source: str, filename: str = "<वाक्>"):
+        # Notepad and PowerShell both write a UTF-8 BOM by default, and a
+        # student's first .vak file is quite likely to have one.  Reporting it
+        # as an unknown character is technically true and completely useless,
+        # so it is dropped here instead.
+        if source.startswith("﻿"):
+            source = source[1:]
         self.src = source
         self.filename = filename
         self.pos = 0
