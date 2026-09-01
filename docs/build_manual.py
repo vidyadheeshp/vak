@@ -14,6 +14,9 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+
+import reference                                                # noqa: E402
 
 from vak import __version__                                    # noqa: E402
 from vak.builtins import BUILTIN_DOCS                          # noqa: E402
@@ -103,7 +106,15 @@ def shell(text: str) -> str:
 SECTIONS: list[tuple[str, str, str, str]] = []   # id, number, दे, English
 
 
-def section(sid: str, num: str, dev: str, eng: str, body: str) -> str:
+def devanagari_number(n: int) -> str:
+    return "".join("०१२३४५६७८९"[int(d)]
+                   for d in str(n))
+
+
+def section(sid: str, dev: str, eng: str, body: str) -> str:
+    """Sections number themselves in order of appearance, so inserting one in
+    the middle cannot leave the rest of the manual mislabelled."""
+    num = devanagari_number(len(SECTIONS) + 1)
     SECTIONS.append((sid, num, dev, eng))
     return f"""<section id="{sid}">
   <div class="head">
@@ -116,8 +127,123 @@ def section(sid: str, num: str, dev: str, eng: str, body: str) -> str:
 
 parts: list[str] = []
 
+flag_rows = chr(10).join(
+    f'    <tr><td><code>{html.escape(flag)}</code></td>'
+    f'<td><code>{html.escape(alias)}</code></td>'
+    f"<td>{html.escape(text)}</td></tr>"
+    for flag, alias, text in reference.cli_flags())
+
+# ------------------------------------------------------------- १ · स्थापना
+parts.append(section("sthapana", "स्थापना", "Installing Vāk", f"""
+<p class="lede">There is no package to install and nothing to configure. Pick
+whichever of these four suits you — they run the same language.</p>
+
+<h3 class="lib"><span class="way">१</span> The standalone binary
+  <span>nothing else required</span></h3>
+<p><code>वाक्.exe</code> ships in the repository. It is the whole toolchain —
+lexer, parser, analyser, compiler and machine — compiled to one file, and it
+needs neither Python nor anything else. Copy it where you like and run it:</p>
+{shell('''वाक्.exe प्रोग्राम.vak''')}
+<p>The binary in the repository is built for <b>64-bit Windows</b>. On Linux or
+macOS, build your own — see <i>Building the binary</i> below; the C sources are
+platform-neutral.</p>
+
+<h3 class="lib"><span class="way">२</span> With pip
+  <span>Python 3.10 or newer</span></h3>
+<p>Vāk pulls in <b>no third-party packages</b>. A standard Python is all it
+needs; it was developed on 3.13.</p>
+{shell('''pip install vak-lang
+vak प्रोग्राम.vak''')}
+<p>This gives you the interpreter, the bytecode virtual machine, the native back
+end, the REPL and the standard library, and the <code>vak</code> command works
+from any directory.</p>
+
+<h3 class="lib"><span class="way">३</span> From a clone
+  <span>everything a wheel does not carry</span></h3>
+<p>Clone it for the C runtime, the Vāk-written toolchain behind
+<code>--self</code>, the documentation generators and the editor extension:</p>
+{shell('''git clone https://github.com/vidyadheeshp/vak.git
+cd vak
+python -m vak examples/01_namaste.vak''')}
+<div class="note">
+  <p><b>Working from a clone, stay in the repository root.</b>
+  <code>python -m vak</code> finds the package only because you are standing in
+  the directory that contains it; from anywhere else you will get
+  <code>No module named vak</code>. Installing with pip avoids this entirely.
+  To run from elsewhere without installing, put the root on the module
+  path:</p>
+</div>
+{shell('''# bash / zsh
+PYTHONPATH=/path/to/vak python -m vak ~/प्रोग्राम.vak
+
+# PowerShell
+$env:PYTHONPATH = "C:\\path\\to\\vak"; python -m vak प्रोग्राम.vak''')}
+<p>On Windows the two launchers in the repository do this and set UTF-8 for
+you:</p>
+{shell('''.\\vak.ps1 examples/01_namaste.vak     # PowerShell
+vak.cmd examples/01_namaste.vak       # cmd.exe''')}
+
+<h3 class="lib"><span class="way">४</span> In a browser
+  <span>nothing installed at all</span></h3>
+<p>The <a href="playground.html">playground</a> is this same toolchain compiled
+to WebAssembly. It runs entirely in the page — there is no server, and nothing
+you type leaves your machine. Use it to try the language before deciding
+whether to install anything.</p>
+
+<h3 class="lib">Checking that it works</h3>
+{shell('''python -m vak --version          # वाक् (Vāk) ''' + __version__ + '''
+python -m vak --builtins         # the 39 built-in functions
+python -m vak                    # संवादः — the interactive session''')}
+<p>Then a program of one line. Put this in <code>परीक्षा.vak</code> and run
+it — if you see the greeting, everything works:</p>
+{code('''मुद्रय "नमस्ते जगत्"।''')}
+
+<h3 class="lib">A terminal that can show Devanagari</h3>
+<p>Two separate things have to be right: the console must be in UTF-8, and the
+font must contain Devanagari.</p>
+<ul>
+  <li><b>Windows.</b> The CLI reconfigures its own output, so Devanagari
+  normally works in Windows Terminal. If you see boxes, the font is the
+  problem, not the encoding — choose <i>Nirmala UI</i> or
+  <i>Noto Sans Devanagari</i>. The older <code>conhost</code> console may also
+  need <code>chcp 65001</code>.</li>
+  <li><b>Linux and macOS.</b> A UTF-8 locale is the default almost everywhere;
+  <code>locale</code> will confirm it. Most terminal fonts fall back to a system
+  Devanagari face automatically.</li>
+</ul>
+<div class="note">
+  <p><b>You do not have to type Devanagari at all.</b> Every keyword has an
+  ASCII spelling and ASCII numerals work everywhere, so a complete Vāk program
+  can be written on a plain keyboard. The switch at the top of this page shows
+  any example either way.</p>
+</div>
+
+<h3 class="lib">Building the binary</h3>
+<p>The native back end turns a program into C and hands it to <b>gcc</b>, so a C
+compiler is the only extra requirement. On Windows,
+<a href="https://github.com/skeeto/w64devkit">w64devkit</a> is the one Vāk looks
+for by default; on Linux and macOS the system compiler is already there.</p>
+{shell('''python -m vak --native प्रोग्राम.vak       # produce an executable
+python -m vak --run-native प्रोग्राम.vak   # build it and run it''')}
+<p>If no compiler is found, Vāk says so rather than failing obscurely.</p>
+
+<h3 class="lib">The editor extension</h3>
+<p>Copy the <code>vscode-vak</code> folder from the repository into your VS Code
+extensions directory and reload the window:</p>
+{shell('''# Windows
+%USERPROFILE%\\.vscode\\extensions\\vscode-vak
+
+# macOS and Linux
+~/.vscode/extensions/vscode-vak''')}
+<p>Then point it at whichever toolchain you installed — set
+<code>vak.executable</code> to your <code>वाक्.exe</code>, or leave that empty
+and set <code>vak.pythonPath</code> so it uses <code>python -m vak</code>. You
+get highlighting, the <code>.vak</code> file icon, romanised typing that becomes
+Devanagari, and the analyser's diagnostics as you save — the same ones listed in
+<a href="#doshasuchi">दोषसूची</a>.</p>"""))
+
 # ---------------------------------------------------------------- १ · running
-parts.append(section("chalanam", "१", "चालनम्", "Running Vāk", f"""
+parts.append(section("chalanam", "चालनम्", "Running Vāk", f"""
 <p>Three ways to run a program, all producing identical output. The first needs
 Python; the last needs nothing at all.</p>
 {shell('''python -m vak प्रोग्राम.vak          # the tree-walking interpreter
@@ -127,20 +253,32 @@ python -m vak --vm प्रोग्राम.vak     # compile to bytecode, ru
 starts a REPL:</p>
 {shell('''./वाक्.exe --परीक्षा प्रोग्राम.vak    # report problems, run nothing
 python -m vak                        # संवादः — the REPL''')}
+<p>The full set of options, read from the argument parser itself. Four carry a
+Sanskrit alias:</p>
+<div class="scroll"><table class="kw">
+  <thead><tr><th>विकल्पः</th><th>संस्कृतम्</th><th>what it does</th></tr></thead>
+  <tbody>
+{flag_rows}
+  </tbody>
+</table></div>
 <div class="note">
-  <p><b>Writing Devanagari.</b> You do not have to. Every keyword has an ASCII
-  spelling and ASCII numerals work everywhere, so a Vāk program can be typed on
-  a plain keyboard. Use the switch at the top of this page to see any example
-  either way.</p>
-  <p>If you do write Devanagari, note that no monospace coding font contains it —
-  your editor will silently fall back to a proportional face and your columns
-  will drift. Setting <code>editor.fontFamily</code> to a chain ending in
-  <code>Nirmala UI</code> or <code>Noto Sans Devanagari</code> fixes the
-  rendering, though nothing makes Devanagari truly monospaced.</p>
+  <p><b>An editor.</b> The <code>vscode-vak</code> extension in the repository
+  gives Vāk syntax highlighting, the <code>.vak</code> file icon, romanised
+  typing that becomes Devanagari as you write, and live diagnostics from the
+  real analyser — the same messages listed in
+  <a href="#doshasuchi">दोषसूची</a>.</p>
+</div>
+<div class="note">
+  <p><b>Fonts.</b> No monospace coding font contains Devanagari, so an editor
+  falls back to a proportional face and columns drift. Setting
+  <code>editor.fontFamily</code> to a chain ending in <code>Nirmala UI</code> or
+  <code>Noto Sans Devanagari</code> fixes the rendering, though nothing makes
+  Devanagari truly monospaced. Installation is covered in
+  <a href="#sthapana">स्थापना</a>.</p>
 </div>"""))
 
 # ---------------------------------------------------------------- २ · danda
-parts.append(section("vakyani", "२", "वाक्यानि", "Statements and the danda", f"""
+parts.append(section("vakyani", "वाक्यानि", "Statements and the danda", f"""
 <p>A statement ends with a <b>danda</b> — <code>।</code> — the full stop
 Sanskrit has used since manuscripts. <code>॥</code>, the double danda, ends a
 section. A semicolon means the same thing and is easier to type.</p>
@@ -151,7 +289,7 @@ section. A semicolon means the same thing and is easier to type.</p>
 from <code>#</code> to the end of the line.</p>"""))
 
 # ---------------------------------------------------------------- ३ · चराः
-parts.append(section("charah", "३", "चराः", "Variables and numerals", f"""
+parts.append(section("charah", "चराः", "Variables and numerals", f"""
 <p><code>मान</code> declares a variable, <code>ध्रुव</code> a constant. A type
 may be written in place of <code>मान</code>, and then it binds — the analyser
 and every engine hold you to it.</p>
@@ -168,7 +306,7 @@ whichever form the value was written in where that is knowable, and
 <code>देवनागरी()</code> converts on demand.</p>"""))
 
 # ---------------------------------------------------------------- ४ · प्रवाहः
-parts.append(section("pravahah", "४", "प्रवाहः", "Control flow", f"""
+parts.append(section("pravahah", "प्रवाहः", "Control flow", f"""
 <p><code>यदि</code> and <code>अन्यथा</code> branch. Parentheses around the
 condition are optional; the braces are not.</p>
 {code('''यदि (अङ्कः > १००) {
@@ -224,7 +362,7 @@ written. The subject is evaluated once.</p>
 needs no closing <code>प्रत्यागच्छ</code>.</p>"""))
 
 # ---------------------------------------------------------------- ५ · कार्याणि
-parts.append(section("karyani", "५", "कार्याणि", "Functions", f"""
+parts.append(section("karyani", "कार्याणि", "Functions", f"""
 <p><code>कार्यम्</code> defines a function. A return type after the colon is
 optional and binding. Functions are values: pass them, return them, close over
 their surroundings.</p>
@@ -242,7 +380,7 @@ their surroundings.</p>
 block.</p>"""))
 
 # ---------------------------------------------------------------- ६ · संग्रहाः
-parts.append(section("sangrahah", "६", "संग्रहाः", "Lists and dictionaries", f"""
+parts.append(section("sangrahah", "संग्रहाः", "Lists and dictionaries", f"""
 <p><code>सूची</code> is an ordered list, <code>कोशः</code> a dictionary —
 literally a <i>treasury</i>, the word Sanskrit uses for a lexicon. Negative
 indices count from the end.</p>
@@ -272,7 +410,7 @@ type_rows = "\n".join(
         ("किमपि", "anything at all — <i>kimapi</i>, “whatever”"),
         ("शून्यम्", "nothing — <i>śūnyam</i>, the zero India gave the world"),
     ])
-parts.append(section("prakarah", "७", "प्रकाराः", "Types", f"""
+parts.append(section("prakarah", "प्रकाराः", "Types", f"""
 <p>Typing is gradual. Write no type and nothing is checked; write one and it is
 enforced everywhere — at declaration, at assignment, at every call, and on the
 way out of a function. <code>किमपि</code> flows both ways, so only a provable
@@ -291,7 +429,7 @@ mismatch is an error.</p>
 karaka_rows = "\n".join(
     f'    <tr><td><code class="ka">{role}</code></td><td>{html.escape(desc)}</td></tr>'
     for role, desc in [(r, KARAKA_VIBHAKTI[r]) for r in KARAKA_ORDER])
-parts.append(section("karakani", "८", "कारकाणि", "Kāraka roles", f"""
+parts.append(section("karakani", "कारकाणि", "Kāraka roles", f"""
 <p class="lede">This is the part of Vāk that exists nowhere else.</p>
 <p>Pāṇini analysed a sentence not by word order but by <b>kāraka</b> — the role
 each participant plays in the action. Vāk lets a parameter declare its role, and
@@ -328,7 +466,7 @@ sentence. All three of these calls are the same call:</p>
 </div>"""))
 
 # ---------------------------------------------------------------- ९ · analyser
-parts.append(section("vishleshakah", "९", "अर्थविश्लेषकः", "The semantic analyser", f"""
+parts.append(section("vishleshakah", "अर्थविश्लेषकः", "The semantic analyser", f"""
 <p>Before anything runs, the analyser walks the syntax tree and reports what it
 can prove wrong: undefined names, type mismatches, assignments to constants,
 wrong argument counts, <code>विरम</code> outside a loop, kāraka violations,
@@ -350,7 +488,7 @@ and the toolchain's own source — and must produce identical diagnostics, in th
 same order, with the same wording.</p>"""))
 
 # ---------------------------------------------------------------- १० · दोषाः
-parts.append(section("doshah", "१०", "दोषनिग्रहः", "Exceptions", f"""
+parts.append(section("doshah", "दोषनिग्रहः", "Exceptions", f"""
 <p><code>प्रयत्नः</code> is the attempt, <code>दोषे</code> the locative — “in
 the event of an error” — and <code>अन्ततः</code> what happens at the end
 regardless. <code>उत्सृज</code> throws.</p>
@@ -368,22 +506,88 @@ regardless. <code>उत्सृज</code> throws.</p>
 <code>प्रकारः</code> and <code>सन्देशः</code>. Runtime failures from the
 language itself arrive in the same shape, so one handler catches both.</p>"""))
 
-# ---------------------------------------------------------------- ११ · आनय
-parts.append(section("anaya", "११", "आनय", "Modules and files", f"""
+# ------------------------------------------------------------ प्रदानम्
+parts.append(section("pradanam", "प्रदानम्", "Reading from the user", f"""
+<p><code>पठ</code> reads one line from the user and hands it back as a
+<code>शब्दः</code>. Give it an argument and that is printed first, as a
+prompt.</p>
+{code('''शब्दः नाम = पठ("नाम किम्? ")।
+मुद्रय "नमस्ते,", नाम + "!"।
+
+पूर्णाङ्कः वयः = संख्या(पठ("वयः? "))।
+मुद्रय "आगामिवर्षे भवतः वयः", वयः + १, "भविष्यति।"।''',
+      "संख्या turns the line into a number — and it reads Devanagari numerals, "
+      "so the user may type ३८ or 38.")}
+<p>What comes back is always text, even when it looks like a number, so wrap it
+in <code>संख्या</code> when you want arithmetic. A line that cannot be read as a
+number raises a catchable <code>कार्यकालदोषः</code>:</p>
+{code('''प्रयत्नः {
+    पूर्णाङ्कः क = संख्या(पठ("अङ्कम् लिखतु: "))।
+    मुद्रय "वर्गः:", क * क।
+} दोषे (द) {
+    मुद्रय "सः अङ्कः न आसीत् —", द.सन्देशः।
+}''')}
+<div class="note">
+  <p><b>At the end of input</b> <code>पठ</code> returns the empty string rather
+  than failing, in every engine. So a program that reads until there is nothing
+  left tests for it:</p>
+  <p><code>यावत् (सत्य) {{ शब्दः पं = पठ()। यदि (दीर्घता(पं) == ०) {{ विरम। }} … }}</code></p>
+  <p>That does mean an empty line and the end of input look alike. If you need
+  to tell them apart, read the whole of standard input another way.</p>
+</div>
+<p>In the <a href="playground.html">playground</a> there is no terminal to type
+into, so the box under the editor is what <code>पठ</code> reads — one line per
+call.</p>"""))
+
+# ---------------------------------------------------------------- १२ · आनय
+parts.append(section("anaya", "आनय", "Modules and files", f"""
 <p><code>आनय</code> — <i>bring</i> — imports. A module is any
 <code>.vak</code> file; whatever it declares at the top level is what it
 exports.</p>
-{code('''आनय "गणितम्"।                    # गणितम्.वर्गमूलम्(...)
-आनय "गणितम्" इति ग।               # ग.वर्गमूलम्(...)
-आनय "गणितम्" तः वर्गमूलम्, ज्या।   # वर्गमूलम्(...)''')}
+{code('''आनय "गणितम्"।                       # गणितम्.वर्गः(...)
+आनय "गणितम्" इति ग।                  # ग.वर्गः(...)
+आनय "गणितम्" तः वर्गः, क्रमगुणितम्।   # वर्गः(...)''')}
 <p>Modules run once and are cached; a circular import is reported rather than
 hung on. Files are read and written with the built-ins:</p>
 {code('''शब्दः विषयम् = सञ्चिकापठ("काव्यम्.txt")।
 सञ्चिकालिख("फलम्.txt", विषयम्)।
 यदि (सञ्चिकास्ति("फलम्.txt")) { मुद्रय निर्देशिका(".")। }''')}"""))
 
-# ---------------------------------------------------------------- १२ · यन्त्रम्
-parts.append(section("yantram", "१२", "यन्त्रम्", "How Vāk runs", f"""
+
+# ------------------------------------------------------------ १३ · पुस्तकालयः
+# Signatures come from parsing the modules with the real parser; the glosses
+# live in docs/reference.py, which fails the build if the two fall out of step.
+lib_parts = []
+for _mod, _blurb, _entries in reference.library():
+    _rows = chr(10).join(
+        f'    <tr><td><code>{html.escape(sig)}</code></td>'
+        f'<td>{html.escape(gloss)}</td></tr>'
+        for _kind, sig, gloss in _entries)
+    lib_parts.append(f"""
+<h3 class="lib"><code>आनय "{_mod}"।</code> <span>{html.escape(_blurb)}</span></h3>
+<div class="scroll"><table class="kw">
+  <thead><tr><th>{_mod}</th><th>what it does</th></tr></thead>
+  <tbody>
+{_rows}
+  </tbody>
+</table></div>""")
+
+parts.append(section("pustakalayah", "पुस्तकालयः", "The standard library", f"""
+<p>Two modules ship with Vāk, and both are <b>written in Vāk</b> — they are
+ordinary <code>.vak</code> files you can read, and a fair sample of what the
+language looks like in use. Bring one in with <code>आनय</code>:</p>
+{code('''आनय "गणितम्"।
+मुद्रय गणितम्.क्रमगुणितम्(५)।        # १२०
+
+आनय "शब्दाः" तः विलोमः_वा।
+मुद्रय विलोमः_वा("नयन")।            # सत्य''')}
+<p>Every signature below is printed from the module's own source, so it is
+exactly what the file declares — including the kāraka role each parameter
+takes.</p>
+{"".join(lib_parts)}"""))
+
+# ---------------------------------------------------------------- १४ · यन्त्रम्
+parts.append(section("yantram", "यन्त्रम्", "How Vāk runs", f"""
 <p class="lede">The point of the project is a language that does not depend on a
 host language.</p>
 <p>A Vāk program can be executed by any of five engines, and all five are held to
@@ -438,6 +642,15 @@ ORDER = [
     ("FROM", "taking from"), ("TRUE", "true"), ("FALSE", "false"),
     ("NULL", "nothing"), ("AND", "and"), ("OR", "or"), ("NOT", "not"),
 ]
+# Some constructs accept two Devanagari words — दोषे and गृहाण are one and the
+# same token.  Worth counting, because the table shows them side by side and a
+# reader has no other way to tell a synonym from a different keyword.
+SYNONYMS = sum(
+    1 for _kind, _words in _by_kind.items()
+    if len([w for w in _words
+            if not w.isascii()
+            and not any(c in w for c in "āīūṛṇṣśḥṭḍñṅ")]) > 1)
+
 kw_rows = []
 for kind, gloss in ORDER:
     words = _by_kind.get(kind, [])
@@ -448,9 +661,54 @@ for kind, gloss in ORDER:
         f'    <tr><td><code>{" · ".join(dev) or "—"}</code></td>'
         f'<td class="iast">{" · ".join(iast + rom) or "—"}</td>'
         f"<td>{gloss}</td></tr>")
-parts.append(section("padakoshah", "१३", "पदकोशः", "Every keyword", f"""
+# ------------------------------------------------------------- १५ · दोषसूची
+_diag_rows = chr(10).join(
+    f'    <tr><td><code>{html.escape(codeword)}</code></td>'
+    f'<td class="iast">{kind}</td><td>{html.escape(what)}</td></tr>'
+    for codeword, kind, what in reference.diagnostics())
+_kind_rows = chr(10).join(
+    f'    <tr><td><code>{html.escape(codeword)}</code></td>'
+    f'<td>{html.escape(english)}</td></tr>'
+    for codeword, english in reference.error_kinds())
+_errors = sum(1 for _, k, _ in reference.diagnostics() if k == "दोषः")
+_warns = len(reference.diagnostics()) - _errors
+
+parts.append(section("doshasuchi", "दोषसूची", "Every diagnostic", f"""
+<p>The analyser reports {_errors} kinds of error and {_warns} kinds of warning.
+A <b>दोषः</b> stops the program from running; a <b>सूचना</b> is printed and the
+program runs anyway. Every one carries its Sanskrit name, so a message can be
+looked up here.</p>
+<div class="scroll"><table class="kw">
+  <thead><tr><th>सङ्केतः</th><th>kind</th><th>what it means</th></tr></thead>
+  <tbody>
+{_diag_rows}
+  </tbody>
+</table></div>
+<p>Separately, an error caught by <code>दोषे</code> carries its kind in
+<code>प्रकारः</code>. These are the {len(reference.error_kinds())} values it can
+hold:</p>
+<div class="scroll"><table class="kw">
+  <thead><tr><th>प्रकारः</th><th>raised by</th></tr></thead>
+  <tbody>
+{_kind_rows}
+  </tbody>
+</table></div>
+{code('''प्रयत्नः {
+    मुद्रय संख्या("न अङ्कः")।
+} दोषे (त्रुटिः) {
+    यदि (त्रुटिः.प्रकारः == "कार्यकालदोषः") {
+        मुद्रय "गणने दोषः / a runtime error"।
+    }
+}''')}"""))
+
+parts.append(section("padakoshah", "पदकोशः", "Every keyword", f"""
 <p>Each keyword may be written in Devanagari, in IAST transliteration, or in
-plain ASCII. They are the same word — the lexer holds all three spellings.</p>
+plain ASCII. They are the same word — the lexer holds all three spellings, so
+{len(ORDER)} keywords are what there is to learn.</p>
+<p>Where a cell lists two Devanagari words joined by <code>·</code>, they are
+<b>synonyms for the identical token</b>, not different keywords:
+<code>दोषे</code> and <code>गृहाण</code> both begin a catch block. {SYNONYMS}
+constructs have such a pair.</p>
 <div class="scroll"><table class="kw">
   <thead><tr><th>देवनागरी</th><th>IAST · ASCII</th><th>meaning</th></tr></thead>
   <tbody>
@@ -464,7 +722,7 @@ bi_rows = "\n".join(
     f'<td class="iast">{html.escape(iast)}</td>'
     f"<td>{html.escape(doc)}</td></tr>"
     for dev, iast, doc in BUILTIN_DOCS)
-parts.append(section("antarnihitani", "१४", "अन्तर्निहितानि",
+parts.append(section("antarnihitani", "अन्तर्निहितानि",
                      f"The {len(BUILTIN_DOCS)} built-ins", f"""
 <p>Available everywhere without an import. Two more —
 <code>गणितम्</code> and <code>शब्दाः</code> — are libraries written in Vāk and
@@ -475,6 +733,14 @@ brought in with <code>आनय</code>.</p>
 {bi_rows}
   </tbody>
 </table></div>"""))
+
+# The reference tables are only worth having if they cannot fall behind the
+# language, so a mismatch stops the build instead of shipping quietly.
+_drift = reference.check()
+if _drift:
+    for _line in _drift:
+        print(f"  !! {_line}")
+    raise SystemExit("reference has drifted from the source; manual not written")
 
 # ------------------------------------------------------------------- assemble
 nav = "\n".join(
@@ -495,6 +761,7 @@ HERO_CODE = code('''# कारकाणि — a parameter declares the role it
 
 DOC = f"""<title>वाक् · Vāk — a Sanskrit-native programming language</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="favicon.ico" sizes="any">
 <style>
 :root {{
   /* मसी — manuscript ink, paper, and haritāla: the orpiment yellow Indian
@@ -683,6 +950,23 @@ th {{ font-family: var(--sans); font-size: .72rem; letter-spacing: .09em;
 td .iast, td.iast {{ font-family: var(--mono); font-size: .82rem;
                      color: var(--ink-soft); }}
 table.kw td:first-child {{ white-space: nowrap; }}
+/* the library tables carry full signatures, which are long — let them wrap */
+#pustakalayah table.kw td:first-child {{ white-space: normal; }}
+#pustakalayah table.kw td:first-child code {{ white-space: normal;
+  word-break: break-word; }}
+
+/* one sub-heading per library module, reading as the आनय line that loads it */
+h3.lib {{ margin: 2.2rem 0 .2rem; font-size: 1.02rem; font-weight: 500;
+  display: flex; gap: .8rem; align-items: baseline; flex-wrap: wrap;
+  padding-bottom: .5rem; border-bottom: 1px solid var(--rule); }}
+h3.lib span {{ font-family: var(--sans); font-size: .78rem; font-weight: 400;
+  color: var(--ink-faint); }}
+/* the three installation routes are numbered because they are alternatives,
+   not steps — the badge says "pick one", the ordering says nothing else */
+h3.lib span.way {{ display: inline-flex; align-items: center;
+  justify-content: center; width: 1.55rem; height: 1.55rem; flex: none;
+  border-radius: 50%; background: var(--gold); color: var(--paper);
+  font-family: var(--serif); font-size: .82rem; }}
 
 /* ------------------------------------------------------------------ notes */
 .note {{ margin: 1.6rem 0; padding: .1rem 0 .1rem 1.1rem;
@@ -726,6 +1010,7 @@ footer .verse {{ font-family: var(--serif); font-size: .95rem; color: var(--ink-
   <p class="sub">Vāk · a manual</p>
   <p class="ver">{__version__}</p>
   <p class="play"><a href="playground.html">क्रीडाक्षेत्रम् · try it in the browser →</a></p>
+  <p class="play"><a href="story.html">कथा · how it was built →</a></p>
   <ol>
 {nav}
   </ol>

@@ -1,5 +1,6 @@
 <title>वाक् · Vāk — a Sanskrit-native programming language</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="favicon.ico" sizes="any">
 <style>
 :root {
   /* मसी — manuscript ink, paper, and haritāla: the orpiment yellow Indian
@@ -188,6 +189,23 @@ th { font-family: var(--sans); font-size: .72rem; letter-spacing: .09em;
 td .iast, td.iast { font-family: var(--mono); font-size: .82rem;
                      color: var(--ink-soft); }
 table.kw td:first-child { white-space: nowrap; }
+/* the library tables carry full signatures, which are long — let them wrap */
+#pustakalayah table.kw td:first-child { white-space: normal; }
+#pustakalayah table.kw td:first-child code { white-space: normal;
+  word-break: break-word; }
+
+/* one sub-heading per library module, reading as the आनय line that loads it */
+h3.lib { margin: 2.2rem 0 .2rem; font-size: 1.02rem; font-weight: 500;
+  display: flex; gap: .8rem; align-items: baseline; flex-wrap: wrap;
+  padding-bottom: .5rem; border-bottom: 1px solid var(--rule); }
+h3.lib span { font-family: var(--sans); font-size: .78rem; font-weight: 400;
+  color: var(--ink-faint); }
+/* the three installation routes are numbered because they are alternatives,
+   not steps — the badge says "pick one", the ordering says nothing else */
+h3.lib span.way { display: inline-flex; align-items: center;
+  justify-content: center; width: 1.55rem; height: 1.55rem; flex: none;
+  border-radius: 50%; background: var(--gold); color: var(--paper);
+  font-family: var(--serif); font-size: .82rem; }
 
 /* ------------------------------------------------------------------ notes */
 .note { margin: 1.6rem 0; padding: .1rem 0 .1rem 1.1rem;
@@ -229,23 +247,28 @@ footer .verse { font-family: var(--serif); font-size: .95rem; color: var(--ink-s
 <nav class="rail" aria-label="Contents">
   <p class="mark">वाक्</p>
   <p class="sub">Vāk · a manual</p>
-  <p class="ver">0.10.0</p>
+  <p class="ver">0.11.0</p>
   <p class="play"><a href="playground.html">क्रीडाक्षेत्रम् · try it in the browser →</a></p>
+  <p class="play"><a href="story.html">कथा · how it was built →</a></p>
   <ol>
-      <li><a href="#chalanam"><span class="n">१</span><span class="d">चालनम्</span><span class="e">Running Vāk</span></a></li>
-      <li><a href="#vakyani"><span class="n">२</span><span class="d">वाक्यानि</span><span class="e">Statements and the danda</span></a></li>
-      <li><a href="#charah"><span class="n">३</span><span class="d">चराः</span><span class="e">Variables and numerals</span></a></li>
-      <li><a href="#pravahah"><span class="n">४</span><span class="d">प्रवाहः</span><span class="e">Control flow</span></a></li>
-      <li><a href="#karyani"><span class="n">५</span><span class="d">कार्याणि</span><span class="e">Functions</span></a></li>
-      <li><a href="#sangrahah"><span class="n">६</span><span class="d">संग्रहाः</span><span class="e">Lists and dictionaries</span></a></li>
-      <li><a href="#prakarah"><span class="n">७</span><span class="d">प्रकाराः</span><span class="e">Types</span></a></li>
-      <li><a href="#karakani"><span class="n">८</span><span class="d">कारकाणि</span><span class="e">Kāraka roles</span></a></li>
-      <li><a href="#vishleshakah"><span class="n">९</span><span class="d">अर्थविश्लेषकः</span><span class="e">The semantic analyser</span></a></li>
-      <li><a href="#doshah"><span class="n">१०</span><span class="d">दोषनिग्रहः</span><span class="e">Exceptions</span></a></li>
-      <li><a href="#anaya"><span class="n">११</span><span class="d">आनय</span><span class="e">Modules and files</span></a></li>
-      <li><a href="#yantram"><span class="n">१२</span><span class="d">यन्त्रम्</span><span class="e">How Vāk runs</span></a></li>
-      <li><a href="#padakoshah"><span class="n">१३</span><span class="d">पदकोशः</span><span class="e">Every keyword</span></a></li>
-      <li><a href="#antarnihitani"><span class="n">१४</span><span class="d">अन्तर्निहितानि</span><span class="e">The 39 built-ins</span></a></li>
+      <li><a href="#sthapana"><span class="n">१</span><span class="d">स्थापना</span><span class="e">Installing Vāk</span></a></li>
+      <li><a href="#chalanam"><span class="n">२</span><span class="d">चालनम्</span><span class="e">Running Vāk</span></a></li>
+      <li><a href="#vakyani"><span class="n">३</span><span class="d">वाक्यानि</span><span class="e">Statements and the danda</span></a></li>
+      <li><a href="#charah"><span class="n">४</span><span class="d">चराः</span><span class="e">Variables and numerals</span></a></li>
+      <li><a href="#pravahah"><span class="n">५</span><span class="d">प्रवाहः</span><span class="e">Control flow</span></a></li>
+      <li><a href="#karyani"><span class="n">६</span><span class="d">कार्याणि</span><span class="e">Functions</span></a></li>
+      <li><a href="#sangrahah"><span class="n">७</span><span class="d">संग्रहाः</span><span class="e">Lists and dictionaries</span></a></li>
+      <li><a href="#prakarah"><span class="n">८</span><span class="d">प्रकाराः</span><span class="e">Types</span></a></li>
+      <li><a href="#karakani"><span class="n">९</span><span class="d">कारकाणि</span><span class="e">Kāraka roles</span></a></li>
+      <li><a href="#vishleshakah"><span class="n">१०</span><span class="d">अर्थविश्लेषकः</span><span class="e">The semantic analyser</span></a></li>
+      <li><a href="#doshah"><span class="n">११</span><span class="d">दोषनिग्रहः</span><span class="e">Exceptions</span></a></li>
+      <li><a href="#pradanam"><span class="n">१२</span><span class="d">प्रदानम्</span><span class="e">Reading from the user</span></a></li>
+      <li><a href="#anaya"><span class="n">१३</span><span class="d">आनय</span><span class="e">Modules and files</span></a></li>
+      <li><a href="#pustakalayah"><span class="n">१४</span><span class="d">पुस्तकालयः</span><span class="e">The standard library</span></a></li>
+      <li><a href="#yantram"><span class="n">१५</span><span class="d">यन्त्रम्</span><span class="e">How Vāk runs</span></a></li>
+      <li><a href="#doshasuchi"><span class="n">१६</span><span class="d">दोषसूची</span><span class="e">Every diagnostic</span></a></li>
+      <li><a href="#padakoshah"><span class="n">१७</span><span class="d">पदकोशः</span><span class="e">Every keyword</span></a></li>
+      <li><a href="#antarnihitani"><span class="n">१८</span><span class="d">अन्तर्निहितानि</span><span class="e">The 39 built-ins</span></a></li>
   </ol>
   <div class="controls">
     <button id="canon" aria-pressed="false">देवनागरी → roman</button>
@@ -273,9 +296,122 @@ footer .verse { font-family: var(--serif); font-size: .95rem; color: var(--ink-s
 <b class="k" data-r="mudraya">मुद्रय</b> छानय(<b class="ka">करणम्</b>: समः, <b class="ka">अपादानम्</b>: [<i class="n" data-r="1">१</i>, <i class="n" data-r="2">२</i>, <i class="n" data-r="3">३</i>, <i class="n" data-r="4">४</i>, <i class="n" data-r="5">५</i>, <i class="n" data-r="6">६</i>])।</code></pre></figure>
   </header>
 
-<section id="chalanam">
+<section id="sthapana">
   <div class="head">
     <p class="num">१</p>
+    <h2><span class="dev">स्थापना</span><span class="eng">Installing Vāk</span></h2>
+  </div>
+  
+<p class="lede">There is no package to install and nothing to configure. Pick
+whichever of these four suits you — they run the same language.</p>
+
+<h3 class="lib"><span class="way">१</span> The standalone binary
+  <span>nothing else required</span></h3>
+<p><code>वाक्.exe</code> ships in the repository. It is the whole toolchain —
+lexer, parser, analyser, compiler and machine — compiled to one file, and it
+needs neither Python nor anything else. Copy it where you like and run it:</p>
+<figure class="code sh"><pre><code>वाक्.exe प्रोग्राम.vak</code></pre></figure>
+<p>The binary in the repository is built for <b>64-bit Windows</b>. On Linux or
+macOS, build your own — see <i>Building the binary</i> below; the C sources are
+platform-neutral.</p>
+
+<h3 class="lib"><span class="way">२</span> With pip
+  <span>Python 3.10 or newer</span></h3>
+<p>Vāk pulls in <b>no third-party packages</b>. A standard Python is all it
+needs; it was developed on 3.13.</p>
+<figure class="code sh"><pre><code>pip install vak-lang
+vak प्रोग्राम.vak</code></pre></figure>
+<p>This gives you the interpreter, the bytecode virtual machine, the native back
+end, the REPL and the standard library, and the <code>vak</code> command works
+from any directory.</p>
+
+<h3 class="lib"><span class="way">३</span> From a clone
+  <span>everything a wheel does not carry</span></h3>
+<p>Clone it for the C runtime, the Vāk-written toolchain behind
+<code>--self</code>, the documentation generators and the editor extension:</p>
+<figure class="code sh"><pre><code>git clone https://github.com/vidyadheeshp/vak.git
+cd vak
+python -m vak examples/01_namaste.vak</code></pre></figure>
+<div class="note">
+  <p><b>Working from a clone, stay in the repository root.</b>
+  <code>python -m vak</code> finds the package only because you are standing in
+  the directory that contains it; from anywhere else you will get
+  <code>No module named vak</code>. Installing with pip avoids this entirely.
+  To run from elsewhere without installing, put the root on the module
+  path:</p>
+</div>
+<figure class="code sh"><pre><code># bash / zsh
+PYTHONPATH=/path/to/vak python -m vak ~/प्रोग्राम.vak
+
+# PowerShell
+$env:PYTHONPATH = &quot;C:\path\to\vak&quot;; python -m vak प्रोग्राम.vak</code></pre></figure>
+<p>On Windows the two launchers in the repository do this and set UTF-8 for
+you:</p>
+<figure class="code sh"><pre><code>.\vak.ps1 examples/01_namaste.vak     # PowerShell
+vak.cmd examples/01_namaste.vak       # cmd.exe</code></pre></figure>
+
+<h3 class="lib"><span class="way">४</span> In a browser
+  <span>nothing installed at all</span></h3>
+<p>The <a href="playground.html">playground</a> is this same toolchain compiled
+to WebAssembly. It runs entirely in the page — there is no server, and nothing
+you type leaves your machine. Use it to try the language before deciding
+whether to install anything.</p>
+
+<h3 class="lib">Checking that it works</h3>
+<figure class="code sh"><pre><code>python -m vak --version          # वाक् (Vāk) 0.11.0
+python -m vak --builtins         # the 39 built-in functions
+python -m vak                    # संवादः — the interactive session</code></pre></figure>
+<p>Then a program of one line. Put this in <code>परीक्षा.vak</code> and run
+it — if you see the greeting, everything works:</p>
+<figure class="code"><pre><code><b class="k" data-r="mudraya">मुद्रय</b> <i class="s">&quot;नमस्ते जगत्&quot;</i>।</code></pre></figure>
+
+<h3 class="lib">A terminal that can show Devanagari</h3>
+<p>Two separate things have to be right: the console must be in UTF-8, and the
+font must contain Devanagari.</p>
+<ul>
+  <li><b>Windows.</b> The CLI reconfigures its own output, so Devanagari
+  normally works in Windows Terminal. If you see boxes, the font is the
+  problem, not the encoding — choose <i>Nirmala UI</i> or
+  <i>Noto Sans Devanagari</i>. The older <code>conhost</code> console may also
+  need <code>chcp 65001</code>.</li>
+  <li><b>Linux and macOS.</b> A UTF-8 locale is the default almost everywhere;
+  <code>locale</code> will confirm it. Most terminal fonts fall back to a system
+  Devanagari face automatically.</li>
+</ul>
+<div class="note">
+  <p><b>You do not have to type Devanagari at all.</b> Every keyword has an
+  ASCII spelling and ASCII numerals work everywhere, so a complete Vāk program
+  can be written on a plain keyboard. The switch at the top of this page shows
+  any example either way.</p>
+</div>
+
+<h3 class="lib">Building the binary</h3>
+<p>The native back end turns a program into C and hands it to <b>gcc</b>, so a C
+compiler is the only extra requirement. On Windows,
+<a href="https://github.com/skeeto/w64devkit">w64devkit</a> is the one Vāk looks
+for by default; on Linux and macOS the system compiler is already there.</p>
+<figure class="code sh"><pre><code>python -m vak --native प्रोग्राम.vak       # produce an executable
+python -m vak --run-native प्रोग्राम.vak   # build it and run it</code></pre></figure>
+<p>If no compiler is found, Vāk says so rather than failing obscurely.</p>
+
+<h3 class="lib">The editor extension</h3>
+<p>Copy the <code>vscode-vak</code> folder from the repository into your VS Code
+extensions directory and reload the window:</p>
+<figure class="code sh"><pre><code># Windows
+%USERPROFILE%\.vscode\extensions\vscode-vak
+
+# macOS and Linux
+~/.vscode/extensions/vscode-vak</code></pre></figure>
+<p>Then point it at whichever toolchain you installed — set
+<code>vak.executable</code> to your <code>वाक्.exe</code>, or leave that empty
+and set <code>vak.pythonPath</code> so it uses <code>python -m vak</code>. You
+get highlighting, the <code>.vak</code> file icon, romanised typing that becomes
+Devanagari, and the analyser's diagnostics as you save — the same ones listed in
+<a href="#doshasuchi">दोषसूची</a>.</p>
+</section>
+<section id="chalanam">
+  <div class="head">
+    <p class="num">२</p>
     <h2><span class="dev">चालनम्</span><span class="eng">Running Vāk</span></h2>
   </div>
   
@@ -288,21 +424,45 @@ python -m vak --vm प्रोग्राम.vak     # compile to bytecode, ru
 starts a REPL:</p>
 <figure class="code sh"><pre><code>./वाक्.exe --परीक्षा प्रोग्राम.vak    # report problems, run nothing
 python -m vak                        # संवादः — the REPL</code></pre></figure>
+<p>The full set of options, read from the argument parser itself. Four carry a
+Sanskrit alias:</p>
+<div class="scroll"><table class="kw">
+  <thead><tr><th>विकल्पः</th><th>संस्कृतम्</th><th>what it does</th></tr></thead>
+  <tbody>
+    <tr><td><code>--tokens</code></td><td><code></code></td><td>print the token stream and stop</td></tr>
+    <tr><td><code>--ast</code></td><td><code></code></td><td>print the syntax tree and stop</td></tr>
+    <tr><td><code>--check</code></td><td><code></code></td><td>run the semantic analyser and stop, without executing</td></tr>
+    <tr><td><code>--no-check</code></td><td><code></code></td><td>skip the semantic analyser and run the program directly</td></tr>
+    <tr><td><code>--vm</code></td><td><code></code></td><td>compile to bytecode and run on the SanskritVM</td></tr>
+    <tr><td><code>--bytecode</code></td><td><code>--vyakhya</code></td><td>disassemble the compiled bytecode and stop</td></tr>
+    <tr><td><code>--self</code></td><td><code>--svayam</code></td><td>compile with the Vāk-written toolchain, then run on the VM</td></tr>
+    <tr><td><code>--self-vm</code></td><td><code>--svayam-yantram</code></td><td>lex, parse, compile AND run entirely in Vāk</td></tr>
+    <tr><td><code>--native</code></td><td><code>--deshiya</code></td><td>compile to a standalone native executable (needs gcc)</td></tr>
+    <tr><td><code>--run-native</code></td><td><code></code></td><td>compile natively and run the result</td></tr>
+    <tr><td><code>--builtins</code></td><td><code></code></td><td>list the built-in functions</td></tr>
+    <tr><td><code>--karakas</code></td><td><code></code></td><td>list the kāraka roles</td></tr>
+    <tr><td><code>--version</code></td><td><code></code></td><td>print the version and stop</td></tr>
+  </tbody>
+</table></div>
 <div class="note">
-  <p><b>Writing Devanagari.</b> You do not have to. Every keyword has an ASCII
-  spelling and ASCII numerals work everywhere, so a Vāk program can be typed on
-  a plain keyboard. Use the switch at the top of this page to see any example
-  either way.</p>
-  <p>If you do write Devanagari, note that no monospace coding font contains it —
-  your editor will silently fall back to a proportional face and your columns
-  will drift. Setting <code>editor.fontFamily</code> to a chain ending in
-  <code>Nirmala UI</code> or <code>Noto Sans Devanagari</code> fixes the
-  rendering, though nothing makes Devanagari truly monospaced.</p>
+  <p><b>An editor.</b> The <code>vscode-vak</code> extension in the repository
+  gives Vāk syntax highlighting, the <code>.vak</code> file icon, romanised
+  typing that becomes Devanagari as you write, and live diagnostics from the
+  real analyser — the same messages listed in
+  <a href="#doshasuchi">दोषसूची</a>.</p>
+</div>
+<div class="note">
+  <p><b>Fonts.</b> No monospace coding font contains Devanagari, so an editor
+  falls back to a proportional face and columns drift. Setting
+  <code>editor.fontFamily</code> to a chain ending in <code>Nirmala UI</code> or
+  <code>Noto Sans Devanagari</code> fixes the rendering, though nothing makes
+  Devanagari truly monospaced. Installation is covered in
+  <a href="#sthapana">स्थापना</a>.</p>
 </div>
 </section>
 <section id="vakyani">
   <div class="head">
-    <p class="num">२</p>
+    <p class="num">३</p>
     <h2><span class="dev">वाक्यानि</span><span class="eng">Statements and the danda</span></h2>
   </div>
   
@@ -317,7 +477,7 @@ from <code>#</code> to the end of the line.</p>
 </section>
 <section id="charah">
   <div class="head">
-    <p class="num">३</p>
+    <p class="num">४</p>
     <h2><span class="dev">चराः</span><span class="eng">Variables and numerals</span></h2>
   </div>
   
@@ -338,7 +498,7 @@ whichever form the value was written in where that is knowable, and
 </section>
 <section id="pravahah">
   <div class="head">
-    <p class="num">४</p>
+    <p class="num">५</p>
     <h2><span class="dev">प्रवाहः</span><span class="eng">Control flow</span></h2>
   </div>
   
@@ -398,7 +558,7 @@ needs no closing <code>प्रत्यागच्छ</code>.</p>
 </section>
 <section id="karyani">
   <div class="head">
-    <p class="num">५</p>
+    <p class="num">६</p>
     <h2><span class="dev">कार्याणि</span><span class="eng">Functions</span></h2>
   </div>
   
@@ -420,7 +580,7 @@ block.</p>
 </section>
 <section id="sangrahah">
   <div class="head">
-    <p class="num">६</p>
+    <p class="num">७</p>
     <h2><span class="dev">संग्रहाः</span><span class="eng">Lists and dictionaries</span></h2>
   </div>
   
@@ -439,7 +599,7 @@ the same lookup written more quietly.</p>
 </section>
 <section id="prakarah">
   <div class="head">
-    <p class="num">७</p>
+    <p class="num">८</p>
     <h2><span class="dev">प्रकाराः</span><span class="eng">Types</span></h2>
   </div>
   
@@ -467,7 +627,7 @@ mismatch is an error.</p>
 </section>
 <section id="karakani">
   <div class="head">
-    <p class="num">८</p>
+    <p class="num">९</p>
     <h2><span class="dev">कारकाणि</span><span class="eng">Kāraka roles</span></h2>
   </div>
   
@@ -513,7 +673,7 @@ sentence. All three of these calls are the same call:</p>
 </section>
 <section id="vishleshakah">
   <div class="head">
-    <p class="num">९</p>
+    <p class="num">१०</p>
     <h2><span class="dev">अर्थविश्लेषकः</span><span class="eng">The semantic analyser</span></h2>
   </div>
   
@@ -539,7 +699,7 @@ same order, with the same wording.</p>
 </section>
 <section id="doshah">
   <div class="head">
-    <p class="num">१०</p>
+    <p class="num">११</p>
     <h2><span class="dev">दोषनिग्रहः</span><span class="eng">Exceptions</span></h2>
   </div>
   
@@ -560,27 +720,115 @@ regardless. <code>उत्सृज</code> throws.</p>
 <code>प्रकारः</code> and <code>सन्देशः</code>. Runtime failures from the
 language itself arrive in the same shape, so one handler catches both.</p>
 </section>
+<section id="pradanam">
+  <div class="head">
+    <p class="num">१२</p>
+    <h2><span class="dev">प्रदानम्</span><span class="eng">Reading from the user</span></h2>
+  </div>
+  
+<p><code>पठ</code> reads one line from the user and hands it back as a
+<code>शब्दः</code>. Give it an argument and that is printed first, as a
+prompt.</p>
+<figure class="code"><pre><code><b class="t" data-r="shabdah">शब्दः</b> नाम = पठ(<i class="s">&quot;नाम किम्? &quot;</i>)।
+<b class="k" data-r="mudraya">मुद्रय</b> <i class="s">&quot;नमस्ते,&quot;</i>, नाम + <i class="s">&quot;!&quot;</i>।
+
+<b class="t" data-r="purnankah">पूर्णाङ्कः</b> वयः = संख्या(पठ(<i class="s">&quot;वयः? &quot;</i>))।
+<b class="k" data-r="mudraya">मुद्रय</b> <i class="s">&quot;आगामिवर्षे भवतः वयः&quot;</i>, वयः + <i class="n" data-r="1">१</i>, <i class="s">&quot;भविष्यति।&quot;</i>।</code></pre><figcaption>संख्या turns the line into a number — and it reads Devanagari numerals, so the user may type ३८ or 38.</figcaption></figure>
+<p>What comes back is always text, even when it looks like a number, so wrap it
+in <code>संख्या</code> when you want arithmetic. A line that cannot be read as a
+number raises a catchable <code>कार्यकालदोषः</code>:</p>
+<figure class="code"><pre><code><b class="k" data-r="prayatnah">प्रयत्नः</b> {
+    <b class="t" data-r="purnankah">पूर्णाङ्कः</b> क = संख्या(पठ(<i class="s">&quot;अङ्कम् लिखतु: &quot;</i>))।
+    <b class="k" data-r="mudraya">मुद्रय</b> <i class="s">&quot;वर्गः:&quot;</i>, क * क।
+} <b class="k" data-r="doshe">दोषे</b> (द) {
+    <b class="k" data-r="mudraya">मुद्रय</b> <i class="s">&quot;सः अङ्कः न आसीत् —&quot;</i>, द.सन्देशः।
+}</code></pre></figure>
+<div class="note">
+  <p><b>At the end of input</b> <code>पठ</code> returns the empty string rather
+  than failing, in every engine. So a program that reads until there is nothing
+  left tests for it:</p>
+  <p><code>यावत् (सत्य) { शब्दः पं = पठ()। यदि (दीर्घता(पं) == ०) { विरम। } … }</code></p>
+  <p>That does mean an empty line and the end of input look alike. If you need
+  to tell them apart, read the whole of standard input another way.</p>
+</div>
+<p>In the <a href="playground.html">playground</a> there is no terminal to type
+into, so the box under the editor is what <code>पठ</code> reads — one line per
+call.</p>
+</section>
 <section id="anaya">
   <div class="head">
-    <p class="num">११</p>
+    <p class="num">१३</p>
     <h2><span class="dev">आनय</span><span class="eng">Modules and files</span></h2>
   </div>
   
 <p><code>आनय</code> — <i>bring</i> — imports. A module is any
 <code>.vak</code> file; whatever it declares at the top level is what it
 exports.</p>
-<figure class="code"><pre><code><b class="k" data-r="anaya">आनय</b> <i class="s">&quot;गणितम्&quot;</i>।                    <i class="c"># गणितम्.वर्गमूलम्(...)</i>
-<b class="k" data-r="anaya">आनय</b> <i class="s">&quot;गणितम्&quot;</i> <b class="k" data-r="iti">इति</b> ग।               <i class="c"># ग.वर्गमूलम्(...)</i>
-<b class="k" data-r="anaya">आनय</b> <i class="s">&quot;गणितम्&quot;</i> <b class="k" data-r="tah">तः</b> वर्गमूलम्, ज्या।   <i class="c"># वर्गमूलम्(...)</i></code></pre></figure>
+<figure class="code"><pre><code><b class="k" data-r="anaya">आनय</b> <i class="s">&quot;गणितम्&quot;</i>।                       <i class="c"># गणितम्.वर्गः(...)</i>
+<b class="k" data-r="anaya">आनय</b> <i class="s">&quot;गणितम्&quot;</i> <b class="k" data-r="iti">इति</b> ग।                  <i class="c"># ग.वर्गः(...)</i>
+<b class="k" data-r="anaya">आनय</b> <i class="s">&quot;गणितम्&quot;</i> <b class="k" data-r="tah">तः</b> वर्गः, क्रमगुणितम्।   <i class="c"># वर्गः(...)</i></code></pre></figure>
 <p>Modules run once and are cached; a circular import is reported rather than
 hung on. Files are read and written with the built-ins:</p>
 <figure class="code"><pre><code><b class="t" data-r="shabdah">शब्दः</b> विषयम् = सञ्चिकापठ(<i class="s">&quot;काव्यम्.txt&quot;</i>)।
 सञ्चिकालिख(<i class="s">&quot;फलम्.txt&quot;</i>, विषयम्)।
 <b class="k" data-r="yadi">यदि</b> (सञ्चिकास्ति(<i class="s">&quot;फलम्.txt&quot;</i>)) { <b class="k" data-r="mudraya">मुद्रय</b> निर्देशिका(<i class="s">&quot;.&quot;</i>)। }</code></pre></figure>
 </section>
+<section id="pustakalayah">
+  <div class="head">
+    <p class="num">१४</p>
+    <h2><span class="dev">पुस्तकालयः</span><span class="eng">The standard library</span></h2>
+  </div>
+  
+<p>Two modules ship with Vāk, and both are <b>written in Vāk</b> — they are
+ordinary <code>.vak</code> files you can read, and a fair sample of what the
+language looks like in use. Bring one in with <code>आनय</code>:</p>
+<figure class="code"><pre><code><b class="k" data-r="anaya">आनय</b> <i class="s">&quot;गणितम्&quot;</i>।
+<b class="k" data-r="mudraya">मुद्रय</b> गणितम्.क्रमगुणितम्(<i class="n" data-r="5">५</i>)।        <i class="c"># १२०</i>
+
+<b class="k" data-r="anaya">आनय</b> <i class="s">&quot;शब्दाः&quot;</i> <b class="k" data-r="tah">तः</b> विलोमः_वा।
+<b class="k" data-r="mudraya">मुद्रय</b> विलोमः_वा(<i class="s">&quot;नयन&quot;</i>)।            <i class="c"># सत्य</i></code></pre></figure>
+<p>Every signature below is printed from the module's own source, so it is
+exactly what the file declares — including the kāraka role each parameter
+takes.</p>
+
+<h3 class="lib"><code>आनय "गणितम्"।</code> <span>Mathematics — two constants and twelve functions.</span></h3>
+<div class="scroll"><table class="kw">
+  <thead><tr><th>गणितम्</th><th>what it does</th></tr></thead>
+  <tbody>
+    <tr><td><code>दशांशः पाई</code></td><td>π, to fifteen places</td></tr>
+    <tr><td><code>दशांशः ई</code></td><td>e, the base of the natural logarithm</td></tr>
+    <tr><td><code>वर्गः(अङ्कः क) : अङ्कः</code></td><td>क squared</td></tr>
+    <tr><td><code>घनः(अङ्कः क) : अङ्कः</code></td><td>क cubed</td></tr>
+    <tr><td><code>निरपेक्षम्(अङ्कः क) : अङ्कः</code></td><td>the absolute value of क</td></tr>
+    <tr><td><code>चिह्नम्(अङ्कः क) : पूर्णाङ्कः</code></td><td>the sign of क — १, ०, or -१</td></tr>
+    <tr><td><code>क्रमगुणितम्(पूर्णाङ्कः न्) : पूर्णाङ्कः</code></td><td>न् factorial</td></tr>
+    <tr><td><code>मसाभा(पूर्णाङ्कः अ, पूर्णाङ्कः ब) : पूर्णाङ्कः</code></td><td>the greatest common divisor of अ and ब</td></tr>
+    <tr><td><code>लसागु(पूर्णाङ्कः अ, पूर्णाङ्कः ब) : पूर्णाङ्कः</code></td><td>the least common multiple of अ and ब</td></tr>
+    <tr><td><code>अभाज्यः_वा(पूर्णाङ्कः न्) : सत्यता</code></td><td>whether न् is prime</td></tr>
+    <tr><td><code>अभाज्याः_यावत्(पूर्णाङ्कः सीमा) : सूची</code></td><td>every prime up to सीमा, as a list</td></tr>
+    <tr><td><code>माध्यम्(अपादानम् सूची अङ्काः) : अङ्कः</code></td><td>the arithmetic mean of the list</td></tr>
+    <tr><td><code>मध्यमा(अपादानम् सूची अङ्काः) : अङ्कः</code></td><td>the median of the list</td></tr>
+    <tr><td><code>घातः(अङ्कः आधारः, पूर्णाङ्कः घाताङ्कः) : अङ्कः</code></td><td>आधारः raised to the power घाताङ्कः</td></tr>
+  </tbody>
+</table></div>
+<h3 class="lib"><code>आनय "शब्दाः"।</code> <span>Strings — eight functions over शब्दः.</span></h3>
+<div class="scroll"><table class="kw">
+  <thead><tr><th>शब्दाः</th><th>what it does</th></tr></thead>
+  <tbody>
+    <tr><td><code>आदौ_अस्ति(अधिकरणम् शब्दः पूर्णः, कर्म शब्दः आदिः) : सत्यता</code></td><td>whether पूर्णः begins with आदिः</td></tr>
+    <tr><td><code>अन्ते_अस्ति(अधिकरणम् शब्दः पूर्णः, कर्म शब्दः अन्तः_) : सत्यता</code></td><td>whether पूर्णः ends with अन्तः_</td></tr>
+    <tr><td><code>पुनरावृत्तिः(कर्म शब्दः स, पूर्णाङ्कः वारम्) : शब्दः</code></td><td>स repeated वारम् times</td></tr>
+    <tr><td><code>पूरय(कर्म शब्दः स, पूर्णाङ्कः दैर्घ्यम्, शब्दः अक्षरम्) : शब्दः</code></td><td>स padded with अक्षरम् until it reaches दैर्घ्यम्</td></tr>
+    <tr><td><code>अक्षरसूची(कर्म शब्दः स) : सूची</code></td><td>स as a list of its characters</td></tr>
+    <tr><td><code>विलोमः_वा(कर्म शब्दः स) : सत्यता</code></td><td>whether स reads the same in both directions</td></tr>
+    <tr><td><code>गणय_अक्षरम्(कर्म शब्दः अक्षरम्, अधिकरणम् शब्दः वाक्यम्) : पूर्णाङ्कः</code></td><td>how many times अक्षरम् occurs in वाक्यम्</td></tr>
+    <tr><td><code>शब्दगणना(अधिकरणम् शब्दः वाक्यम्) : कोशः</code></td><td>a dictionary of each word in वाक्यम् and its count</td></tr>
+  </tbody>
+</table></div>
+</section>
 <section id="yantram">
   <div class="head">
-    <p class="num">१२</p>
+    <p class="num">१५</p>
     <h2><span class="dev">यन्त्रम्</span><span class="eng">How Vāk runs</span></h2>
   </div>
   
@@ -624,14 +872,65 @@ its own.</p>
   anywhere — the lexer, parser, analyser, compiler and VM are all in the page.</p>
 </div>
 </section>
+<section id="doshasuchi">
+  <div class="head">
+    <p class="num">१६</p>
+    <h2><span class="dev">दोषसूची</span><span class="eng">Every diagnostic</span></h2>
+  </div>
+  
+<p>The analyser reports 6 kinds of error and 5 kinds of warning.
+A <b>दोषः</b> stops the program from running; a <b>सूचना</b> is printed and the
+program runs anyway. Every one carries its Sanskrit name, so a message can be
+looked up here.</p>
+<div class="scroll"><table class="kw">
+  <thead><tr><th>सङ्केतः</th><th>kind</th><th>what it means</th></tr></thead>
+  <tbody>
+    <tr><td><code>कारकदोषः</code></td><td class="iast">दोषः</td><td>a kāraka role is repeated — Pāṇini allows one agent and one patient</td></tr>
+    <tr><td><code>ध्रुवदोषः</code></td><td class="iast">दोषः</td><td>an assignment to a ध्रुव constant</td></tr>
+    <tr><td><code>नामदोषः</code></td><td class="iast">दोषः</td><td>a name is used that was never declared</td></tr>
+    <tr><td><code>प्रकारदोषः</code></td><td class="iast">दोषः</td><td>a value does not match the declared प्रकारः</td></tr>
+    <tr><td><code>प्रवाहदोषः</code></td><td class="iast">दोषः</td><td>विरम or अनुवर्तस्व outside a loop</td></tr>
+    <tr><td><code>प्राचलदोषः</code></td><td class="iast">दोषः</td><td>a call passes the wrong number of arguments</td></tr>
+    <tr><td><code>अगम्यदोषः</code></td><td class="iast">सूचना</td><td>a statement after प्रत्यागच्छ that can never run</td></tr>
+    <tr><td><code>कारकसूचना</code></td><td class="iast">सूचना</td><td>some parameters carry kāraka roles and some do not</td></tr>
+    <tr><td><code>पुनर्घोषणा</code></td><td class="iast">सूचना</td><td>a name declared twice in the same scope</td></tr>
+    <tr><td><code>प्रतिफलसूचना</code></td><td class="iast">सूचना</td><td>a function promises a return type but has a path that returns nothing</td></tr>
+    <tr><td><code>प्रवाहसूचना</code></td><td class="iast">सूचना</td><td>a विकल्पः with no अन्यथा — an unmatched value does nothing</td></tr>
+  </tbody>
+</table></div>
+<p>Separately, an error caught by <code>दोषे</code> carries its kind in
+<code>प्रकारः</code>. These are the 4 values it can
+hold:</p>
+<div class="scroll"><table class="kw">
+  <thead><tr><th>प्रकारः</th><th>raised by</th></tr></thead>
+  <tbody>
+    <tr><td><code>दोषः</code></td><td>Error</td></tr>
+    <tr><td><code>अक्षरदोषः</code></td><td>Lexical Error</td></tr>
+    <tr><td><code>व्याकरणदोषः</code></td><td>Syntax Error</td></tr>
+    <tr><td><code>कार्यकालदोषः</code></td><td>Runtime Error</td></tr>
+  </tbody>
+</table></div>
+<figure class="code"><pre><code><b class="k" data-r="prayatnah">प्रयत्नः</b> {
+    <b class="k" data-r="mudraya">मुद्रय</b> संख्या(<i class="s">&quot;न अङ्कः&quot;</i>)।
+} <b class="k" data-r="doshe">दोषे</b> (त्रुटिः) {
+    <b class="k" data-r="yadi">यदि</b> (त्रुटिः.प्रकारः == <i class="s">&quot;कार्यकालदोषः&quot;</i>) {
+        <b class="k" data-r="mudraya">मुद्रय</b> <i class="s">&quot;गणने दोषः / a runtime error&quot;</i>।
+    }
+}</code></pre></figure>
+</section>
 <section id="padakoshah">
   <div class="head">
-    <p class="num">१३</p>
+    <p class="num">१७</p>
     <h2><span class="dev">पदकोशः</span><span class="eng">Every keyword</span></h2>
   </div>
   
 <p>Each keyword may be written in Devanagari, in IAST transliteration, or in
-plain ASCII. They are the same word — the lexer holds all three spellings.</p>
+plain ASCII. They are the same word — the lexer holds all three spellings, so
+28 keywords are what there is to learn.</p>
+<p>Where a cell lists two Devanagari words joined by <code>·</code>, they are
+<b>synonyms for the identical token</b>, not different keywords:
+<code>दोषे</code> and <code>गृहाण</code> both begin a catch block. 10
+constructs have such a pair.</p>
 <div class="scroll"><table class="kw">
   <thead><tr><th>देवनागरी</th><th>IAST · ASCII</th><th>meaning</th></tr></thead>
   <tbody>
@@ -668,7 +967,7 @@ plain ASCII. They are the same word — the lexer holds all three spellings.</p>
 </section>
 <section id="antarnihitani">
   <div class="head">
-    <p class="num">१४</p>
+    <p class="num">१८</p>
     <h2><span class="dev">अन्तर्निहितानि</span><span class="eng">The 39 built-ins</span></h2>
   </div>
   
@@ -723,7 +1022,7 @@ brought in with <code>आनय</code>.</p>
 
   <footer>
     <p class="verse">वाक् इति भाषा — यत्र संस्कृतम् एव आदेशः<span class="danda">॥</span></p>
-    <p>0.10.0 · 39 built-ins · five engines, one output</p>
+    <p>0.11.0 · 39 built-ins · five engines, one output</p>
   </footer>
 </main>
 </div>

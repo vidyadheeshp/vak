@@ -22,9 +22,19 @@ from vak.builtins import BUILTIN_DOCS                          # noqa: E402
 from vak.interpreter import Interpreter                        # noqa: E402
 from vak.tokens import KARAKA_ORDER, KEYWORDS, TYPE_NAMES      # noqa: E402
 
+
+# The test count is read from the suite, so the page cannot drift from it.
+TESTS = sum(
+    1
+    for line in (ROOT / "tests" / "test_vak.py").read_text(encoding="utf-8").splitlines()
+    if line.strip().startswith("def test_")
+)
+
 # ------------------------------------------------------------------ shared
 TYPES = {t for t in TYPE_NAMES if not t.isascii()}
 KEYWORD_SET = {w for w in KEYWORDS if not w.isascii()}
+# the words themselves, not the three spellings each of them has
+DEV_KEYWORDS = {w for w in KEYWORDS if any("ऀ" <= c <= "ॿ" for c in w)}
 
 import re                                                      # noqa: E402
 
@@ -133,6 +143,7 @@ pratyekam (n antah [1, 2, 3, 4]) { mudraya n, "->", varga(n); }'''
 
 PAGE = f"""<title>वाक् · Vāk — a programming language whose compiler is written in Sanskrit</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="favicon.ico" sizes="any">
 <meta name="description" content="Vāk is a Sanskrit-native programming language.
 Pāṇini's kāraka roles are its type system, and every stage of its front end —
 lexer, parser, analyser, compiler and virtual machine — is written in Vāk itself.">
@@ -314,6 +325,8 @@ footer a:hover {{ color:var(--gold); }}
   <nav>
     <a href="#कारकाणि">कारकाणि · kāraka</a>
     <a href="#स्वयंसिद्धिः">स्वयंसिद्धिः · the bootstrap</a>
+    <a href="manual.html#sthapana">स्थापना · install</a>
+    <a href="story.html">कथा · how it was built</a>
     <a href="manual.html">पुस्तिका · manual</a>
     <a href="playground.html">क्रीडाक्षेत्रम् · try it</a>
   </nav>
@@ -331,7 +344,8 @@ footer a:hover {{ color:var(--gold); }}
   <div class="doors">
     <a class="first" href="playground.html">क्रीडाक्षेत्रम् · run it in your browser →</a>
     <a href="manual.html">पुस्तिका · read the manual</a>
-    <a href="https://github.com/vidyadheeshp/vak">स्रोतः · source</a>
+    <a href="manual.html#sthapana">स्थापना · install it</a>
+    <a href="story.html">कथा · how it was built</a>
   </div>
 </header>
 
@@ -397,7 +411,7 @@ footer a:hover {{ color:var(--gold); }}
   <div class="facts">
     <div><b>5</b><span>engines, one output</span></div>
     <div><b>{len(BUILTIN_DOCS)}</b><span>built-in functions</span></div>
-    <div><b>182</b><span>tests</span></div>
+    <div><b>{TESTS}</b><span>tests</span></div>
     <div><b>6</b><span>kāraka roles</span></div>
     <div><b>139 KB</b><span>the whole toolchain, in your browser</span></div>
   </div>
@@ -413,6 +427,7 @@ footer a:hover {{ color:var(--gold); }}
   <p class="verse">वाक् इति भाषा — यत्र संस्कृतम् एव आदेशः<span class="danda">॥</span></p>
   <p><b>Vāk</b> {__version__} · <a href="manual.html">manual</a> ·
      <a href="playground.html">playground</a> ·
+     <a href="story.html">the story</a> ·
      <a href="https://github.com/vidyadheeshp/vak">source</a></p>
   <p>Built by Vidyadheesh Pandurangi.</p>
 </footer>

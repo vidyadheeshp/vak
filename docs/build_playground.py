@@ -9,11 +9,29 @@ import json
 import pathlib
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-WASM = pathlib.Path("C:/Users/Admin/AppData/Local/Temp/claude/"
-                    "c--Users-Admin-Documents-Sanskrit-Vak/"
-                    "4c4fd862-0883-4daa-adec-bd1c7d0a2de1/scratchpad/wasm/vak.js")
+# built by:  emcc -O2 -DVAK_POSIX <generated>.c native/*.c -sSINGLE_FILE=1 …
+WASM = ROOT / "_wasm" / "vak.js"
 
 engine = WASM.read_text(encoding="utf-8")
+
+# the typing aid, from the same tables as vak/translit.py
+import sys                                                    # noqa: E402
+sys.path.insert(0, str(ROOT))
+import json as _json                                          # noqa: E402
+from vak.translit import tables_for_js                        # noqa: E402
+
+_t = tables_for_js()
+_combined = (
+    [[k, "C", v] for k, v in _t["consonants"].items()]
+    + [[k, "V", v[0], v[1]] for k, v in _t["vowels"].items()]
+    + [[k, "M", v] for k, v in _t["marks"].items()]
+)
+_combined.sort(key=lambda e: len(e[0]), reverse=True)
+TRANSLIT = (
+    "const TR_TABLE = " + _json.dumps(_combined, ensure_ascii=False) + ";\n"
+    "const TR_DIGITS = " + _json.dumps(_t["digits"], ensure_ascii=False) + ";\n"
+    "const TR_VIRAMA = " + _json.dumps(_t["virama"], ensure_ascii=False) + ";\n"
+)
 
 # the standard library travels with the page and is written into the virtual
 # filesystem at startup, so आनय works in the browser
@@ -95,6 +113,14 @@ purnankah yoga = 0;
 yavat (yoga < 10) { yoga += 3; }
 mudraya "yoga =", yoga;''',
 
+    "प्रदानम्": '''# पठ() उपयोक्तुः पङ्क्तिम् पठति — प्रदानपेटिकाम् अधः पश्यतु।
+# पठ() reads a line from the user; see the input box below the editor.
+शब्दः नाम = पठ("नाम किम्? ")।
+मुद्रय "नमस्ते,", नाम + "!"।
+
+पूर्णाङ्कः वयः = संख्या(पठ("वयः? "))।
+मुद्रय "आगामिवर्षे भवतः वयः", वयः + १, "भविष्यति।"।''',
+
     "गणितम्": '''आनय "गणितम्" इति ग।
 
 मुद्रय "पाई             =", ग.पाई।
@@ -107,6 +133,7 @@ mudraya "yoga =", yoga;''',
 
 PAGE = """<title>वाक् · क्रीडाक्षेत्रम् — run Sanskrit in your browser</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="favicon.ico" sizes="any">
 <style>
 :root {
   --ink:#16223f; --ink-soft:#4a5570; --ink-faint:#7c8499; --paper:#f7f6f1;
@@ -196,6 +223,19 @@ pre.out .err { color:var(--crimson); }
 pre.out .ok { color:var(--good); }
 pre.out .dim { color:var(--ink-faint); font-style:italic; }
 
+.feed { border-top:1px solid var(--rule); background:var(--paper-2); }
+.feed label {
+  display:block; padding:.45rem clamp(.7rem,2vw,1.1rem) 0;
+  font-family:var(--sans); font-size:.7rem; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--ink-faint);
+}
+.feed label span { text-transform:none; letter-spacing:0; opacity:.85; }
+.feed textarea {
+  display:block; width:100%; flex:none; background:var(--paper-2);
+  padding:.35rem clamp(.7rem,2vw,1.1rem) .7rem; resize:vertical;
+  min-height:2.6rem; font-size:.82rem;
+}
+
 footer {
   padding:.6rem clamp(1rem,3vw,2rem); font-family:var(--sans); font-size:.73rem;
   color:var(--ink-faint); display:flex; gap:1rem; flex-wrap:wrap;
@@ -217,6 +257,7 @@ footer b { color:var(--ink-soft); font-weight:500; }
   <span class="spacer"></span>
   <a href="index.html">← वाक्</a>
   <a href="manual.html">पुस्तिका · the manual</a>
+  <a href="story.html">कथा · the story</a>
   <button id="theme" type="button">theme</button>
 </header>
 
@@ -226,10 +267,18 @@ footer b { color:var(--ink-soft); font-weight:500; }
       <span class="label">प्रोग्रामः</span>
       <select id="samples" aria-label="Load an example"></select>
       <span class="spacer"></span>
+      <button id="typing" type="button" aria-pressed="false"
+              title="Type romanised, get Devanagari (ITRANS: aa A T D N S ~N H M)">देवनागरी</button>
       <button id="check" type="button">परीक्षा · check</button>
       <button id="run" class="go" type="button">चालय · run ⏎</button>
     </div>
     <textarea id="src" spellcheck="false" aria-label="Vāk source"></textarea>
+    <div class="feed">
+      <label for="stdin">प्रदानम् · input <span>— what पठ() reads, one line
+        per call</span></label>
+      <textarea id="stdin" spellcheck="false" rows="2"
+                aria-label="Standard input for the program"></textarea>
+    </div>
   </section>
 
   <section class="pane">
@@ -257,6 +306,37 @@ footer b { color:var(--ink-soft); font-weight:500; }
   var SAMPLES = __SAMPLES__;
   var LIBRARY = __LIBRARY__;
 
+  __TRANSLIT__
+
+  /* लिप्यन्तरणम् — Vāk never transliterates identifiers, so the help belongs
+     where you type.  Finish a word and the romanised form becomes Devanagari. */
+  function devanagari(text, digits) {
+    var out = "", i = 0, pending = false;
+    outer:
+    while (i < text.length) {
+      for (var e = 0; e < TR_TABLE.length; e++) {
+        var entry = TR_TABLE[e], key = entry[0];
+        if (text.substr(i, key.length) !== key) continue;
+        if (entry[1] === "C") {
+          if (pending) out += TR_VIRAMA;
+          out += entry[2]; pending = true;
+        } else if (entry[1] === "V") {
+          out += pending ? entry[3] : entry[2]; pending = false;
+        } else {
+          out += out.length ? entry[2] : key; pending = false;
+        }
+        i += key.length;
+        continue outer;
+      }
+      if (pending) { out += TR_VIRAMA; pending = false; }
+      var ch = text[i];
+      out += (digits && TR_DIGITS[ch]) ? TR_DIGITS[ch] : ch;
+      i += 1;
+    }
+    if (pending) out += TR_VIRAMA;
+    return out;
+  }
+
   var src = document.getElementById("src");
   var out = document.getElementById("out");
   var runBtn = document.getElementById("run");
@@ -282,8 +362,11 @@ footer b { color:var(--ink-soft); font-weight:500; }
   }
   var handed = fromHash();
   src.value = handed || SAMPLES[names[0]];
+  /* the reading sample is useless without something to read */
+  var SAMPLE_INPUT = { "प्रदानम्": "विद्याधीश\n38" };
   picker.addEventListener("change", function () {
     src.value = SAMPLES[picker.value];
+    document.getElementById("stdin").value = SAMPLE_INPUT[picker.value] || "";
     src.focus();
   });
 
@@ -301,9 +384,21 @@ footer b { color:var(--ink-soft); font-weight:500; }
   /* एकम् एव यन्त्रम् — a fresh module per run, so one program's state can never
      leak into the next.  Instantiation is cheap; the wasm is already compiled. */
   var lines = [];
+
+  /* प्रदानम् — Emscripten asks for stdin one byte at a time and takes null as
+     end of input, so the input pane is handed over as a byte feeder. */
+  function feeder(text) {
+    var bytes = new TextEncoder().encode(text);
+    var i = 0;
+    return function () { return i < bytes.length ? bytes[i++] : null; };
+  }
+
   function boot() {
+    var given = document.getElementById("stdin").value;
+    if (given && !/\n$/.test(given)) given += "\n";   // पठ wants a full line
     return VakModule({
       noInitialRun: true,
+      stdin: feeder(given),
       print: function (t) { lines.push(["", t]); },
       printErr: function (t) { lines.push(["err", t]); },
     });
@@ -350,6 +445,32 @@ footer b { color:var(--ink-soft); font-weight:500; }
     }
   });
 
+  var typingOn = false;
+  var typingBtn = document.getElementById("typing");
+  typingBtn.addEventListener("click", function () {
+    typingOn = !typingOn;
+    typingBtn.setAttribute("aria-pressed", String(typingOn));
+    src.focus();
+  });
+
+  var ROMAN_TAIL = /[A-Za-z~^.]+$/;
+  src.addEventListener("input", function (e) {
+    if (!typingOn) return;
+    if (e.inputType !== "insertText" || !e.data) return;
+    if (/[A-Za-z~^.]/.test(e.data)) return;      // still inside a word
+    var at = src.selectionStart - e.data.length;
+    var before = src.value.slice(0, at);
+    var m = ROMAN_TAIL.exec(before);
+    if (!m) return;
+    var out = devanagari(m[0], true);
+    if (out === m[0]) return;
+    var start = at - m[0].length;
+    var after = src.selectionStart;
+    src.value = src.value.slice(0, start) + out + src.value.slice(at, after)
+              + src.value.slice(after);
+    src.selectionStart = src.selectionEnd = start + out.length + e.data.length;
+  });
+
   document.getElementById("theme").addEventListener("click", function () {
     var now = document.documentElement.dataset.theme;
     if (!now) {
@@ -373,6 +494,7 @@ page = (PAGE
         .replace("__ENGINE__", engine)
         .replace("__SAMPLES__", json.dumps(SAMPLES, ensure_ascii=False))
         .replace("__LIBRARY__", json.dumps(library, ensure_ascii=False))
+        .replace("__TRANSLIT__", TRANSLIT)
         .replace("__VERSION__", __version__))
 
 out = ROOT / "docs" / "playground.html"

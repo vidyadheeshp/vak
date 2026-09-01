@@ -41,19 +41,21 @@ readable on purpose, so it can be read as a course in language design.
 
 ---
 
-> **The site** — three self-contained pages in [docs/](docs/), each generated,
+> **The site** — four self-contained pages in [docs/](docs/), each generated,
 > each with no external requests:
 >
 > | page | what it is | built by |
 > |---|---|---|
 > | [index.html](docs/index.html) | the landing page — every program on it is run while the page is built | `docs/build_landing.py` |
-> | [manual.html](docs/manual.html) | the whole language, from the tables in `vak/` | `docs/build_manual.py` |
+> | [manual.html](docs/manual.html) | the whole language in 17 sections — syntax, the standard library, every diagnostic, every flag | `docs/build_manual.py` |
 > | [playground.html](docs/playground.html) | the toolchain in WebAssembly — runs Vāk in the browser | `docs/build_playground.py` |
+> | [story.html](docs/story.html) | कथा — how the language was built, with every figure read from the repository | `docs/build_story.py` |
 >
 > Serve them with GitHub Pages (Settings → Pages → Deploy from branch → `/docs`).
 
 ## विषयसूची · Contents
 
+- [स्थापना · Installing](#स्थापना--installing)
 - [चालनम् · Running Vāk](#चालनम्--running-vāk)
 - [भाषापरिचयः · A tour of the language](#भाषापरिचयः--a-tour-of-the-language)
 - [प्रकाराः · Types](#प्रकाराः--types)
@@ -76,16 +78,140 @@ readable on purpose, so it can be read as a course in language design.
 
 ---
 
+## स्थापना · Installing
+
+Four ways in. They run the same language; pick whichever suits you.
+
+**1 · The standalone binary — nothing else required.** `वाक्.exe` in this
+repository is the whole toolchain compiled to one file. It needs no Python.
+Copy it anywhere and run it:
+
+```powershell
+वाक्.exe प्रोग्राम.vak
+```
+
+The binary here is built for **64-bit Windows**. On Linux or macOS, build your
+own — see [Building the binary](#building-the-binary). The C sources are
+platform-neutral.
+
+**2 · With pip.** Requires **Python 3.10+** and pulls in **no third-party
+packages**.
+
+```powershell
+pip install vak-lang
+vak प्रोग्राम.vak
+```
+
+This gives you the interpreter, the bytecode VM, the native back end, the REPL
+and the standard library, and the `vak` command works from any directory.
+
+**3 · From a clone,** if you want the parts a wheel does not carry — the C
+runtime, the Vāk-written toolchain behind `--self`, the documentation
+generators and the editor extension:
+
+```powershell
+git clone https://github.com/vidyadheeshp/vak.git
+cd vak
+python -m vak examples/01_namaste.vak
+```
+
+> **Working from a clone, stay in the repository root.** `python -m vak`
+> finds the package only because you are standing in the directory that
+> contains it; from anywhere else you get `No module named vak`. Installing
+> with pip avoids this entirely. To run from elsewhere without installing, put
+> the root on the module path:
+>
+> ```bash
+> PYTHONPATH=/path/to/vak python -m vak ~/प्रोग्राम.vak          # bash / zsh
+> ```
+> ```powershell
+> $env:PYTHONPATH = "C:\path\to\vak"; python -m vak प्रोग्राम.vak  # PowerShell
+> ```
+
+On Windows the two launchers do this and set UTF-8 for you:
+
+```powershell
+.\vak.ps1 examples/01_namaste.vak     # PowerShell
+vak.cmd examples/01_namaste.vak       # cmd.exe
+```
+
+**4 · In a browser — nothing installed at all.** The
+[playground](docs/playground.html) is this toolchain compiled to WebAssembly.
+It runs in the page; there is no server and nothing you type leaves your
+machine.
+
+### Checking that it works
+
+```powershell
+python -m vak --version          # वाक् (Vāk) 0.11.0
+python -m vak --builtins         # the 39 built-in functions
+python -m vak                    # संवादः — the interactive session
+```
+
+Then one line in `परीक्षा.vak`. If you see the greeting, you are set:
+
+```
+मुद्रय "नमस्ते जगत्"।
+```
+
+### A terminal that can show Devanagari
+
+Two separate things must be right: the console must be in UTF-8, and the font
+must contain Devanagari.
+
+- **Windows.** The CLI reconfigures its own output, so Devanagari normally
+  works in Windows Terminal. Boxes mean the *font* is wrong, not the encoding —
+  choose *Nirmala UI* or *Noto Sans Devanagari*. The older `conhost` console may
+  also need `chcp 65001`.
+- **Linux and macOS.** A UTF-8 locale is the default almost everywhere;
+  `locale` confirms it. Most terminal fonts fall back to a system Devanagari
+  face automatically.
+
+You do not have to type Devanagari at all — every keyword has an ASCII spelling
+and ASCII numerals work everywhere, so a complete Vāk program fits on a plain
+keyboard.
+
+### Building the binary
+
+The native back end turns a program into C and hands it to **gcc**, so a C
+compiler is the only extra requirement. On Windows,
+[w64devkit](https://github.com/skeeto/w64devkit) is what Vāk looks for by
+default; on Linux and macOS the system compiler is already there.
+
+```powershell
+python -m vak --native प्रोग्राम.vak       # produce an executable
+python -m vak --run-native प्रोग्राम.vak   # build it and run it
+```
+
+If no compiler is found, Vāk says so rather than failing obscurely.
+
+### The editor extension
+
+Copy `vscode-vak/` into your VS Code extensions directory and reload the
+window:
+
+```
+%USERPROFILE%\.vscode\extensions\vscode-vak      # Windows
+~/.vscode/extensions/vscode-vak                  # macOS and Linux
+```
+
+Then point it at whichever toolchain you installed: set `vak.executable` to
+your `वाक्.exe`, or leave it empty and set `vak.pythonPath` so it uses
+`python -m vak`. You get highlighting, the `.vak` file icon, romanised typing
+that becomes Devanagari, and the analyser's diagnostics on save.
+
+---
+
 ## चालनम् · Running Vāk
 
-Requirements: **Python 3.10+** (developed on 3.13). No third-party packages.
+Once it is installed — see [स्थापना](#स्थापना--installing) — everything below runs from the repository root.
 
 ```powershell
 # run a program
 python -m vak examples/01_namaste.vak
 
 # or use the launcher (it sets UTF-8 for you)
-../vak.ps1 examples/01_namaste.vak      # PowerShell
+.\vak.ps1 examples/01_namaste.vak      # PowerShell
 vak.cmd examples/01_namaste.vak        # cmd.exe
 
 # interactive session (संवादः)
@@ -111,7 +237,7 @@ run_source('मुद्रय "नमस्ते जगत्"।')
 ### The REPL
 
 ```
-वाक् (Vāk) 0.10.0 — संस्कृतभाषायाः संगणकभाषा
+वाक् (Vāk) 0.11.0 — संस्कृतभाषायाः संगणकभाषा
 सहायता: :सहायता   निर्गमः: :निर्गम  (help / exit)
 वाक्> पूर्णाङ्कः क = ७।
 वाक्> क * क
@@ -859,6 +985,34 @@ the built-in.
 
 ---
 
+## साधनानि · Tooling
+
+**The editor.** [vscode-vak/](vscode-vak/) is a VS Code extension: `.vak` files
+carry the वा mark in the explorer, all 38 keywords highlight in every canon with
+the kāraka roles given a scope of their own, and the real analyser's diagnostics
+appear inline on save. The TextMate grammar is *generated* from `vak/tokens.py`
+and `vak/builtins.py`, so highlighting cannot drift from the language, and 15
+checks run on every build — one of them for `विरम।`, a keyword written hard
+against its danda, which stopped matching when the word-boundary class swallowed
+U+0964.
+
+**Typing Devanagari.** Vāk never transliterates identifiers — `नाम` and `naam`
+are two different names, deliberately, because a language that merged them would
+make every variable ambiguous. The help belongs where you type instead:
+`Ctrl+Alt+T` converts romanised words as you finish them, `Ctrl+Alt+D` converts a
+selection, and the browser playground has the same switch. The scheme is
+ITRANS-flavoured — `kaaryam` → `कार्यम्`, `puurNaa~NkaH` → `पूर्णाङ्कः` — and it
+exists three times, in Python and in two JavaScript copies, all generated from
+one table in [vak/translit.py](vak/translit.py) and checked against each other.
+
+**The mark.** [brand/](brand/) holds वा, the first syllable, in real outlines
+pulled from a Devanagari font and shaped by HarfBuzz, then converted to SVG
+paths so it needs no font installed. वा is chosen because Devanagari hangs its
+letters from a शिरोरेखा, and वा gives you that head-line spanning two verticals —
+the silhouette that survives being shrunk to the 16 pixels a file tree allows.
+
+---
+
 ## व्याकरणम् · Grammar
 
 ```ebnf
@@ -1004,6 +1158,61 @@ python -m vak examples/12_dosha.vak
 
 ---
 
+## कार्यक्षमता · Performance
+
+Every program below prints the same answer in every language, and each figure is
+the best of five runs. Startup is measured separately because a language that
+takes 150 ms to boot should not be credited for it.
+
+| workload | C ‑O2 | Node/V8 | PHP 8.2 | CPython 3.13 | **वाक्** |
+|---|---|---|---|---|---|
+| `fib(30)` — recursion | 0.034 s | 0.160 s | 0.387 s | 0.351 s | **2.377 s** |
+| 8 M-iteration loop | 0.029 s | 0.177 s | 0.633 s | 2.845 s | **5.926 s** |
+| 120 k string appends | 0.032 s | 0.215 s | 1.419 s | 0.950 s | **0.108 s** |
+| 1.2 M list operations | 0.025 s | 0.228 s | 0.257 s | 0.551 s | **1.292 s** |
+| **startup** | 0.043 s | 0.153 s | 0.135 s | 0.067 s | **0.036 s** |
+
+Relative to CPython, lower being faster: **loops 2.1×, collections 2.3×,
+function calls 6.8×, and string building 0.11× — nine times faster.** Vāk also
+starts faster than every other language here, from a single 737 KB binary with
+nothing to install.
+
+### What made the difference — and what did not
+
+Two optimisations **failed**, and they are worth more than the successes to
+anyone building an interpreter:
+
+- Removing **71% of all string comparisons** moved the wall clock **2%**.
+- Exploiting the fact that borrowed names are shared pointers moved it **not at
+  all** — most of a scope scan is spent on entries that do *not* match, so a
+  pointer check only helps the one that does.
+
+The intuition that name lookup dominates was wrong twice. Every real gain came
+from allocation and from work that need not have been done at all:
+
+| change | effect |
+|---|---|
+| bindings borrow their name and type instead of copying | 2 allocations + 2 frees gone per binding |
+| a pool of scopes | 364 k scope allocations → 121 k |
+| `कोशः` keys carry a cached hash, and the probe is specialised for strings | ~12% on the toolchain's own workload |
+| `x = x + y` grows the string in place | **quadratic → linear, 58× on that workload** |
+| a call stops formatting an error it will not use, and compares type *codes* | 37% off `fib` |
+
+Growing a string in place is the one with teeth. The machine does not take the
+compiler's word for it: after the add pops its operands it looks at the *next*
+instruction, and only grows in place if that is an assignment back to a binding
+which currently holds this very object **and** would accept it — not a `ध्रुव`,
+and not a declared type that would refuse a `शब्दः`. The growth happens before
+the assignment, so an assignment that would fail must not be allowed to leave a
+mutated string behind.
+
+One caveat worth stating: **measurement noise on the development machine is about
+7%**, discovered when a path bug made five supposedly different builds identical
+and they still spread that far apart. Anything smaller than that was re-measured
+interleaved before being believed.
+
+---
+
 ## परीक्षाः · Tests
 
 ```powershell
@@ -1072,14 +1281,18 @@ language stops depending on a host language. Progress along that road:
   switch is shared by all three C files, and nothing assumes a `.exe` suffix. Building
   with `VAK_POSIX=1` forces that branch, so it can be exercised on Windows too.
 - ✅ **A browser playground.** The self-hosted toolchain compiled to WebAssembly.
-- ⬜ **The instruction pipeline — where the time actually goes.** Two rounds of lookup
-  work removed 71% of all string comparisons and moved wall clock by 2%. Direct
-  measurement says why: compiling a 791-line file executes **10.25 M bytecode
-  instructions in 7.7 s — about 754 ns each**. That is far too slow for a switch
-  dispatch, so the cost is per-instruction machinery, not name lookup. The prime
-  suspect is `कोशः` field access: every AST node and every compiler structure is a
-  dictionary, and `kosha_sthanam` is a linear scan comparing string keys. That is the
-  next thing worth measuring, and the first place worth optimising.
+- ✅ **The instruction pipeline.** Measurement pointed away from name lookup and at
+  allocation and wasted work, and five changes followed: bindings borrow their names
+  instead of copying them, scopes come from a pool, `कोशः` keys carry a cached hash,
+  string building went from quadratic to linear, and a call stopped formatting an
+  error message and comparing type *names* for every parameter. See
+  [कार्यक्षमता](#कार्यक्षमता--performance).
+- ⬜ **Frame slots.** Function calls remain the weak spot, at about 6.8× CPython.
+  Closing that means locals in a contiguous stack array with no scope object at
+  all — which changes the bytecode, both compilers and all five engines, and needs
+  upvalues so a closure can outlive its frame. It is a project, not a patch.
+- ⬜ **Computed-goto dispatch.** Mechanical, typically 10–20% — though on this
+  machine it must clear a ~7% measurement noise floor to be verifiable.
 - ⬜ **Memory.** The native runtime reference-counts and so leaks reference cycles; a small
   mark-and-sweep pass would close that.
 
@@ -1090,6 +1303,23 @@ Beyond the bootstrap:
 3. **Full akṣara mode** — `दीर्घता` and indexing by syllable, not code point.
 4. **Deeper kāraka semantics** — `भाव` and `कर्मणि` voices; roles that flow through calls.
 5. **Tooling** — a VS Code grammar for `.vak`, a formatter, a Devanagari output mode.
+
+---
+
+## अनुज्ञा · Licence
+
+Vāk is released under the **MIT Licence** — see [LICENSE](LICENSE). You may use,
+modify and redistribute it, including commercially, provided the copyright
+notice travels with it.
+
+**The name and the mark are not part of that grant.** "वाक्", "Vāk" and the वा
+mark identify this project and its releases; the licence covers the software, not
+the identity. This is the ordinary arrangement — Python, Rust, Linux and Firefox
+all separate the two — and it exists so that nobody can publish a modified or
+broken build under the name and have it taken for yours. Forks are welcome; they
+should simply carry their own name.
+
+If you use Vāk in research, [CITATION.cff](CITATION.cff) says how to cite it.
 
 ---
 
@@ -1105,6 +1335,7 @@ Sanskrit-Vak/
 │   ├── cli.py                 # file runner, REPL, --tokens / --ast / --builtins
 │   ├── tokens.py              # token kinds + keyword, type and numeral tables
 │   ├── lexer.py               # text  → tokens
+│   ├── translit.py            # romanised typing → Devanagari (a typing aid)
 │   ├── ast_nodes.py           # AST node definitions
 │   ├── parser.py              # tokens → AST
 │   ├── analyzer.py            # AST   → diagnostics (names, types, kārakas)
@@ -1135,13 +1366,22 @@ Sanskrit-Vak/
 │   ├── यन्त्रम्.vak            #   the virtual machine, in Vāk
 │   ├── वाक्.vak                #   the driver — compiled natively, this is वाक्.exe
 │   └── मुख्यम्.vak             #   the whole toolchain, over its own source
+├── brand/                     # the mark — वा, from real font outlines
+│   ├── build_brand.py         #   shaped by HarfBuzz, emitted as SVG paths
+│   └── vak-icon.svg …         #   icons, wordmark, favicon
+├── vscode-vak/                # the VS Code extension
+│   ├── build_extension.py     #   grammar generated from vak/tokens.py
+│   └── extension.js           #   diagnostics from the real analyser
 ├── docs/
 │   ├── index.html             # the landing page
 │   ├── build_landing.py       #   every sample is run while the page is built
 │   ├── manual.html            # the whole language, one page
 │   ├── build_manual.py        #   generated from the tables in vak/
+│   ├── reference.py           #   library, diagnostics and flags, read from source
 │   ├── playground.html        # the toolchain in WebAssembly, runs in a browser
-│   └── build_playground.py    #   emcc + the standard library, inlined
+│   ├── build_playground.py    #   emcc + the standard library, inlined
+│   ├── story.html             # कथा — how the language came to be
+│   └── build_story.py         #   line counts and timings read from the repo
 ├── examples/                  # 15 runnable .vak programs + 1 importable module
 ├── वाक्.exe                    # the self-hosted toolchain, built natively
 └── tests/
