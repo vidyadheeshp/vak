@@ -32,23 +32,36 @@ jobs:
           python-version: "3.13"
       - run: python -m pip install -e .
 
+      # A Devanagari output path cannot be opened by MinGW's linker, so the
+      # native back end builds under a derived ASCII name — वाक् becomes
+      # vak_adc6e74a. Guessing that name is how this step failed before; it
+      # now reads the path the tool reports.
       - name: Build the self-hosted toolchain natively
         shell: bash
         run: |
-          python -m vak --native स्वयंसिद्धिः/वाक्.vak
-          ls -la
+          mkdir -p out
+          python -m vak --native "स्वयंसिद्धिः/वाक्.vak" 2>&1 | tee build.log
+          built=$(sed -n 's/.*built: //p' build.log | tail -1)
+          built="${built%$'\r'}"
+          if [ -z "$built" ] || [ ! -f "$built" ]; then
+            echo "::error::no binary produced"
+            cat build.log
+            exit 1
+          fi
+          echo "built: $built"
+          cp "$built" "out/${{ matrix.asset }}"
+          ls -la out/
 
-      - name: Collect the binary
+      # A binary that builds but does not run is worse than a failed build,
+      # because it ships.
+      - name: The binary must actually run
         shell: bash
         run: |
-          mkdir -p out
-          # the native back end names the executable after the source
-          found=$(find . -maxdepth 2 -type f \( -name "वाक्" -o -name "वाक्.exe" \) | head -1)
-          if [ -z "$found" ]; then
-            echo "::error::no binary produced"; exit 1
-          fi
-          cp "$found" "out/${{ matrix.asset }}"
-          ls -la out/
+          chmod +x "out/${{ matrix.asset }}" || true
+          printf 'मुद्रय "नमस्ते जगत्"।\n' > smoke.vak
+          got=$("./out/${{ matrix.asset }}" smoke.vak | tr -d '\r')
+          echo "got: [$got]"
+          test "$got" = "नमस्ते जगत्"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -70,6 +83,28 @@ jobs:
         with:
           name: python-dist
           path: dist/*
+
+  # Publishing to PyPI needs a trusted publisher configured on PyPI's side
+  # first (Manage project -> Publishing -> add a GitHub publisher for this
+  # repo and workflow). Until then this job would fail and put a red mark on
+  # an otherwise good release, so it stays switched off behind a repository
+  # variable: set PUBLISH_TO_PYPI to "true" once PyPI is ready.
+  pypi:
+    name: PyPI · publish the wheel
+    needs: [binaries, wheel]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') && vars.PUBLISH_TO_PYPI == 'true'
+    environment: pypi
+    permissions:
+      id-token: write        # trusted publishing — no token to store or leak
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: python-dist
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
 
   publish:
     name: विमोचनम् · attach everything to the release
