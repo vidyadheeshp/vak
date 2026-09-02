@@ -94,13 +94,16 @@ The binary here is built for **64-bit Windows**. On Linux or macOS, build your
 own — see [Building the binary](#building-the-binary). The C sources are
 platform-neutral.
 
-**2 · With pip.** Requires **Python 3.10+** and pulls in **no third-party
-packages**.
+**2 · With pip, from GitHub.** Requires **Python 3.10+** and pulls in **no
+third-party packages**.
 
 ```powershell
-pip install vak-lang
+pip install git+https://github.com/vidyadheeshp/vak.git
 vak प्रोग्राम.vak
 ```
+
+> Vāk is not on PyPI yet, so `pip install vak-lang` will not find it. Install
+> from the repository as above; the `vak` command works the same either way.
 
 This gives you the interpreter, the bytecode VM, the native back end, the REPL
 and the standard library, and the `vak` command works from any directory.

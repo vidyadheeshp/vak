@@ -148,12 +148,17 @@ needs neither Python nor anything else. Copy it where you like and run it:</p>
 macOS, build your own — see <i>Building the binary</i> below; the C sources are
 platform-neutral.</p>
 
-<h3 class="lib"><span class="way">२</span> With pip
+<h3 class="lib"><span class="way">२</span> With pip, from GitHub
   <span>Python 3.10 or newer</span></h3>
 <p>Vāk pulls in <b>no third-party packages</b>. A standard Python is all it
 needs; it was developed on 3.13.</p>
-{shell('''pip install vak-lang
+{shell('''pip install git+https://github.com/vidyadheeshp/vak.git
 vak प्रोग्राम.vak''')}
+<div class="note">
+  <p><b>Not on PyPI yet.</b> <code>pip install vak-lang</code> will not find
+  anything — install from the repository as above. The <code>vak</code> command
+  is the same either way.</p>
+</div>
 <p>This gives you the interpreter, the bytecode virtual machine, the native back
 end, the REPL and the standard library, and the <code>vak</code> command works
 from any directory.</p>
