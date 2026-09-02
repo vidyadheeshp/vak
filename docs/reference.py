@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """सन्दर्भः — the reference tables the manual could not previously reach.
 
-Three things about Vāk live outside `vak/tokens.py` and `vak/builtins.py`, and
+Three things about Vāk live outside `vaak/tokens.py` and `vaak/builtins.py`, and
 so were missing from the manual: the standard library (written in Vāk), the
 analyser's diagnostics, and the command line.
 
@@ -20,11 +20,11 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from vak.ast_nodes import FunctionDecl, VarDecl                  # noqa: E402
-from vak.lexer import Lexer                                      # noqa: E402
-from vak.parser import Parser                                    # noqa: E402
+from vaak.ast_nodes import FunctionDecl, VarDecl                  # noqa: E402
+from vaak.lexer import Lexer                                      # noqa: E402
+from vaak.parser import Parser                                    # noqa: E402
 
-LIB_DIR = ROOT / "vak" / "पुस्तकालयः"
+LIB_DIR = ROOT / "vaak" / "पुस्तकालयः"
 
 
 # ------------------------------------------------------------- पुस्तकालयः
@@ -118,7 +118,7 @@ DIAGNOSTIC_DOCS: dict[str, tuple[str, str]] = {
 
 def diagnostic_codes() -> list[str]:
     """Every code the analyser can emit, read out of the analyser."""
-    src = (ROOT / "vak" / "analyzer.py").read_text(encoding="utf-8")
+    src = (ROOT / "vaak" / "analyzer.py").read_text(encoding="utf-8")
     return sorted(set(re.findall(r'_(?:error|warn)\(\s*"([^"]+)"', src)))
 
 
@@ -131,7 +131,7 @@ def diagnostics() -> list[tuple[str, str, str]]:
 def error_kinds() -> list[tuple[str, str]]:
     """The values a दोषे block can find in the error's प्रकारः, taken from the
     error classes themselves."""
-    src = (ROOT / "vak" / "errors.py").read_text(encoding="utf-8")
+    src = (ROOT / "vaak" / "errors.py").read_text(encoding="utf-8")
     out = []
     for m in re.finditer(r'title = "([^"]+)"\s*\n\s*default_code = "([^"]+)"', src):
         title, code = m.group(1), m.group(2)
@@ -150,8 +150,8 @@ FLAG_ORDER = [
 
 def cli_flags() -> list[tuple[str, str, str]]:
     """(flag, Sanskrit alias, help) for every command-line option, read out of
-    the argparse calls in vak/cli.py."""
-    src = (ROOT / "vak" / "cli.py").read_text(encoding="utf-8")
+    the argparse calls in vaak/cli.py."""
+    src = (ROOT / "vaak" / "cli.py").read_text(encoding="utf-8")
     found: dict[str, tuple[str, str]] = {}
     for call in re.findall(r"ap\.add_argument\((.*?)\)\n", src, re.S):
         flags = [f for f in re.findall(r'"(--[a-z][\w-]*)"', call)]

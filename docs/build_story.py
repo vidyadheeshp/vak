@@ -20,10 +20,10 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from vak import __version__                                     # noqa: E402
-from vak.builtins import BUILTIN_DOCS                           # noqa: E402
-from vak.opcodes import Op                                      # noqa: E402
-from vak.tokens import KARAKA_ORDER, KEYWORDS                   # noqa: E402
+from vaak import __version__                                     # noqa: E402
+from vaak.builtins import BUILTIN_DOCS                           # noqa: E402
+from vaak.opcodes import Op                                      # noqa: E402
+from vaak.tokens import KARAKA_ORDER, KEYWORDS                   # noqa: E402
 
 
 def lines(path: pathlib.Path) -> int:
@@ -38,7 +38,7 @@ STAGE_FILE = {
 }
 VAK_LINES = {k: lines(SELF / (v + ".vak")) for k, v in STAGE_FILE.items()}
 VAK_TOTAL = sum(VAK_LINES.values())
-PY_LINES = sum(lines(f) for f in (ROOT / "vak").glob("*.py"))
+PY_LINES = sum(lines(f) for f in (ROOT / "vaak").glob("*.py"))
 C_LINES = sum(lines(f) for f in (ROOT / "native").glob("*.[ch]"))
 EXAMPLES = len(list((ROOT / "examples").glob("*.vak")))
 EXE = ROOT / "वाक्.exe"
@@ -48,7 +48,7 @@ TESTS = sum(1 for line in (ROOT / "tests" / "test_vak.py")
             if line.strip().startswith("def test_"))
 
 # Which versions were actually cut.  This is stated rather than inferred: the
-# repository has exactly one commit (वाक् 0.10.0) and vak/__init__.py says
+# repository has exactly one commit (वाक् 0.10.0) and vaak/__init__.py says
 # 0.11.0, so those two exist and the other eight numbers on this page do not.
 # Scraping them out of commit subjects would mark any version-like number in any
 # future commit as a release, which is not the claim being made.

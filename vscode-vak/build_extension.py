@@ -2,7 +2,7 @@
 """विस्तारकरचना — generate the VS Code extension for Vāk.
 
 The grammar is not hand-written.  Keywords, type names and kāraka roles are
-read out of vak/tokens.py and vak/builtins.py, so the highlighting cannot drift
+read out of vaak/tokens.py and vaak/builtins.py, so the highlighting cannot drift
 away from the language the way a hand-maintained grammar always does.
 
     python vscode-vak/build_extension.py
@@ -16,9 +16,9 @@ ROOT = pathlib.Path(__file__).resolve().parent
 REPO = ROOT.parent
 sys.path.insert(0, str(REPO))
 
-from vak import __version__                                    # noqa: E402
-from vak.builtins import BUILTIN_SIGNATURES                    # noqa: E402
-from vak.tokens import KARAKA_ORDER, KEYWORDS, TYPE_NAMES      # noqa: E402
+from vaak import __version__                                    # noqa: E402
+from vaak.builtins import BUILTIN_SIGNATURES                    # noqa: E402
+from vaak.tokens import KARAKA_ORDER, KEYWORDS, TYPE_NAMES      # noqa: E402
 
 
 def alt(words) -> str:
@@ -259,12 +259,12 @@ let diagnostics;
 let statusBar;
 let typing = false;      // देवनागरी-लेखनम् — convert romanised words as they finish
 
-/** How to invoke Vāk: the native binary if configured, else `python -m vak`. */
+/** How to invoke Vāk: the native binary if configured, else `python -m vaak`. */
 function toolchain(args) {
   const cfg = vscode.workspace.getConfiguration("vak");
   const exe = (cfg.get("executable") || "").trim();
   if (exe) return { cmd: exe, args };
-  return { cmd: cfg.get("pythonPath") || "python", args: ["-m", "vak", ...args] };
+  return { cmd: cfg.get("pythonPath") || "python", args: ["-m", "vaak", ...args] };
 }
 
 /*  अर्थदोषः lines look like:
@@ -469,7 +469,7 @@ The extension needs the Vāk toolchain. Either:
 
 - set **`vak.executable`** to your `वाक्.exe`, or
 - leave it empty and set **`vak.pythonPath`** (default `python`), and the
-  extension will use `python -m vak`.
+  extension will use `python -m vaak`.
 
 ## Settings
 
@@ -506,9 +506,9 @@ VSCODEIGNORE = """build_extension.py
 
 # ------------------------------------------------------- लिप्यन्तरणम् in JS
 # The typing aid runs in the editor, so it has to exist in JavaScript — but the
-# tables are the ones in vak/translit.py, emitted here, so the scheme a student
+# tables are the ones in vaak/translit.py, emitted here, so the scheme a student
 # types with is the scheme the documentation describes.
-from vak.translit import tables_for_js                        # noqa: E402
+from vaak.translit import tables_for_js                        # noqa: E402
 
 
 def translit_js() -> str:
@@ -521,7 +521,7 @@ def translit_js() -> str:
     combined.sort(key=lambda e: len(e[0]), reverse=True)
     return (
         '"use strict";\n'
-        "// स्वयं जनितम् — generated from vak/translit.py; do not edit.\n"
+        "// स्वयं जनितम् — generated from vaak/translit.py; do not edit.\n"
         "// Longest key first, across every table at once: matching per-table\n"
         "// would let `~` beat `~N`, turning अङ्क into अँण्क.\n"
         "const TABLE = " + json.dumps(combined, ensure_ascii=False) + ";\n"

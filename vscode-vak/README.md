@@ -29,7 +29,7 @@ The extension needs the Vāk toolchain. Either:
 
 - set **`vak.executable`** to your `वाक्.exe`, or
 - leave it empty and set **`vak.pythonPath`** (default `python`), and the
-  extension will use `python -m vak`.
+  extension will use `python -m vaak`.
 
 ## Settings
 

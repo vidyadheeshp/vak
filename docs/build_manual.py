@@ -18,9 +18,9 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 import reference                                                # noqa: E402
 
-from vak import __version__                                    # noqa: E402
-from vak.builtins import BUILTIN_DOCS                          # noqa: E402
-from vak.tokens import KARAKA_ORDER, KARAKA_VIBHAKTI, KEYWORDS, TYPE_NAMES  # noqa: E402
+from vaak import __version__                                    # noqa: E402
+from vaak.builtins import BUILTIN_DOCS                          # noqa: E402
+from vaak.tokens import KARAKA_ORDER, KARAKA_VIBHAKTI, KEYWORDS, TYPE_NAMES  # noqa: E402
 
 # ---------------------------------------------------------------- canon map
 # Every Devanagari keyword paired with the ASCII spelling of the same word, so
@@ -153,7 +153,7 @@ platform-neutral.</p>
 <p>Vāk pulls in <b>no third-party packages</b>. A standard Python is all it
 needs; it was developed on 3.13.</p>
 {shell('''pip install git+https://github.com/vidyadheeshp/vak.git
-vak प्रोग्राम.vak''')}
+vaak प्रोग्राम.vak''')}
 <div class="note">
   <p><b>Not on PyPI yet.</b> <code>pip install vak-lang</code> will not find
   anything — install from the repository as above. The <code>vak</code> command
@@ -169,24 +169,24 @@ from any directory.</p>
 <code>--self</code>, the documentation generators and the editor extension:</p>
 {shell('''git clone https://github.com/vidyadheeshp/vak.git
 cd vak
-python -m vak examples/01_namaste.vak''')}
+python -m vaak examples/01_namaste.vak''')}
 <div class="note">
   <p><b>Working from a clone, stay in the repository root.</b>
-  <code>python -m vak</code> finds the package only because you are standing in
+  <code>python -m vaak</code> finds the package only because you are standing in
   the directory that contains it; from anywhere else you will get
   <code>No module named vak</code>. Installing with pip avoids this entirely.
   To run from elsewhere without installing, put the root on the module
   path:</p>
 </div>
 {shell('''# bash / zsh
-PYTHONPATH=/path/to/vak python -m vak ~/प्रोग्राम.vak
+PYTHONPATH=/path/to/vak python -m vaak ~/प्रोग्राम.vak
 
 # PowerShell
-$env:PYTHONPATH = "C:\\path\\to\\vak"; python -m vak प्रोग्राम.vak''')}
+$env:PYTHONPATH = "C:\\path\\to\\vak"; python -m vaak प्रोग्राम.vak''')}
 <p>On Windows the two launchers in the repository do this and set UTF-8 for
 you:</p>
-{shell('''.\\vak.ps1 examples/01_namaste.vak     # PowerShell
-vak.cmd examples/01_namaste.vak       # cmd.exe''')}
+{shell('''.\\vaak.ps1 examples/01_namaste.vak     # PowerShell
+vaak.cmd examples/01_namaste.vak       # cmd.exe''')}
 
 <h3 class="lib"><span class="way">४</span> In a browser
   <span>nothing installed at all</span></h3>
@@ -196,9 +196,9 @@ you type leaves your machine. Use it to try the language before deciding
 whether to install anything.</p>
 
 <h3 class="lib">Checking that it works</h3>
-{shell('''python -m vak --version          # वाक् (Vāk) ''' + __version__ + '''
-python -m vak --builtins         # the 39 built-in functions
-python -m vak                    # संवादः — the interactive session''')}
+{shell('''python -m vaak --version          # वाक् (Vāk) ''' + __version__ + '''
+python -m vaak --builtins         # the 39 built-in functions
+python -m vaak                    # संवादः — the interactive session''')}
 <p>Then a program of one line. Put this in <code>परीक्षा.vak</code> and run
 it — if you see the greeting, everything works:</p>
 {code('''मुद्रय "नमस्ते जगत्"।''')}
@@ -228,8 +228,8 @@ font must contain Devanagari.</p>
 compiler is the only extra requirement. On Windows,
 <a href="https://github.com/skeeto/w64devkit">w64devkit</a> is the one Vāk looks
 for by default; on Linux and macOS the system compiler is already there.</p>
-{shell('''python -m vak --native प्रोग्राम.vak       # produce an executable
-python -m vak --run-native प्रोग्राम.vak   # build it and run it''')}
+{shell('''python -m vaak --native प्रोग्राम.vak       # produce an executable
+python -m vaak --run-native प्रोग्राम.vak   # build it and run it''')}
 <p>If no compiler is found, Vāk says so rather than failing obscurely.</p>
 
 <h3 class="lib">The editor extension</h3>
@@ -242,7 +242,7 @@ extensions directory and reload the window:</p>
 ~/.vscode/extensions/vscode-vak''')}
 <p>Then point it at whichever toolchain you installed — set
 <code>vak.executable</code> to your <code>वाक्.exe</code>, or leave that empty
-and set <code>vak.pythonPath</code> so it uses <code>python -m vak</code>. You
+and set <code>vak.pythonPath</code> so it uses <code>python -m vaak</code>. You
 get highlighting, the <code>.vak</code> file icon, romanised typing that becomes
 Devanagari, and the analyser's diagnostics as you save — the same ones listed in
 <a href="#doshasuchi">दोषसूची</a>.</p>"""))
@@ -251,13 +251,13 @@ Devanagari, and the analyser's diagnostics as you save — the same ones listed 
 parts.append(section("chalanam", "चालनम्", "Running Vāk", f"""
 <p>Three ways to run a program, all producing identical output. The first needs
 Python; the last needs nothing at all.</p>
-{shell('''python -m vak प्रोग्राम.vak          # the tree-walking interpreter
-python -m vak --vm प्रोग्राम.vak     # compile to bytecode, run on the SanskritVM
+{shell('''python -m vaak प्रोग्राम.vak          # the tree-walking interpreter
+python -m vaak --vm प्रोग्राम.vak     # compile to bytecode, run on the SanskritVM
 ./वाक्.exe प्रोग्राम.vak              # the self-hosted toolchain, no Python''')}
 <p>Two more you will want early — the first analyses without running, the second
 starts a REPL:</p>
 {shell('''./वाक्.exe --परीक्षा प्रोग्राम.vak    # report problems, run nothing
-python -m vak                        # संवादः — the REPL''')}
+python -m vaak                        # संवादः — the REPL''')}
 <p>The full set of options, read from the argument parser itself. Four carry a
 Sanskrit alias:</p>
 <div class="scroll"><table class="kw">
@@ -614,10 +614,10 @@ against its Python counterpart at the finest granularity that stage allows —
 the lexer on every token's kind, lexeme, value and line; the parser on the whole
 syntax tree node for node; the analyser on every diagnostic's code, line and
 wording; the compiler on every instruction, constant and line number.</p>
-{shell('''python -m vak --self प्रोग्राम.vak      # compiled by Vāk, run on the Python VM
-python -m vak --self-vm प्रोग्राम.vak   # lexed, parsed, compiled AND run by Vāk
-python -m vak --native प्रोग्राम.vak    # a standalone executable (needs gcc)
-python -m vak --bytecode प्रोग्राम.vak  # disassemble''')}
+{shell('''python -m vaak --self प्रोग्राम.vak      # compiled by Vāk, run on the Python VM
+python -m vaak --self-vm प्रोग्राम.vak   # lexed, parsed, compiled AND run by Vāk
+python -m vaak --native प्रोग्राम.vak    # a standalone executable (needs gcc)
+python -m vaak --bytecode प्रोग्राम.vak  # disassemble''')}
 <p>Python is used to build <code>वाक्.exe</code> once, exactly as a C compiler is
 used once to build a self-hosting C compiler. After that the language stands on
 its own.</p>
@@ -1094,8 +1094,8 @@ footer .verse {{ font-family: var(--serif); font-size: .95rem; color: var(--ink-
 """
 
 # एकम् अपि उदाहरणम् न भग्नम् — every sample on the page must really parse.
-from vak import parse, tokenize                                # noqa: E402
-from vak.errors import VakError                                # noqa: E402
+from vaak import parse, tokenize                                # noqa: E402
+from vaak.errors import VakError                                # noqa: E402
 
 broken = 0
 for sample in SAMPLES:

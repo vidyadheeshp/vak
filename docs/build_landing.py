@@ -17,10 +17,10 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from vak import __version__, run_source                        # noqa: E402
-from vak.builtins import BUILTIN_DOCS                          # noqa: E402
-from vak.interpreter import Interpreter                        # noqa: E402
-from vak.tokens import KARAKA_ORDER, KEYWORDS, TYPE_NAMES      # noqa: E402
+from vaak import __version__, run_source                        # noqa: E402
+from vaak.builtins import BUILTIN_DOCS                          # noqa: E402
+from vaak.interpreter import Interpreter                        # noqa: E402
+from vaak.tokens import KARAKA_ORDER, KEYWORDS, TYPE_NAMES      # noqa: E402
 
 
 # The test count is read from the suite, so the page cannot drift from it.

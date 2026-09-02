@@ -5,7 +5,7 @@ The lexer, parser and compiler in स्वयंसिद्धिः/ are ordi
 loads them into an interpreter once and exposes them as Python functions, so a
 program can be compiled *by Vāk* and then run on the SanskritVM:
 
-    from vak.selfhost import compile_with_vak
+    from vaak.selfhost import compile_with_vak
     chunk = compile_with_vak(source, filename)   # lexed, parsed, compiled in Vāk
     VM(filename).run(chunk)                      # executed by the VM
 

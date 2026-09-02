@@ -99,7 +99,7 @@ third-party packages**.
 
 ```powershell
 pip install git+https://github.com/vidyadheeshp/vak.git
-vak प्रोग्राम.vak
+vaak प्रोग्राम.vak
 ```
 
 > Vāk is not on PyPI yet, so `pip install vak-lang` will not find it. Install
@@ -115,27 +115,27 @@ generators and the editor extension:
 ```powershell
 git clone https://github.com/vidyadheeshp/vak.git
 cd vak
-python -m vak examples/01_namaste.vak
+python -m vaak examples/01_namaste.vak
 ```
 
-> **Working from a clone, stay in the repository root.** `python -m vak`
+> **Working from a clone, stay in the repository root.** `python -m vaak`
 > finds the package only because you are standing in the directory that
 > contains it; from anywhere else you get `No module named vak`. Installing
 > with pip avoids this entirely. To run from elsewhere without installing, put
 > the root on the module path:
 >
 > ```bash
-> PYTHONPATH=/path/to/vak python -m vak ~/प्रोग्राम.vak          # bash / zsh
+> PYTHONPATH=/path/to/vak python -m vaak ~/प्रोग्राम.vak          # bash / zsh
 > ```
 > ```powershell
-> $env:PYTHONPATH = "C:\path\to\vak"; python -m vak प्रोग्राम.vak  # PowerShell
+> $env:PYTHONPATH = "C:\path\to\vak"; python -m vaak प्रोग्राम.vak  # PowerShell
 > ```
 
 On Windows the two launchers do this and set UTF-8 for you:
 
 ```powershell
-.\vak.ps1 examples/01_namaste.vak     # PowerShell
-vak.cmd examples/01_namaste.vak       # cmd.exe
+.\vaak.ps1 examples/01_namaste.vak     # PowerShell
+vaak.cmd examples/01_namaste.vak       # cmd.exe
 ```
 
 **4 · In a browser — nothing installed at all.** The
@@ -146,9 +146,9 @@ machine.
 ### Checking that it works
 
 ```powershell
-python -m vak --version          # वाक् (Vāk) 0.11.0
-python -m vak --builtins         # the 39 built-in functions
-python -m vak                    # संवादः — the interactive session
+python -m vaak --version          # वाक् (Vāk) 0.11.0
+python -m vaak --builtins         # the 39 built-in functions
+python -m vaak                    # संवादः — the interactive session
 ```
 
 Then one line in `परीक्षा.vak`. If you see the greeting, you are set:
@@ -182,8 +182,8 @@ compiler is the only extra requirement. On Windows,
 default; on Linux and macOS the system compiler is already there.
 
 ```powershell
-python -m vak --native प्रोग्राम.vak       # produce an executable
-python -m vak --run-native प्रोग्राम.vak   # build it and run it
+python -m vaak --native प्रोग्राम.vak       # produce an executable
+python -m vaak --run-native प्रोग्राम.vak   # build it and run it
 ```
 
 If no compiler is found, Vāk says so rather than failing obscurely.
@@ -200,7 +200,7 @@ window:
 
 Then point it at whichever toolchain you installed: set `vak.executable` to
 your `वाक्.exe`, or leave it empty and set `vak.pythonPath` so it uses
-`python -m vak`. You get highlighting, the `.vak` file icon, romanised typing
+`python -m vaak`. You get highlighting, the `.vak` file icon, romanised typing
 that becomes Devanagari, and the analyser's diagnostics on save.
 
 ---
@@ -211,25 +211,25 @@ Once it is installed — see [स्थापना](#स्थापना--ins
 
 ```powershell
 # run a program
-python -m vak examples/01_namaste.vak
+python -m vaak examples/01_namaste.vak
 
 # or use the launcher (it sets UTF-8 for you)
-.\vak.ps1 examples/01_namaste.vak      # PowerShell
-vak.cmd examples/01_namaste.vak        # cmd.exe
+.\vaak.ps1 examples/01_namaste.vak      # PowerShell
+vaak.cmd examples/01_namaste.vak        # cmd.exe
 
 # interactive session (संवादः)
-python -m vak
+python -m vaak
 
 # see what the front end is doing
-python -m vak --tokens examples/01_namaste.vak    # token stream
-python -m vak --ast    examples/03_yadi.vak       # syntax tree
-python -m vak --builtins                          # standard library listing
+python -m vaak --tokens examples/01_namaste.vak    # token stream
+python -m vaak --ast    examples/03_yadi.vak       # syntax tree
+python -m vaak --builtins                          # standard library listing
 ```
 
 Embedding it in Python:
 
 ```python
-from vak import run_source
+from vaak import run_source
 run_source('मुद्रय "नमस्ते जगत्"।')
 ```
 
@@ -509,7 +509,7 @@ The analyser enforces the grammar of roles: **one कर्ता and one कर
 allows only one of each per action), every label must name a role the function actually
 declares, no role may be given twice — and it warns when a role holds a kind of value it
 cannot sensibly play, or when a function with a कर्म returns nothing (a transitive verb
-yields a result). Order is deliberately *not* checked. `python -m vak --karakas` lists them.
+yields a result). Order is deliberately *not* checked. `python -m vaak --karakas` lists them.
 
 Kāraka names are contextual, not reserved: `कर्म` alone is still an ordinary variable name.
 
@@ -523,7 +523,7 @@ Between parser and interpreter sits a static pass that answers what the parser c
 It runs automatically before a file executes; `--check` runs it alone, `--no-check` skips it.
 
 ```powershell
-python -m vak --check प्रोग्राम.vak
+python -m vaak --check प्रोग्राम.vak
 ```
 
 ```
@@ -611,12 +611,12 @@ imported.
 
 A module value is an ordinary `कोशः`, so `कुञ्जिकाः(गणितम्)` lists what it exports.
 Search order: the importing file's directory, the current directory, then the bundled
-standard library in [vak/पुस्तकालयः/](vak/पुस्तकालयः/). Circular imports raise
+standard library in [vaak/पुस्तकालयः/](vaak/पुस्तकालयः/). Circular imports raise
 `आयातदोषः` rather than looping.
 
-**The standard library is written in Vāk itself** — [गणितम्.vak](vak/पुस्तकालयः/गणितम्.vak)
+**The standard library is written in Vāk itself** — [गणितम्.vak](vaak/पुस्तकालयः/गणितम्.vak)
 (squares, gcd/lcm, factorials, primes, mean, median) and
-[शब्दाः.vak](vak/पुस्तकालयः/शब्दाः.vak) (prefix/suffix tests, padding, repetition,
+[शब्दाः.vak](vaak/पुस्तकालयः/शब्दाः.vak) (prefix/suffix tests, padding, repetition,
 syllable splitting, word counts). They are the first pieces of Vāk standing on their own
 feet, and they use kāraka-marked parameters throughout.
 
@@ -661,8 +661,8 @@ Vāk has two engines. The tree-walking interpreter is the reference; the bytecod
 compiles the AST into instructions for a stack machine whose opcodes are Sanskrit words.
 
 ```powershell
-python -m vak --vm       प्रोग्राम.vak     # compile, then run on the VM
-python -m vak --bytecode प्रोग्राम.vak     # disassemble instead of running
+python -m vaak --vm       प्रोग्राम.vak     # compile, then run on the VM
+python -m vaak --bytecode प्रोग्राम.vak     # disassemble instead of running
 ```
 
 ```
@@ -681,7 +681,7 @@ The instruction set: `स्थापय` (push a constant), `गृहाण` /
 (comparison), `लङ्घय` / `असत्ये_लङ्घय` / `पुनरागच्छ` (jumps), `आवरणम्` `आह्वय`
 `प्रत्यागच्छ` (closures and calls), `प्रयत्नम्_आरभ` `उत्सृज` `अन्ततः_समापय` (exceptions),
 `पुनरावर्तय` (iteration), `आनय` (import) — the full list is in
-[vak/opcodes.py](vak/opcodes.py).
+[vaak/opcodes.py](vaak/opcodes.py).
 
 Both engines share the same Environment chain, values, built-ins and error types, so
 closures, scoping and exceptions behave identically. That is enforced, not assumed: the
@@ -698,7 +698,7 @@ A Vāk program can be compiled to a **standalone Windows executable** that needs
 Python nor the Vāk toolchain to run:
 
 ```powershell
-python -m vak --native examples/08_fibonacci.vak    # → examples/08_fibonacci.exe
+python -m vaak --native examples/08_fibonacci.vak    # → examples/08_fibonacci.exe
 ./examples/08_fibonacci.exe
 ```
 
@@ -713,7 +713,7 @@ executors rather than four dialects.
 | [native/mulyani.c](native/mulyani.c) | मूल्यानि | Values: tagged unions, reference-counted strings, lists, dictionaries and closures; UTF-8 handling; the scope chain; printing that matches Python's exactly, down to shortest-round-trip floats. |
 | [native/antarnihitani.c](native/antarnihitani.c) | अन्तर्निहितानि | All 37 built-ins in C, including akṣara splitting and file I/O, with the same bilingual error text. |
 | [native/yantram.c](native/yantram.c) | यन्त्रम् | The VM: value stack, call frames, environments, `प्रयत्नः` handler stack, kāraka-labelled calls, declared-type checks, module loading. |
-| [vak/native.py](vak/native.py) | देशीयसंकलनम् | The code generator: a Chunk (and every module it imports) becomes one C translation unit, then gcc links it against the runtime. |
+| [vaak/native.py](vaak/native.py) | देशीयसंकलनम् | The code generator: a Chunk (and every module it imports) becomes one C translation unit, then gcc links it against the runtime. |
 
 Requires a C compiler — [w64devkit](https://github.com/skeeto/w64devkit/releases) is the
 easiest on Windows: unzip it, put its `bin` on PATH, and `--native` finds it. Without one
@@ -763,7 +763,7 @@ complaints*, in the same order, with the same wording. It does:
 
 ```powershell
 ./वाक्.exe --परीक्षा प्रोग्राम.vak     # analyse and stop — no Python anywhere
-python -m vak --check प्रोग्राम.vak    # the same report, from the Python analyser
+python -m vaak --check प्रोग्राम.vak    # the same report, from the Python analyser
 ```
 
 Both are checked against each other on every example, on the standard library, on a
@@ -809,11 +809,11 @@ already full before the program started. Numbering the built-ins is the next ste
 that names resolve to places at all, it is a small one.
 
 ```powershell
-python -m vak स्वयंसिद्धिः/मुख्यम्.vak            # the toolchain over its own source
+python -m vaak स्वयंसिद्धिः/मुख्यम्.vak            # the toolchain over its own source
 ./वाक्.exe --परीक्षा प्रोग्राम.vak                # analyse it, in Vāk, without Python
-python -m vak --self examples/08_fibonacci.vak   # compiled by Vāk, run on the Python VM
-python -m vak --self-vm examples/13_karaka.vak   # compiled AND run by Vāk
-python -m vak --native examples/08_fibonacci.vak # build a standalone .exe
+python -m vaak --self examples/08_fibonacci.vak   # compiled by Vāk, run on the Python VM
+python -m vaak --self-vm examples/13_karaka.vak   # compiled AND run by Vāk
+python -m vaak --native examples/08_fibonacci.vak # build a standalone .exe
 ```
 
 ```
@@ -840,9 +840,9 @@ handler stack, all as ordinary `कोशाः`. It reaches the host only for p
 arithmetic on numbers, the built-in functions, file access — exactly the boundary a native
 runtime would later replace.
 
-The shared contract is [vak/kosha.py](vak/kosha.py), which writes the Python AST and Chunk
+The shared contract is [vaak/kosha.py](vaak/kosha.py), which writes the Python AST and Chunk
 as plain कोशाः — the same shape the Vāk stages build — so every stage can be compared
-against its counterpart. [vak/selfhost.py](vak/selfhost.py) drives the Vāk toolchain from
+against its counterpart. [vaak/selfhost.py](vaak/selfhost.py) drives the Vāk toolchain from
 Python (`parse_with_vak`, `compile_with_vak`, `run_with_vak`).
 
 ### वाक्.exe — the bootstrap closed
@@ -852,7 +852,7 @@ Vāk that reads a `.vak` file and lexes, parses, compiles and runs it using only
 Vāk-written toolchain. Compiled natively, that driver **is** the compiler:
 
 ```powershell
-python -m vak --native स्वयंसिद्धिः/वाक्.vak     # once, to build it
+python -m vaak --native स्वयंसिद्धिः/वाक्.vak     # once, to build it
 ./वाक्.exe examples/13_karaka.vak                # thereafter: no Python at all
 ./वाक्.exe --चिह्नानि प्रोग्राम.vak               # show the tokens
 ./वाक्.exe --आदेशाः प्रोग्राम.vak                 # count the instructions
@@ -942,7 +942,7 @@ Punctuation: `।` `॥` `;` end statements · `{}` blocks · `[]` lists · `{k:
 
 ## अन्तर्निहितानि · Built-in functions
 
-Run `python -m vak --builtins` to print this table from the interpreter itself.
+Run `python -m vaak --builtins` to print this table from the interpreter itself.
 
 | देवनागरी | Romanized | What it does |
 |---|---|---|
@@ -996,8 +996,8 @@ the built-in.
 **The editor.** [vscode-vak/](vscode-vak/) is a VS Code extension: `.vak` files
 carry the वा mark in the explorer, all 38 keywords highlight in every canon with
 the kāraka roles given a scope of their own, and the real analyser's diagnostics
-appear inline on save. The TextMate grammar is *generated* from `vak/tokens.py`
-and `vak/builtins.py`, so highlighting cannot drift from the language, and 15
+appear inline on save. The TextMate grammar is *generated* from `vaak/tokens.py`
+and `vaak/builtins.py`, so highlighting cannot drift from the language, and 15
 checks run on every build — one of them for `विरम।`, a keyword written hard
 against its danda, which stopped matching when the word-boundary class swallowed
 U+0964.
@@ -1009,7 +1009,7 @@ make every variable ambiguous. The help belongs where you type instead:
 selection, and the browser playground has the same switch. The scheme is
 ITRANS-flavoured — `kaaryam` → `कार्यम्`, `puurNaa~NkaH` → `पूर्णाङ्कः` — and it
 exists three times, in Python and in two JavaScript copies, all generated from
-one table in [vak/translit.py](vak/translit.py) and checked against each other.
+one table in [vaak/translit.py](vaak/translit.py) and checked against each other.
 
 **The mark.** [brand/](brand/) holds वा, the first syllable, in real outlines
 pulled from a Devanagari font and shaped by HarfBuzz, then converted to SVG
@@ -1095,24 +1095,24 @@ source .vak
 
 | File | Sanskrit name | Responsibility |
 |---|---|---|
-| [vak/tokens.py](vak/tokens.py) | शब्दप्रकाराः | Token kinds, the `Token` record, the **keyword table** (both canons + romanized aliases), the **type-name table**, numeral tables, and the character predicates that define a Devanagari identifier. |
-| [vak/lexer.py](vak/lexer.py) | शब्दविभाजकः | **Lexer.** One left-to-right pass producing tokens: identifiers (letters + matras + virama + ZWJ), numbers in either script, strings with escapes, comments, operators, and `। ॥ ;` as terminators. Tracks line/column for every token. |
-| [vak/ast_nodes.py](vak/ast_nodes.py) | वाक्यरचना | The **AST**: expressions (`Literal`, `Binary`, `Call`, `IndexGet`, …) and statements (`VarDecl`, `If`, `While`, `Repeat`, `Print`, `Try`, `Throw`, `FunctionDecl`, …), plus `Param` carrying declared types. |
-| [vak/parser.py](vak/parser.py) | व्याकरणम् | **Parser.** Hand-written recursive descent, one method per grammar rule. Resolves the type-vs-call ambiguity by lookahead, and the `मुद्रय(...)` command-vs-call form by backtracking. |
-| [vak/analyzer.py](vak/analyzer.py) | अर्थविश्लेषकः | **Semantic analyser.** Scope resolution, gradual type inference and checking, control-flow placement, reachability, and the kāraka rules. Collects every diagnostic instead of stopping at the first. |
-| [vak/पुस्तकालयः/](vak/पुस्तकालयः/) | पुस्तकालयः | The standard library — `गणितम्` and `शब्दाः` — **written in Vāk itself** and found automatically by `आनय`. |
-| [vak/interpreter.py](vak/interpreter.py) | दुभाषिकः | **Interpreter.** Walks the AST via `_eval_*` / `_exec_*` dispatch. Hoists functions per block, loads and caches modules, reorders kāraka-labelled arguments. `प्रत्यागच्छ`, `विरम`, `अनुवर्त` and `उत्सृज` travel as `ReturnSignal` / `BreakSignal` / `ContinueSignal` / `VakThrow`. |
-| [vak/environment.py](vak/environment.py) | परिवेशः | **Scopes.** A chain of `Environment` objects; each block, call and loop iteration gets a child. Enforces `ध्रुव` immutability and the declared type of every variable on assignment. |
-| [vak/values.py](vak/values.py) | मूल्यानि | Runtime values: `VakFunction` (closure), `NativeFunction`, the **type predicate table** (`matches_type` / `check_type`), plus `type_name`, `is_truthy`, `stringify`. |
-| [vak/builtins.py](vak/builtins.py) | अन्तर्निहितानि | The standard library and its registry of Devanagari + romanized names. |
-| [vak/errors.py](vak/errors.py) | दोषाः | `LexError`, `ParseError`, `RuntimeVakError` with its Sanskrit `code`, and the source-snippet renderer. |
-| [vak/opcodes.py](vak/opcodes.py) | आदेशाः | The instruction set — every opcode with its Sanskrit name and operand count. |
-| [vak/compiler.py](vak/compiler.py) | संकलकः | **Compiler.** AST → `Chunk` (code, constants, line table). Each कार्यम् compiles to its own chunk; loops patch their own jumps; try/catch/finally compiles to handler ranges. Includes the disassembler. |
-| [vak/vm.py](vak/vm.py) | संस्कृतयन्त्रम् | **The VM.** A stack machine with call frames, handler stacks and module caching, running the bytecode over the same environments the interpreter uses. |
-| [vak/kosha.py](vak/kosha.py) | कोशरूपम् | The contract between the two toolchains — the AST and a compiled Chunk written as plain कोशाः, in both directions. |
-| [vak/selfhost.py](vak/selfhost.py) | स्वयंसिद्धिः | Loads the Vāk-written toolchain and exposes it to Python: `compile_with_vak(source)` returns a Chunk the VM can run. |
+| [vaak/tokens.py](vaak/tokens.py) | शब्दप्रकाराः | Token kinds, the `Token` record, the **keyword table** (both canons + romanized aliases), the **type-name table**, numeral tables, and the character predicates that define a Devanagari identifier. |
+| [vaak/lexer.py](vaak/lexer.py) | शब्दविभाजकः | **Lexer.** One left-to-right pass producing tokens: identifiers (letters + matras + virama + ZWJ), numbers in either script, strings with escapes, comments, operators, and `। ॥ ;` as terminators. Tracks line/column for every token. |
+| [vaak/ast_nodes.py](vaak/ast_nodes.py) | वाक्यरचना | The **AST**: expressions (`Literal`, `Binary`, `Call`, `IndexGet`, …) and statements (`VarDecl`, `If`, `While`, `Repeat`, `Print`, `Try`, `Throw`, `FunctionDecl`, …), plus `Param` carrying declared types. |
+| [vaak/parser.py](vaak/parser.py) | व्याकरणम् | **Parser.** Hand-written recursive descent, one method per grammar rule. Resolves the type-vs-call ambiguity by lookahead, and the `मुद्रय(...)` command-vs-call form by backtracking. |
+| [vaak/analyzer.py](vaak/analyzer.py) | अर्थविश्लेषकः | **Semantic analyser.** Scope resolution, gradual type inference and checking, control-flow placement, reachability, and the kāraka rules. Collects every diagnostic instead of stopping at the first. |
+| [vaak/पुस्तकालयः/](vaak/पुस्तकालयः/) | पुस्तकालयः | The standard library — `गणितम्` and `शब्दाः` — **written in Vāk itself** and found automatically by `आनय`. |
+| [vaak/interpreter.py](vaak/interpreter.py) | दुभाषिकः | **Interpreter.** Walks the AST via `_eval_*` / `_exec_*` dispatch. Hoists functions per block, loads and caches modules, reorders kāraka-labelled arguments. `प्रत्यागच्छ`, `विरम`, `अनुवर्त` and `उत्सृज` travel as `ReturnSignal` / `BreakSignal` / `ContinueSignal` / `VakThrow`. |
+| [vaak/environment.py](vaak/environment.py) | परिवेशः | **Scopes.** A chain of `Environment` objects; each block, call and loop iteration gets a child. Enforces `ध्रुव` immutability and the declared type of every variable on assignment. |
+| [vaak/values.py](vaak/values.py) | मूल्यानि | Runtime values: `VakFunction` (closure), `NativeFunction`, the **type predicate table** (`matches_type` / `check_type`), plus `type_name`, `is_truthy`, `stringify`. |
+| [vaak/builtins.py](vaak/builtins.py) | अन्तर्निहितानि | The standard library and its registry of Devanagari + romanized names. |
+| [vaak/errors.py](vaak/errors.py) | दोषाः | `LexError`, `ParseError`, `RuntimeVakError` with its Sanskrit `code`, and the source-snippet renderer. |
+| [vaak/opcodes.py](vaak/opcodes.py) | आदेशाः | The instruction set — every opcode with its Sanskrit name and operand count. |
+| [vaak/compiler.py](vaak/compiler.py) | संकलकः | **Compiler.** AST → `Chunk` (code, constants, line table). Each कार्यम् compiles to its own chunk; loops patch their own jumps; try/catch/finally compiles to handler ranges. Includes the disassembler. |
+| [vaak/vm.py](vaak/vm.py) | संस्कृतयन्त्रम् | **The VM.** A stack machine with call frames, handler stacks and module caching, running the bytecode over the same environments the interpreter uses. |
+| [vaak/kosha.py](vaak/kosha.py) | कोशरूपम् | The contract between the two toolchains — the AST and a compiled Chunk written as plain कोशाः, in both directions. |
+| [vaak/selfhost.py](vaak/selfhost.py) | स्वयंसिद्धिः | Loads the Vāk-written toolchain and exposes it to Python: `compile_with_vak(source)` returns a Chunk the VM can run. |
 | [स्वयंसिद्धिः/](स्वयंसिद्धिः/) | स्वयंसिद्धिः | **Vāk written in Vāk** — the lexer, the parser, the compiler and the VM, plus a driver that runs all four over their own source. |
-| [vak/cli.py](vak/cli.py) | आदेशपङ्क्तिः | File runner, REPL, `--tokens`, `--ast`, `--bytecode`, `--vm`, `--check`, `--builtins`, `--karakas`. |
+| [vaak/cli.py](vaak/cli.py) | आदेशपङ्क्तिः | File runner, REPL, `--tokens`, `--ast`, `--bytecode`, `--vm`, `--check`, `--builtins`, `--karakas`. |
 
 Design choices worth knowing:
 
@@ -1159,7 +1159,7 @@ All of them live in [examples/](examples/) and all of them run:
 | [स्वयंसिद्धिः/मुख्यम्.vak](स्वयंसिद्धिः/मुख्यम्.vak) | the Vāk-written toolchain lexing, parsing, compiling and running its own source |
 
 ```powershell
-python -m vak examples/12_dosha.vak
+python -m vaak examples/12_dosha.vak
 ```
 
 ---
@@ -1273,7 +1273,7 @@ language stops depending on a host language. Progress along that road:
 - ✅ **One VM, not two.** `खण्डम्_चालय` hands a compiled chunk straight to the host
   machine; `वाक्.exe` is 10× faster on function-heavy code and 145 KB smaller.
 - ✅ **The analyser in Vāk.** The front end is now Vāk all the way down, and
-  `वाक्.exe --परीक्षा` reports exactly what `python -m vak --check` reports.
+  `वाक्.exe --परीक्षा` reports exactly what `python -m vaak --check` reports.
 - ✅ **Slot-resolved locals.** Names the compiler can see are read by place, in all four
   engines; both compilers resolve them independently and still agree byte for byte.
 - ✅ **विकल्पः · switch/case.** Built out of instructions the machine already
@@ -1334,10 +1334,10 @@ If you use Vāk in research, [CITATION.cff](CITATION.cff) says how to cite it.
 ```
 Sanskrit-Vak/
 ├── README.md
-├── vak.cmd / vak.ps1          # launchers that set UTF-8 and call python -m vak
-├── vak/
+├── vaak.cmd / vaak.ps1          # launchers that set UTF-8 and call python -m vaak
+├── vaak/
 │   ├── __init__.py            # public API: run_source(), check_source(), parse(), Interpreter
-│   ├── __main__.py            # python -m vak
+│   ├── __main__.py            # python -m vaak
 │   ├── cli.py                 # file runner, REPL, --tokens / --ast / --builtins
 │   ├── tokens.py              # token kinds + keyword, type and numeral tables
 │   ├── lexer.py               # text  → tokens
@@ -1360,7 +1360,7 @@ Sanskrit-Vak/
 │       ├── गणितम्.vak          #   mathematics
 │       └── शब्दाः.vak          #   strings
 ├── native/                    # the native runtime, in C
-│   ├── vak.h                  #   values, opcodes, compiled-program shape
+│   ├── vaak.h                  #   values, opcodes, compiled-program shape
 │   ├── mulyani.c              #   values, UTF-8, scopes, printing
 │   ├── antarnihitani.c        #   the built-ins
 │   └── yantram.c              #   the VM
@@ -1376,7 +1376,7 @@ Sanskrit-Vak/
 │   ├── build_brand.py         #   shaped by HarfBuzz, emitted as SVG paths
 │   └── vak-icon.svg …         #   icons, wordmark, favicon
 ├── vscode-vak/                # the VS Code extension
-│   ├── build_extension.py     #   grammar generated from vak/tokens.py
+│   ├── build_extension.py     #   grammar generated from vaak/tokens.py
 │   └── extension.js           #   diagnostics from the real analyser
 ├── docs/
 │   ├── index.html             # the landing page

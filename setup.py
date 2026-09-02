@@ -2,7 +2,7 @@
 """Packaging shim, for one job: the README's links.
 
 README.md links to files by relative path — `docs/manual.html`,
-`examples/13_karaka.vak`, `vak/पुस्तकालयः/गणितम्.vak`. GitHub resolves those.
+`examples/13_karaka.vak`, `vaak/पुस्तकालयः/गणितम्.vak`. GitHub resolves those.
 PyPI does not: it renders the README on its own page, where every one of the
 69 relative links is a dead end.
 

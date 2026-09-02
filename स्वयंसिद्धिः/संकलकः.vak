@@ -27,8 +27,8 @@
 ध्रुव पूर्णाङ्कः आ_स्थाने_न्यसय = १५।
 ध्रुव पूर्णाङ्कः आ_अन्तर्निहितम्_गृहाण = १६।
 
-# अन्तर्निहितानाम् नामानि — vak/builtins.py इत्यस्मात् एव जनितानि।
-# Generated from vak/builtins.py by docs-free tooling, so the two cannot drift.
+# अन्तर्निहितानाम् नामानि — vaak/builtins.py इत्यस्मात् एव जनितानि।
+# Generated from vaak/builtins.py by docs-free tooling, so the two cannot drift.
 ध्रुव सूची अन्तर्निहितनामानि = [
     "लिख", "likh", "पठ", "patha", "प्रकार", "prakara", "संख्या", "sankhya", "शब्द",
     "shabda", "देवनागरी", "devanagari", "दीर्घता", "dirghata", "सूची", "suchi",

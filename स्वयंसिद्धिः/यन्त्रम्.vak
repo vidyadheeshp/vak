@@ -1009,7 +1009,7 @@
 # आयातस्य अन्वेषणपथाः — चालकः प्रोग्रामस्य निर्देशिकाम् अपि योजयति
 # Where आनय looks. The driver adds the running program's own directory, which
 # is how the Python interpreter resolves a module relative to its importer.
-ध्रुव सूची अन्वेषणनिर्देशिकाः = ["", "vak/पुस्तकालयः/", "examples/", "स्वयंसिद्धिः/"]।
+ध्रुव सूची अन्वेषणनिर्देशिकाः = ["", "vaak/पुस्तकालयः/", "examples/", "स्वयंसिद्धिः/"]।
 
 कार्यम् निर्देशिकाम्_योजय(कर्म शब्दः निर्देशिका) {
     यदि (निर्देशिका != "" च न अस्ति(अन्वेषणनिर्देशिकाः, निर्देशिका)) {

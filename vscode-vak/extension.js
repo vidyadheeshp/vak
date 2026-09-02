@@ -13,12 +13,12 @@ let diagnostics;
 let statusBar;
 let typing = false;      // देवनागरी-लेखनम् — convert romanised words as they finish
 
-/** How to invoke Vāk: the native binary if configured, else `python -m vak`. */
+/** How to invoke Vāk: the native binary if configured, else `python -m vaak`. */
 function toolchain(args) {
   const cfg = vscode.workspace.getConfiguration("vak");
   const exe = (cfg.get("executable") || "").trim();
   if (exe) return { cmd: exe, args };
-  return { cmd: cfg.get("pythonPath") || "python", args: ["-m", "vak", ...args] };
+  return { cmd: cfg.get("pythonPath") || "python", args: ["-m", "vaak", ...args] };
 }
 
 /*  अर्थदोषः lines look like:

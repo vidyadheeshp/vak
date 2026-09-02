@@ -46,7 +46,11 @@ Source = "https://github.com/vidyadheeshp/vak"
 Issues = "https://github.com/vidyadheeshp/vak/issues"
 
 [project.scripts]
-vak = "vak.cli:main"
+# vaak, not vak: PyPI's vak is an established bioacoustics package
+# (vocalpy/vak, 2019) and both would install a top-level vak/ and a vak
+# command. vaak is what Vāk's own transliterator makes of वाक्.
+vaak = "vaak.cli:main"
+vak-lang = "vaak.cli:main"
 
 [project.optional-dependencies]
 dev = ["pytest>=7"]
@@ -56,11 +60,11 @@ dev = ["pytest>=7"]
 # toolchain and the documentation generators are part of the repository, not of
 # the installed library — see CONTRIBUTING.md for what a clone gives you that a
 # wheel does not.
-packages = ["vak"]
+packages = ["vaak"]
 
 [tool.setuptools.package-data]
 # the standard library, written in Vāk
-vak = ["पुस्तकालयः/*.vak"]
+vaak = ["पुस्तकालयः/*.vak"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

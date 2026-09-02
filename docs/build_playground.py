@@ -14,11 +14,11 @@ WASM = ROOT / "_wasm" / "vak.js"
 
 engine = WASM.read_text(encoding="utf-8")
 
-# the typing aid, from the same tables as vak/translit.py
+# the typing aid, from the same tables as vaak/translit.py
 import sys                                                    # noqa: E402
 sys.path.insert(0, str(ROOT))
 import json as _json                                          # noqa: E402
-from vak.translit import tables_for_js                        # noqa: E402
+from vaak.translit import tables_for_js                        # noqa: E402
 
 _t = tables_for_js()
 _combined = (
@@ -38,8 +38,8 @@ TRANSLIT = (
 # the standard library travels with the page and is written into the virtual
 # filesystem at startup, so आनय works in the browser
 library = {}
-for f in sorted((ROOT / "vak" / "पुस्तकालयः").glob("*.vak")):
-    library["/vak/पुस्तकालयः/" + f.name] = f.read_text(encoding="utf-8")
+for f in sorted((ROOT / "vaak" / "पुस्तकालयः").glob("*.vak")):
+    library["/vaak/पुस्तकालयः/" + f.name] = f.read_text(encoding="utf-8")
 
 SAMPLES = {
     "नमस्ते": '''मुद्रय "नमस्ते जगत्"।
@@ -569,7 +569,7 @@ footer b { color:var(--ink-soft); font-weight:500; }
 
 import sys
 sys.path.insert(0, str(ROOT))
-from vak import __version__                                    # noqa: E402
+from vaak import __version__                                    # noqa: E402
 
 page = (PAGE
         .replace("__ENGINE__", engine)

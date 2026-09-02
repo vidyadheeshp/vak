@@ -320,7 +320,7 @@ platform-neutral.</p>
 <p>Vāk pulls in <b>no third-party packages</b>. A standard Python is all it
 needs; it was developed on 3.13.</p>
 <figure class="code sh"><pre><code>pip install git+https://github.com/vidyadheeshp/vak.git
-vak प्रोग्राम.vak</code></pre></figure>
+vaak प्रोग्राम.vak</code></pre></figure>
 <div class="note">
   <p><b>Not on PyPI yet.</b> <code>pip install vak-lang</code> will not find
   anything — install from the repository as above. The <code>vak</code> command
@@ -336,24 +336,24 @@ from any directory.</p>
 <code>--self</code>, the documentation generators and the editor extension:</p>
 <figure class="code sh"><pre><code>git clone https://github.com/vidyadheeshp/vak.git
 cd vak
-python -m vak examples/01_namaste.vak</code></pre></figure>
+python -m vaak examples/01_namaste.vak</code></pre></figure>
 <div class="note">
   <p><b>Working from a clone, stay in the repository root.</b>
-  <code>python -m vak</code> finds the package only because you are standing in
+  <code>python -m vaak</code> finds the package only because you are standing in
   the directory that contains it; from anywhere else you will get
   <code>No module named vak</code>. Installing with pip avoids this entirely.
   To run from elsewhere without installing, put the root on the module
   path:</p>
 </div>
 <figure class="code sh"><pre><code># bash / zsh
-PYTHONPATH=/path/to/vak python -m vak ~/प्रोग्राम.vak
+PYTHONPATH=/path/to/vak python -m vaak ~/प्रोग्राम.vak
 
 # PowerShell
-$env:PYTHONPATH = &quot;C:\path\to\vak&quot;; python -m vak प्रोग्राम.vak</code></pre></figure>
+$env:PYTHONPATH = &quot;C:\path\to\vak&quot;; python -m vaak प्रोग्राम.vak</code></pre></figure>
 <p>On Windows the two launchers in the repository do this and set UTF-8 for
 you:</p>
-<figure class="code sh"><pre><code>.\vak.ps1 examples/01_namaste.vak     # PowerShell
-vak.cmd examples/01_namaste.vak       # cmd.exe</code></pre></figure>
+<figure class="code sh"><pre><code>.\vaak.ps1 examples/01_namaste.vak     # PowerShell
+vaak.cmd examples/01_namaste.vak       # cmd.exe</code></pre></figure>
 
 <h3 class="lib"><span class="way">४</span> In a browser
   <span>nothing installed at all</span></h3>
@@ -363,9 +363,9 @@ you type leaves your machine. Use it to try the language before deciding
 whether to install anything.</p>
 
 <h3 class="lib">Checking that it works</h3>
-<figure class="code sh"><pre><code>python -m vak --version          # वाक् (Vāk) 0.11.0
-python -m vak --builtins         # the 39 built-in functions
-python -m vak                    # संवादः — the interactive session</code></pre></figure>
+<figure class="code sh"><pre><code>python -m vaak --version          # वाक् (Vāk) 0.11.0
+python -m vaak --builtins         # the 39 built-in functions
+python -m vaak                    # संवादः — the interactive session</code></pre></figure>
 <p>Then a program of one line. Put this in <code>परीक्षा.vak</code> and run
 it — if you see the greeting, everything works:</p>
 <figure class="code"><pre><code><b class="k" data-r="mudraya">मुद्रय</b> <i class="s">&quot;नमस्ते जगत्&quot;</i>।</code></pre></figure>
@@ -395,8 +395,8 @@ font must contain Devanagari.</p>
 compiler is the only extra requirement. On Windows,
 <a href="https://github.com/skeeto/w64devkit">w64devkit</a> is the one Vāk looks
 for by default; on Linux and macOS the system compiler is already there.</p>
-<figure class="code sh"><pre><code>python -m vak --native प्रोग्राम.vak       # produce an executable
-python -m vak --run-native प्रोग्राम.vak   # build it and run it</code></pre></figure>
+<figure class="code sh"><pre><code>python -m vaak --native प्रोग्राम.vak       # produce an executable
+python -m vaak --run-native प्रोग्राम.vak   # build it and run it</code></pre></figure>
 <p>If no compiler is found, Vāk says so rather than failing obscurely.</p>
 
 <h3 class="lib">The editor extension</h3>
@@ -409,7 +409,7 @@ extensions directory and reload the window:</p>
 ~/.vscode/extensions/vscode-vak</code></pre></figure>
 <p>Then point it at whichever toolchain you installed — set
 <code>vak.executable</code> to your <code>वाक्.exe</code>, or leave that empty
-and set <code>vak.pythonPath</code> so it uses <code>python -m vak</code>. You
+and set <code>vak.pythonPath</code> so it uses <code>python -m vaak</code>. You
 get highlighting, the <code>.vak</code> file icon, romanised typing that becomes
 Devanagari, and the analyser's diagnostics as you save — the same ones listed in
 <a href="#doshasuchi">दोषसूची</a>.</p>
@@ -422,13 +422,13 @@ Devanagari, and the analyser's diagnostics as you save — the same ones listed 
   
 <p>Three ways to run a program, all producing identical output. The first needs
 Python; the last needs nothing at all.</p>
-<figure class="code sh"><pre><code>python -m vak प्रोग्राम.vak          # the tree-walking interpreter
-python -m vak --vm प्रोग्राम.vak     # compile to bytecode, run on the SanskritVM
+<figure class="code sh"><pre><code>python -m vaak प्रोग्राम.vak          # the tree-walking interpreter
+python -m vaak --vm प्रोग्राम.vak     # compile to bytecode, run on the SanskritVM
 ./वाक्.exe प्रोग्राम.vak              # the self-hosted toolchain, no Python</code></pre></figure>
 <p>Two more you will want early — the first analyses without running, the second
 starts a REPL:</p>
 <figure class="code sh"><pre><code>./वाक्.exe --परीक्षा प्रोग्राम.vak    # report problems, run nothing
-python -m vak                        # संवादः — the REPL</code></pre></figure>
+python -m vaak                        # संवादः — the REPL</code></pre></figure>
 <p>The full set of options, read from the argument parser itself. Four carry a
 Sanskrit alias:</p>
 <div class="scroll"><table class="kw">
@@ -858,10 +858,10 @@ against its Python counterpart at the finest granularity that stage allows —
 the lexer on every token's kind, lexeme, value and line; the parser on the whole
 syntax tree node for node; the analyser on every diagnostic's code, line and
 wording; the compiler on every instruction, constant and line number.</p>
-<figure class="code sh"><pre><code>python -m vak --self प्रोग्राम.vak      # compiled by Vāk, run on the Python VM
-python -m vak --self-vm प्रोग्राम.vak   # lexed, parsed, compiled AND run by Vāk
-python -m vak --native प्रोग्राम.vak    # a standalone executable (needs gcc)
-python -m vak --bytecode प्रोग्राम.vak  # disassemble</code></pre></figure>
+<figure class="code sh"><pre><code>python -m vaak --self प्रोग्राम.vak      # compiled by Vāk, run on the Python VM
+python -m vaak --self-vm प्रोग्राम.vak   # lexed, parsed, compiled AND run by Vāk
+python -m vaak --native प्रोग्राम.vak    # a standalone executable (needs gcc)
+python -m vaak --bytecode प्रोग्राम.vak  # disassemble</code></pre></figure>
 <p>Python is used to build <code>वाक्.exe</code> once, exactly as a C compiler is
 used once to build a self-hosting C compiler. After that the language stands on
 its own.</p>

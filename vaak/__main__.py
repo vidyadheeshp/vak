@@ -1,4 +1,4 @@
-"""python -m vak ..."""
+"""python -m vaak ..."""
 
 from .cli import main
 

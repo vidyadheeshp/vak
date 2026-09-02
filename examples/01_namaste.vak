@@ -1,5 +1,5 @@
 # ०१ — नमस्ते जगत् / Hello, world
-# चालनम् / run:  python -m vak examples/01_namaste.vak
+# चालनम् / run:  python -m vaak examples/01_namaste.vak
 
 मुद्रय("नमस्ते जगत्")।
 

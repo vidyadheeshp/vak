@@ -16,7 +16,7 @@ ordinary Python and C.
 git clone https://github.com/vidyadheeshp/vak.git
 cd vak
 python -m pytest tests/ -q          # 208 tests, ~7 minutes
-python -m vak examples/01_namaste.vak
+python -m vaak examples/01_namaste.vak
 ```
 
 Requirements: **Python 3.10+** and nothing else. There are no third-party
@@ -55,7 +55,7 @@ there are plenty, and they are labelled.
 Look for issues labelled **`good first issue`**. Categories that reliably do not
 touch all five engines:
 
-- **Standard library functions.** `vak/पुस्तकालयः/` holds `गणितम्` (maths) and
+- **Standard library functions.** `vaak/पुस्तकालयः/` holds `गणितम्` (maths) and
   `शब्दाः` (strings), written in Vāk. The library is small — 22 entries — and
   growing it is genuinely useful. Add the function, add a gloss in
   `docs/reference.py`, add a test.
@@ -124,9 +124,9 @@ happened, your OS and Python version, and — if you can — whether the engines
 disagree:
 
 ```bash
-python -m vak प्रोग्राम.vak            # tree-walking interpreter
-python -m vak --vm प्रोग्राम.vak       # bytecode VM
-python -m vak --self प्रोग्राम.vak     # the Vāk-written toolchain
+python -m vaak प्रोग्राम.vak            # tree-walking interpreter
+python -m vaak --vm प्रोग्राम.vak       # bytecode VM
+python -m vaak --self प्रोग्राम.vak     # the Vāk-written toolchain
 ```
 
 An engine disagreement is the most valuable bug report this project can

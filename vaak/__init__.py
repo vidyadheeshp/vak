@@ -1,7 +1,7 @@
 """
 वाक् (Vāk) — a Sanskrit-native programming language.
 
-    from vak import run_source
+    from vaak import run_source
     run_source('लिख("नमस्ते जगत्")')
 
 Pipeline:  source text → Lexer → Tokens → Parser → AST → Interpreter → effects

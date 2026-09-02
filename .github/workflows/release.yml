@@ -40,7 +40,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p out
-          python -m vak --native "स्वयंसिद्धिः/वाक्.vak" 2>&1 | tee build.log
+          python -m vaak --native "स्वयंसिद्धिः/वाक्.vak" 2>&1 | tee build.log
           built=$(sed -n 's/.*built: //p' build.log | tail -1)
           built="${built%$'\r'}"
           if [ -z "$built" ] || [ ! -f "$built" ]; then

@@ -22,24 +22,24 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from vak import check_source, run_source        # noqa: E402
-from vak.analyzer import SemanticError          # noqa: E402
-from vak.compiler import compile_program        # noqa: E402
-from vak.kosha import chunk_to_kosha, to_kosha  # noqa: E402
-from vak.native import build_executable, find_gcc  # noqa: E402
-from vak.selfhost import (                      # noqa: E402
+from vaak import check_source, run_source        # noqa: E402
+from vaak.analyzer import SemanticError          # noqa: E402
+from vaak.compiler import compile_program        # noqa: E402
+from vaak.kosha import chunk_to_kosha, to_kosha  # noqa: E402
+from vaak.native import build_executable, find_gcc  # noqa: E402
+from vaak.selfhost import (                      # noqa: E402
     compile_kosha_with_vak,
     compile_with_vak,
     parse_with_vak,
     run_with_vak,
 )
-from vak.vm import VM                           # noqa: E402
-from vak.errors import LexError, ParseError, RuntimeVakError  # noqa: E402
-from vak.interpreter import Interpreter, VakThrow  # noqa: E402
-from vak.lexer import tokenize                  # noqa: E402
-from vak.opcodes import Op                      # noqa: E402
-from vak.parser import parse                    # noqa: E402
-from vak.tokens import KEYWORDS, T              # noqa: E402
+from vaak.vm import VM                           # noqa: E402
+from vaak.errors import LexError, ParseError, RuntimeVakError  # noqa: E402
+from vaak.interpreter import Interpreter, VakThrow  # noqa: E402
+from vaak.lexer import tokenize                  # noqa: E402
+from vaak.opcodes import Op                      # noqa: E402
+from vaak.parser import parse                    # noqa: E402
+from vaak.tokens import KEYWORDS, T              # noqa: E402
 
 
 def output(source: str) -> str:
@@ -1125,7 +1125,7 @@ class TestExamples(unittest.TestCase):
                 self.assertTrue(buf.getvalue().strip(), f"{path.name} किमपि न अलिखत्")
 
     def test_every_example_passes_the_analyser(self):
-        library = sorted((ROOT / "vak" / "पुस्तकालयः").glob("*.vak"))
+        library = sorted((ROOT / "vaak" / "पुस्तकालयः").glob("*.vak"))
         for path in sorted((ROOT / "examples").glob("*.vak")) + library:
             with self.subTest(example=path.name):
                 report = check_source(path.read_text(encoding="utf-8"), path.name)
@@ -1150,7 +1150,7 @@ class TestVakAnalyzer(unittest.TestCase):
 
     def run_vak(self, *args: str) -> str:
         result = subprocess.run(
-            [sys.executable, "-m", "vak", *args], capture_output=True, cwd=str(ROOT),
+            [sys.executable, "-m", "vaak", *args], capture_output=True, cwd=str(ROOT),
             env={**os.environ, "PYTHONIOENCODING": "utf-8"},
         )
         text = result.stdout.decode("utf-8", "replace")
@@ -1255,7 +1255,7 @@ class TestSlotResolution(unittest.TestCase):
                 self.assertEqual(misses, 0, "a resolved slot landed on the wrong binding")
 
     def test_every_example_resolves_cleanly(self):
-        library = sorted((ROOT / "vak" / "पुस्तकालयः").glob("*.vak"))
+        library = sorted((ROOT / "vaak" / "पुस्तकालयः").glob("*.vak"))
         toolchain = sorted((ROOT / "स्वयंसिद्धिः").glob("*.vak"))
         for path in sorted((ROOT / "examples").glob("*.vak")) + library + toolchain:
             with self.subTest(program=path.name):
@@ -1469,7 +1469,7 @@ class TestInput(unittest.TestCase):
         path = pathlib.Path(tempfile.mkdtemp()) / "प्रदानम्.vak"
         path.write_text(source, encoding="utf-8")
         result = subprocess.run(
-            [sys.executable, "-m", "vak", *extra, str(path)],
+            [sys.executable, "-m", "vaak", *extra, str(path)],
             input=given.encode("utf-8"), capture_output=True, cwd=str(ROOT),
             env={**os.environ, "PYTHONIOENCODING": "utf-8"},
         )
@@ -1654,11 +1654,11 @@ class TestByteOrderMark(unittest.TestCase):
         """cmd.exe reads a .cmd in the console's OEM codepage, so Devanagari in
         a REM line comes back as bytes it then tries to execute."""
         root = pathlib.Path(__file__).resolve().parent.parent
-        raw = (root / "vak.cmd").read_bytes()
+        raw = (root / "vaak.cmd").read_bytes()
         try:
             raw.decode("ascii")
         except UnicodeDecodeError as exc:
-            self.fail(f"vak.cmd must be ASCII for cmd.exe to parse it: {exc}")
+            self.fail(f"vaak.cmd must be ASCII for cmd.exe to parse it: {exc}")
 
 class TestTypingAid(unittest.TestCase):
     """The romanised typing aid must never turn a valid Vāk program into an
@@ -1671,8 +1671,8 @@ class TestTypingAid(unittest.TestCase):
         return any("ऀ" <= c <= "ॿ" for c in word)
 
     def test_every_romanised_keyword_maps_to_a_real_keyword(self):
-        from vak.tokens import KEYWORDS
-        from vak.translit import keyword_map
+        from vaak.tokens import KEYWORDS
+        from vaak.translit import keyword_map
 
         mapping = keyword_map()
         devanagari_keywords = {w for w in KEYWORDS if self._is_devanagari(w)}
@@ -1682,8 +1682,8 @@ class TestTypingAid(unittest.TestCase):
                               f"{roman!r} maps to {dev!r}, which is not a keyword")
 
     def test_the_map_covers_every_romanised_keyword(self):
-        from vak.tokens import KEYWORDS
-        from vak.translit import keyword_map
+        from vaak.tokens import KEYWORDS
+        from vaak.translit import keyword_map
 
         mapping = keyword_map()
         missing = [w for w in KEYWORDS
@@ -1694,8 +1694,8 @@ class TestTypingAid(unittest.TestCase):
         """If phonetic transliteration ever became correct for every keyword
         this test would fail, and the map could go. It is not: 22 of the 33
         ASCII keywords differ."""
-        from vak.tokens import KEYWORDS
-        from vak.translit import devanagari, keyword_map
+        from vaak.tokens import KEYWORDS
+        from vaak.translit import devanagari, keyword_map
 
         mapping = keyword_map()
         differ = [w for w in KEYWORDS
@@ -1706,9 +1706,9 @@ class TestTypingAid(unittest.TestCase):
     def test_converted_keywords_still_lex_as_keywords(self):
         """The point of the map, end to end: what it produces must tokenise as
         the same keyword the romanised form did."""
-        from vak.lexer import tokenize
-        from vak.tokens import KEYWORDS
-        from vak.translit import keyword_map
+        from vaak.lexer import tokenize
+        from vaak.tokens import KEYWORDS
+        from vaak.translit import keyword_map
 
         for roman, dev in keyword_map().items():
             if roman not in KEYWORDS:
@@ -1717,7 +1717,7 @@ class TestTypingAid(unittest.TestCase):
                 self.assertEqual(tokenize(dev)[0].type, tokenize(roman)[0].type)
 
     def test_a_typed_program_still_runs_after_conversion(self):
-        from vak.translit import keyword_map
+        from vaak.translit import keyword_map
 
         mapping = keyword_map()
         words = "mana x = 5. mudraya x.".replace(".", "।").split()
@@ -1730,7 +1730,7 @@ class TestTypingAid(unittest.TestCase):
     def test_ordinary_names_are_still_phonetic(self):
         """Names the author invents are not in the map and must fall through
         to the phonetic rules."""
-        from vak.translit import devanagari, keyword_map
+        from vaak.translit import devanagari, keyword_map
 
         mapping = keyword_map()
         self.assertNotIn("naama", mapping)
@@ -1777,8 +1777,8 @@ class TestDocumentation(unittest.TestCase):
         self.assertEqual(missing, [], f"undocumented flags: {missing}")
 
     def test_every_keyword_and_builtin_is_documented(self):
-        from vak.builtins import BUILTIN_DOCS
-        from vak.tokens import KEYWORDS
+        from vaak.builtins import BUILTIN_DOCS
+        from vaak.tokens import KEYWORDS
         man = self._manual()
         dev = [w for w in KEYWORDS
                if any("ऀ" <= c <= "ॿ" for c in w)]
@@ -1789,7 +1789,7 @@ class TestDocumentation(unittest.TestCase):
         """A sample that parses can still call a function nobody wrote — the
         manual shipped गणितम्.वर्गमूलम् for a while, which never existed."""
         import re
-        from vak.builtins import BUILTIN_DOCS
+        from vaak.builtins import BUILTIN_DOCS
         known = {b[0] for b in BUILTIN_DOCS} | self._reference().library_names()
         man = self._manual()
         called = set()

@@ -36,7 +36,7 @@ jobs:
 
       - name: Show the toolchain
         run: |
-          python -m vak --version
+          python -m vaak --version
           python -c "import shutil; print('cc:', shutil.which('gcc') or shutil.which('clang') or 'none')"
 
       - name: परीक्षाः · run the test suite
@@ -47,7 +47,7 @@ jobs:
         run: |
           for f in examples/[0-9][0-9]_*.vak; do
             echo "-- $f"
-            python -m vak "$f" > /dev/null
+            python -m vaak "$f" > /dev/null
           done
 
   # The documentation is generated from the language's own tables and refuses to
@@ -102,8 +102,8 @@ jobs:
           mkdir -p "$RUNNER_TEMP/elsewhere"
           cd "$RUNNER_TEMP/elsewhere"
           printf 'मुद्रय "नमस्ते जगत्"।\n' > pariksha.vak
-          vak --version
-          out=$(vak pariksha.vak)
+          vaak --version
+          out=$(vaak pariksha.vak)
           echo "got: $out"
           test "$out" = "नमस्ते जगत्"
       - uses: actions/upload-artifact@v4
@@ -128,4 +128,4 @@ jobs:
           python-version: "3.13"
       - run: python -m pip install -e .
       - name: Compile and run an example natively
-        run: python -m vak --run-native examples/01_namaste.vak
+        run: python -m vaak --run-native examples/01_namaste.vak

@@ -1,16 +1,16 @@
 """
 वाक्-आदेशपङ्क्तिः — the command line front end.
 
-    python -m vak examples/01_namaste.vak     # run a program
-    python -m vak                             # start the REPL (संवादः)
-    python -m vak --tokens प्रोग्राम.vak       # dump the token stream
-    python -m vak --ast प्रोग्राम.vak          # dump the syntax tree
-    python -m vak --bytecode प्रोग्राम.vak     # disassemble the bytecode
-    python -m vak --vm प्रोग्राम.vak           # run on the SanskritVM
-    python -m vak --self प्रोग्राम.vak         # compile it with Vāk itself, then run
-    python -m vak --self-vm प्रोग्राम.vak      # compile AND run it with Vāk itself
-    python -m vak --native प्रोग्राम.vak       # build a standalone .exe (needs gcc)
-    python -m vak --builtins                  # list the standard library
+    python -m vaak examples/01_namaste.vak     # run a program
+    python -m vaak                             # start the REPL (संवादः)
+    python -m vaak --tokens प्रोग्राम.vak       # dump the token stream
+    python -m vaak --ast प्रोग्राम.vak          # dump the syntax tree
+    python -m vaak --bytecode प्रोग्राम.vak     # disassemble the bytecode
+    python -m vaak --vm प्रोग्राम.vak           # run on the SanskritVM
+    python -m vaak --self प्रोग्राम.vak         # compile it with Vāk itself, then run
+    python -m vaak --self-vm प्रोग्राम.vak      # compile AND run it with Vāk itself
+    python -m vaak --native प्रोग्राम.vak       # build a standalone .exe (needs gcc)
+    python -m vaak --builtins                  # list the standard library
 """
 
 from __future__ import annotations
