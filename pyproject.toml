@@ -6,7 +6,9 @@ build-backend = "setuptools.build_meta"
 name = "vak-lang"
 version = "0.11.0"
 description = "वाक् — a Sanskrit-native programming language whose type system is Pāṇini's kāraka grammar, and whose own front end is written in itself"
-readme = { file = "README.md", content-type = "text/markdown" }
+# the README is supplied by setup.py, which rewrites its relative links to
+# absolute GitHub URLs so they resolve on the PyPI page too
+dynamic = ["readme"]
 requires-python = ">=3.10"
 license = "MIT"
 license-files = ["LICENSE"]
