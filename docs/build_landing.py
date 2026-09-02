@@ -24,6 +24,19 @@ from vaak.tokens import KARAKA_ORDER, KEYWORDS, TYPE_NAMES      # noqa: E402
 
 
 # The test count is read from the suite, so the page cannot drift from it.
+# What a visitor actually downloads. GitHub Pages serves the page gzipped, and
+# quoting the raw size would overstate it by four times — but quoting a gzipped
+# number without saying so is the reason this figure was wrong before.
+def _browser_kb() -> int:
+    import gzip
+    page = ROOT / "docs" / "playground.html"
+    if not page.exists():
+        return 144
+    return round(len(gzip.compress(page.read_bytes(), 9)) / 1024)
+
+
+PLAYGROUND_KB = _browser_kb()
+
 TESTS = sum(
     1
     for line in (ROOT / "tests" / "test_vak.py").read_text(encoding="utf-8").splitlines()
@@ -221,6 +234,24 @@ p {{ max-width:38em; }}
 .hero .danda {{ color:var(--gold); }}
 .hero .stand {{ font-size:1.13rem; color:var(--ink-soft); max-width:36em; }}
 .doors {{ display:flex; gap:.7rem; flex-wrap:wrap; margin:2rem 0 0; }}
+/* the three installation routes are alternatives, not steps — numbered so a
+   reader knows to pick one rather than do all three */
+.ways {{ display:grid; gap:1px; background:var(--rule); border:1px solid var(--rule);
+  grid-template-columns:repeat(auto-fit,minmax(15rem,1fr)); margin:1.6rem 0;
+  border-radius:3px; overflow:hidden; }}
+.way {{ background:var(--paper); padding:1.1rem 1.2rem 1.3rem; }}
+.way .n {{ margin:0 0 .3rem; font-family:var(--serif); font-size:.95rem;
+  width:1.6rem; height:1.6rem; border-radius:50%; background:var(--gold);
+  color:var(--paper); display:flex; align-items:center; justify-content:center; }}
+.way h3 {{ margin:0 0 .5rem; font-size:1.02rem; font-weight:600; }}
+.way p {{ margin:.45rem 0; font-size:.9rem; }}
+/* a long install URL should wrap inside the card rather than hide behind a
+   scrollbar — a command you cannot see is a command you cannot copy */
+.way pre {{ margin:.7rem 0 .3rem; background:var(--paper-2); padding:.6rem .7rem;
+  border-radius:3px; font-size:.78rem; line-height:1.5;
+  white-space:pre-wrap; overflow-wrap:anywhere; }}
+.way pre code {{ background:none; padding:0; }}
+.way .aside {{ font-family:var(--sans); font-size:.74rem; color:var(--ink-faint); }}
 .doors a {{
   font-family:var(--sans); font-size:.86rem; text-decoration:none;
   border:1px solid var(--rule); border-radius:2px; padding:.55rem 1.05rem;
@@ -325,7 +356,7 @@ footer a:hover {{ color:var(--gold); }}
   <nav>
     <a href="#कारकाणि">कारकाणि · kāraka</a>
     <a href="#स्वयंसिद्धिः">स्वयंसिद्धिः · the bootstrap</a>
-    <a href="manual.html#sthapana">स्थापना · install</a>
+    <a href="#स्थापना">स्थापना · install</a>
     <a href="story.html">कथा · how it was built</a>
     <a href="manual.html">पुस्तिका · manual</a>
     <a href="playground.html">क्रीडाक्षेत्रम् · try it</a>
@@ -344,7 +375,7 @@ footer a:hover {{ color:var(--gold); }}
   <div class="doors">
     <a class="first" href="playground.html">क्रीडाक्षेत्रम् · run it in your browser →</a>
     <a href="manual.html">पुस्तिका · read the manual</a>
-    <a href="manual.html#sthapana">स्थापना · install it</a>
+    <a href="#स्थापना">स्थापना · install it</a>
     <a href="story.html">कथा · how it was built</a>
   </div>
 </header>
@@ -413,7 +444,7 @@ footer a:hover {{ color:var(--gold); }}
     <div><b>{len(BUILTIN_DOCS)}</b><span>built-in functions</span></div>
     <div><b>{TESTS}</b><span>tests</span></div>
     <div><b>6</b><span>kāraka roles</span></div>
-    <div><b>139 KB</b><span>the whole toolchain, in your browser</span></div>
+    <div><b>{PLAYGROUND_KB} KB</b><span>gzipped — the whole toolchain, in your browser</span></div>
   </div>
   <div class="note">
     <p><b>The page you are reading links to a real compiler.</b> The
@@ -421,6 +452,51 @@ footer a:hover {{ color:var(--gold); }}
     WebAssembly — it lexes, parses, analyses, compiles and runs Vāk inside the
     browser. There is no server. Nothing you type is sent anywhere.</p>
   </div>
+</section>
+
+<section id="स्थापना">
+  <div class="head">
+    <h2>स्थापना</h2><span class="en">getting it</span>
+  </div>
+  <p class="lede">Three ways in, and none of them needs a package manager you do
+  not already have.</p>
+  <div class="ways">
+    <div class="way">
+      <p class="n">१</p>
+      <h3>In your browser</h3>
+      <p>Nothing to install at all. The
+      <a href="playground.html">playground</a> is this toolchain compiled to
+      WebAssembly — {PLAYGROUND_KB} KB gzipped, no server, nothing you type
+      leaves the page.</p>
+    </div>
+    <div class="way">
+      <p class="n">२</p>
+      <h3>With pip</h3>
+      <p>Python 3.10 or newer, and <b>no third-party packages</b>.</p>
+      <pre><code>pip install git+https://github.com/vidyadheeshp/vak.git
+vaak प्रोग्राम.vak</code></pre>
+      <p class="aside">Not on PyPI yet, so install from the repository.</p>
+    </div>
+    <div class="way">
+      <p class="n">३</p>
+      <h3>A standalone binary</h3>
+      <p>The whole toolchain in one file — no Python, no dependencies. Builds
+      for Linux, macOS and Windows are attached to
+      <a href="https://github.com/vidyadheeshp/vak/releases/latest">the latest
+      release</a>.</p>
+      <pre><code>vaak प्रोग्राम.vak</code></pre>
+    </div>
+  </div>
+  <div class="note">
+    <p><b>You do not need a Devanagari keyboard.</b> Every keyword has an ASCII
+    spelling and ASCII numerals work everywhere, so a complete Vāk program fits
+    on an ordinary keyboard. The playground also turns romanised typing into
+    Devanagari as you write — in code, while leaving the inside of your strings
+    and comments alone.</p>
+  </div>
+  <p>The <a href="manual.html#sthapana">manual</a> covers the rest: verifying
+  the install, UTF-8 terminals and fonts on each platform, building the binary
+  yourself, and the VS Code extension.</p>
 </section>
 
 <footer>
