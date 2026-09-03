@@ -248,6 +248,12 @@ footer {
 }
 footer .spacer { flex:1; }
 footer b { color:var(--ink-soft); font-weight:500; }
+/* the legal line wraps onto its own row under the status line, rather than
+   competing with it for space */
+footer .legal { flex-basis:100%; font-size:.69rem; opacity:.8;
+  padding-top:.5rem; border-top:1px solid var(--rule); }
+footer .legal a { color:inherit; text-decoration:underline;
+  text-underline-offset:.15em; }
 
 @media (max-width:52rem) {
   main { grid-template-columns:1fr; }
@@ -301,9 +307,8 @@ footer b { color:var(--ink-soft); font-weight:500; }
   parses, analyses, compiles and runs Vāk itself.</span>
   <span class="spacer"></span>
   <span><b>Ctrl/⌘ + Enter</b> runs</span>
+  <span class="legal">__COPYRIGHT__ · __COUNTER_NOTICE__</span>
 </footer>
-__COPYRIGHT__
-__COUNTER_NOTICE__
 __COUNTER__
 
 <script>__ENGINE__</script>
@@ -583,11 +588,9 @@ page = (PAGE
         .replace("__LIBRARY__", json.dumps(library, ensure_ascii=False))
         .replace("__TRANSLIT__", TR_KEYWORDS + "\n  " + TRANSLIT)
         .replace("__VERSION__", __version__)
-        .replace("__COPYRIGHT__",
-                 f'<p class="counted">{sitemeta.copyright_html()}</p>')
-        .replace("__COUNTER_NOTICE__",
-                 f'<p class="counted">{analytics.notice()}</p>'
-                 if analytics.SITE else "")
+        .replace("__COPYRIGHT__", sitemeta.copyright_inline())
+        .replace(" · __COUNTER_NOTICE__",
+                 f" · {analytics.notice_inline()}" if analytics.SITE else "")
         .replace("__COUNTER__", analytics.script()))
 
 # ------------------------------------------------------------------ परीक्षा

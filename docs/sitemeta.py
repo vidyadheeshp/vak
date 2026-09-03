@@ -37,6 +37,14 @@ def copyright_html(licence_href: str | None = None) -> str:
             f'it, ship it.</p>')
 
 
+def copyright_inline(licence_href: str | None = None) -> str:
+    """The notice without a block wrapper, for a footer that is a flex row of
+    spans rather than a stack of paragraphs."""
+    href = licence_href or f"{REPO}/blob/main/LICENSE"
+    return (f'© {YEARS} {HOLDER} · released under the '
+            f'<a href="{href}">MIT Licence</a>')
+
+
 def copyright_line() -> str:
     """The same thing as plain text, for a place that cannot take markup."""
     return f"© {YEARS} {HOLDER} · MIT Licence"

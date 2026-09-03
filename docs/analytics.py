@@ -60,6 +60,14 @@ def script() -> str:
 </script>"""
 
 
+def notice_inline() -> str:
+    """The same disclosure without a block wrapper."""
+    if not SITE:
+        return ""
+    return (f'visits counted with <a href="https://{SITE}.goatcounter.com">'
+            f'GoatCounter</a>, which sets no cookies and honours Do Not Track')
+
+
 def notice(link: bool = True) -> str:
     """One line for a footer, saying that counting happens and on what terms."""
     if not SITE:

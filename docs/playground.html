@@ -110,6 +110,12 @@ footer {
 }
 footer .spacer { flex:1; }
 footer b { color:var(--ink-soft); font-weight:500; }
+/* the legal line wraps onto its own row under the status line, rather than
+   competing with it for space */
+footer .legal { flex-basis:100%; font-size:.69rem; opacity:.8;
+  padding-top:.5rem; border-top:1px solid var(--rule); }
+footer .legal a { color:inherit; text-decoration:underline;
+  text-underline-offset:.15em; }
 
 @media (max-width:52rem) {
   main { grid-template-columns:1fr; }
@@ -163,9 +169,8 @@ footer b { color:var(--ink-soft); font-weight:500; }
   parses, analyses, compiles and runs Vāk itself.</span>
   <span class="spacer"></span>
   <span><b>Ctrl/⌘ + Enter</b> runs</span>
+  <span class="legal">© 2026 Vidyadheesh Pandurangi · released under the <a href="https://github.com/vidyadheeshp/vak/blob/main/LICENSE">MIT Licence</a> · visits counted with <a href="https://vak.goatcounter.com">GoatCounter</a>, which sets no cookies and honours Do Not Track</span>
 </footer>
-<p class="counted"><p class="copyright">© 2026 Vidyadheesh Pandurangi. वाक् is free software, released under the <a href="https://github.com/vidyadheeshp/vak/blob/main/LICENSE">MIT Licence</a> — use it, change it, teach with it, ship it.</p></p>
-<p class="counted"><p>Visits are counted with <a href="https://vak.goatcounter.com">GoatCounter</a> — no cookies, no personal data, and Do Not Track is honoured.</p></p>
 
 <!-- गणना — visitor count. No cookies, no personal data, no cross-site
      tracking, and nothing here can see what you type into the playground.
