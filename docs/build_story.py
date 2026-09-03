@@ -25,6 +25,9 @@ from vaak.builtins import BUILTIN_DOCS                           # noqa: E402
 from vaak.opcodes import Op                                      # noqa: E402
 from vaak.tokens import KARAKA_ORDER, KEYWORDS                   # noqa: E402
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import analytics                                                # noqa: E402
+
 
 def lines(path: pathlib.Path) -> int:
     return len(path.read_text(encoding="utf-8").splitlines())
@@ -150,7 +153,8 @@ language describes itself completely.</p>"""),
 
     ("IV", "0.10.0", "साधनानि", "Making it usable by someone else", 100, f"""
 <p>A language nobody can install is a paper. So: a browser playground — the
-whole toolchain compiled to WebAssembly, no server at all. An editor extension
+whole toolchain compiled to WebAssembly — the language runs in the page, not
+on a server. An editor extension
 whose grammar is <em>generated</em> from the language's own keyword tables, so
 highlighting cannot drift. A typing aid, because Devanagari on a plain keyboard
 is otherwise a wall. POSIX branches, so Linux and macOS are reachable.</p>
@@ -550,7 +554,9 @@ footer p {{ margin:.3rem 0; max-width:none; }}
   <p>Line counts, keyword and opcode totals and the test count on this page are
   read from the repository when the page is built. The three timings were
   measured by hand and are quoted, not regenerated.</p>
+  {analytics.notice()}
 </footer>
+{analytics.script()}
 
 </div>
 

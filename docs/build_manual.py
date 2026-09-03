@@ -192,7 +192,7 @@ vaak.cmd examples/01_namaste.vak       # cmd.exe''')}
 <h3 class="lib"><span class="way">४</span> In a browser
   <span>nothing installed at all</span></h3>
 <p>The <a href="playground.html">playground</a> is this same toolchain compiled
-to WebAssembly. It runs entirely in the page — there is no server, and nothing
+to WebAssembly. It runs entirely in the page — your program is not uploaded, and nothing
 you type leaves your machine. Use it to try the language before deciding
 whether to install anything.</p>
 

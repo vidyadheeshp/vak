@@ -336,7 +336,8 @@ language describes itself completely.</p>
     <h3><span class="ver cut" title="a released version">0.10.0</span><span class="dev">साधनानि</span><span class="eng">Making it usable by someone else</span></h3>
     
 <p>A language nobody can install is a paper. So: a browser playground — the
-whole toolchain compiled to WebAssembly, no server at all. An editor extension
+whole toolchain compiled to WebAssembly — the language runs in the page, not
+on a server. An editor extension
 whose grammar is <em>generated</em> from the language's own keyword tables, so
 highlighting cannot drift. A typing aid, because Devanagari on a plain keyboard
 is otherwise a wall. POSIX branches, so Linux and macOS are reachable.</p>
@@ -481,7 +482,9 @@ a string was quadratic, because each append rebuilt the whole of it.</p>
   <p>Line counts, keyword and opcode totals and the test count on this page are
   read from the repository when the page is built. The three timings were
   measured by hand and are quoted, not regenerated.</p>
+  
 </footer>
+
 
 </div>
 

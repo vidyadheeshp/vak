@@ -50,6 +50,8 @@ KEYWORD_SET = {w for w in KEYWORDS if not w.isascii()}
 DEV_KEYWORDS = {w for w in KEYWORDS if any("ऀ" <= c <= "ॿ" for c in w)}
 
 import re                                                      # noqa: E402
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import analytics                                               # noqa: E402
 
 TOKEN = re.compile(
     r"(#[^\n]*)"
@@ -450,7 +452,7 @@ footer a:hover {{ color:var(--gold); }}
     <p><b>The page you are reading links to a real compiler.</b> The
     <a href="playground.html">playground</a> is this entire toolchain compiled to
     WebAssembly — it lexes, parses, analyses, compiles and runs Vāk inside the
-    browser. There is no server. Nothing you type is sent anywhere.</p>
+    browser. <b>Your program never leaves the page</b> — it is not uploaded, not compiled elsewhere, and not seen by anything but your own browser.</p>
   </div>
 </section>
 
@@ -466,8 +468,8 @@ footer a:hover {{ color:var(--gold); }}
       <h3>In your browser</h3>
       <p>Nothing to install at all. The
       <a href="playground.html">playground</a> is this toolchain compiled to
-      WebAssembly — {PLAYGROUND_KB} KB gzipped, no server, nothing you type
-      leaves the page.</p>
+      WebAssembly — {PLAYGROUND_KB} KB gzipped. Your program never leaves
+      the page.</p>
     </div>
     <div class="way">
       <p class="n">२</p>
@@ -507,7 +509,9 @@ vaak प्रोग्राम.vak</code></pre>
      <a href="story.html">the story</a> ·
      <a href="https://github.com/vidyadheeshp/vak">source</a></p>
   <p>Built by Vidyadheesh Pandurangi.</p>
+  {analytics.notice()}
 </footer>
+{analytics.script()}
 
 </div>
 

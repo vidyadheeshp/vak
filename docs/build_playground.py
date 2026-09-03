@@ -19,6 +19,8 @@ import sys                                                    # noqa: E402
 sys.path.insert(0, str(ROOT))
 import json as _json                                          # noqa: E402
 from vaak.translit import tables_for_js                        # noqa: E402
+sys.path.insert(0, str(ROOT / "docs"))
+import analytics                                              # noqa: E402
 
 _t = tables_for_js()
 _combined = (
@@ -299,6 +301,8 @@ footer b { color:var(--ink-soft); font-weight:500; }
   <span class="spacer"></span>
   <span><b>Ctrl/⌘ + Enter</b> runs</span>
 </footer>
+__COUNTER_NOTICE__
+__COUNTER__
 
 <script>__ENGINE__</script>
 <script>
@@ -576,7 +580,11 @@ page = (PAGE
         .replace("__SAMPLES__", json.dumps(SAMPLES, ensure_ascii=False))
         .replace("__LIBRARY__", json.dumps(library, ensure_ascii=False))
         .replace("__TRANSLIT__", TR_KEYWORDS + "\n  " + TRANSLIT)
-        .replace("__VERSION__", __version__))
+        .replace("__VERSION__", __version__)
+        .replace("__COUNTER_NOTICE__",
+                 f'<p class="counted">{analytics.notice()}</p>'
+                 if analytics.SITE else "")
+        .replace("__COUNTER__", analytics.script()))
 
 # ------------------------------------------------------------------ परीक्षा
 # This page shipped with a raw newline inside a JS string literal, which is a
