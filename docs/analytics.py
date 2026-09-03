@@ -28,8 +28,15 @@ from __future__ import annotations
 import os
 
 # The GoatCounter site code — the `vak` in https://vak.goatcounter.com.
-# Empty means no counter is emitted at all.
-SITE = os.environ.get("VAK_GOATCOUNTER", "").strip()
+#
+# Kept here as a literal rather than only in an environment variable. An
+# env-var-only setting means any rebuild by anyone who has not exported it
+# silently strips the counter back out of the pages, which is exactly what
+# happened the first time. The environment variable still overrides, for a
+# build that deliberately wants no counter:
+#
+#     VAK_GOATCOUNTER= python docs/build_landing.py     # emits nothing
+SITE = os.environ.get("VAK_GOATCOUNTER", "vak").strip()
 
 
 def script() -> str:

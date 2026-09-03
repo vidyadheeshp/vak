@@ -1030,6 +1030,7 @@ brought in with <code>आनय</code>.</p>
     <p class="verse">वाक् इति भाषा — यत्र संस्कृतम् एव आदेशः<span class="danda">॥</span></p>
     <p>0.11.1 · 39 built-ins · five engines, one output</p>
     <p class="copyright">© 2026 Vidyadheesh Pandurangi. वाक् is free software, released under the <a href="https://github.com/vidyadheeshp/vak/blob/main/LICENSE">MIT Licence</a> — use it, change it, teach with it, ship it.</p>
+    <p>Visits are counted with <a href="https://vak.goatcounter.com">GoatCounter</a> — no cookies, no personal data, and Do Not Track is honoured.</p>
   </footer>
 </main>
 </div>
@@ -1078,5 +1079,20 @@ brought in with <code>आनय</code>.</p>
     });
   }, { rootMargin: "-10% 0px -70% 0px" });
   [].forEach.call(document.querySelectorAll("section"), function (s) { obs.observe(s); });
+})();
+</script>
+
+<!-- गणना — visitor count. No cookies, no personal data, no cross-site
+     tracking, and nothing here can see what you type into the playground.
+     Do Not Track is checked before the script is requested. -->
+<script>
+(function () {
+  var dnt = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+  if (dnt === "1" || dnt === "yes") return;      // asked not to be counted
+  var s = document.createElement("script");
+  s.async = true;
+  s.src = "https://gc.zgo.at/count.js";
+  s.setAttribute("data-goatcounter", "https://vak.goatcounter.com/count");
+  document.head.appendChild(s);
 })();
 </script>

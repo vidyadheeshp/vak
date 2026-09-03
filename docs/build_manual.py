@@ -17,6 +17,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 import reference                                                # noqa: E402
+import analytics                                                # noqa: E402
 import sitemeta                                                 # noqa: E402
 
 from vaak import __version__                                    # noqa: E402
@@ -1044,6 +1045,7 @@ footer .verse {{ font-family: var(--serif); font-size: .95rem; color: var(--ink-
     <p class="verse">वाक् इति भाषा — यत्र संस्कृतम् एव आदेशः<span class="danda">॥</span></p>
     <p>{__version__} · {len(BUILTIN_DOCS)} built-ins · five engines, one output</p>
     {sitemeta.copyright_html()}
+    {analytics.notice()}
   </footer>
 </main>
 </div>
@@ -1094,6 +1096,7 @@ footer .verse {{ font-family: var(--serif); font-size: .95rem; color: var(--ink-
   [].forEach.call(document.querySelectorAll("section"), function (s) {{ obs.observe(s); }});
 }})();
 </script>
+{analytics.script()}
 """
 
 # एकम् अपि उदाहरणम् न भग्नम् — every sample on the page must really parse.
