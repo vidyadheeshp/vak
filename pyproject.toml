@@ -22,7 +22,9 @@ classifiers = [
     "Intended Audience :: Developers",
     "Intended Audience :: Education",
     "Intended Audience :: Science/Research",
-    "Natural Language :: Sanskrit",
+    # PyPI has no Sanskrit classifier — it lists Hindi, Marathi, Bengali,
+    # Tamil and others, but not Sanskrit. Claiming one of those instead
+    # would be wrong, and wrong in the one way this project cannot afford.
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",

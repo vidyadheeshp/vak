@@ -1736,6 +1736,45 @@ class TestTypingAid(unittest.TestCase):
         self.assertNotIn("naama", mapping)
         self.assertEqual(devanagari("naama"), "नाम")
 
+class TestPackaging(unittest.TestCase):
+    """`twine check` validates the description and nothing else, so an invalid
+    trove classifier sails past it and PyPI answers 400 Bad Request with no
+    indication of which field is wrong. `Natural Language :: Sanskrit` — which
+    PyPI does not define — cost one failed upload before this test existed."""
+
+    OFFICIAL = "https://pypi.org/pypi?:action=list_classifiers"
+
+    def _classifiers(self) -> list[str]:
+        import tomllib
+        root = pathlib.Path(__file__).resolve().parent.parent
+        with (root / "pyproject.toml").open("rb") as fh:
+            return tomllib.load(fh)["project"]["classifiers"]
+
+    def test_every_classifier_is_one_pypi_defines(self):
+        import urllib.error
+        import urllib.request
+        try:
+            with urllib.request.urlopen(self.OFFICIAL, timeout=20) as response:
+                official = set(response.read().decode("utf-8").splitlines())
+        except (urllib.error.URLError, TimeoutError) as exc:  # offline
+            self.skipTest(f"cannot reach PyPI's classifier list: {exc}")
+        unknown = [c for c in self._classifiers() if c not in official]
+        self.assertEqual(unknown, [],
+                         f"PyPI does not define these classifiers, and will "
+                         f"reject the upload with 400: {unknown}")
+
+    def test_no_licence_classifier_alongside_the_licence_expression(self):
+        """PEP 639 metadata carries `License-Expression`. PyPI rejects an
+        upload that also carries a `License ::` classifier."""
+        import tomllib
+        root = pathlib.Path(__file__).resolve().parent.parent
+        with (root / "pyproject.toml").open("rb") as fh:
+            project = tomllib.load(fh)["project"]
+        if "license" in project:
+            clashing = [c for c in project["classifiers"] if c.startswith("License ::")]
+            self.assertEqual(clashing, [],
+                             "remove the License classifier, or the license field")
+
 class TestDocumentation(unittest.TestCase):
     """The manual is generated, but generation only helps if the generator is
     made to notice what it has not covered.  These hold it to the language."""
