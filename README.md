@@ -1,9 +1,33 @@
 # वाक् · Vāk
 
-**A Sanskrit-native programming language.** Keywords, types, built-in functions, error
-names and numerals are Sanskrit — not an English language with a Devanagari skin. Commands
-are imperative verbs (`मुद्रय` "print!", `उत्सृज` "cast forth!"), the catch clause is in the
-locative case (`दोषे` "in case of a fault"), and statements end with a danda `।`.
+**A programming language whose type system is Pāṇini's grammar, and whose own compiler is
+written in itself.**
+
+Sanskrit does not decide meaning by word order. It marks the **role** each participant
+plays in an action — the agent, the patient, the instrument, the source — and lets the
+words fall where they like. Vāk makes those roles part of a function's type:
+
+```sanskrit
+कार्यम् छानय(अपादानम् सूची संग्रहः, करणम् कार्यम् परीक्षा) : सूची { ... }
+#            ↑ the source drawn from   ↑ the instrument drawn by
+```
+
+The analyser enforces Pāṇini's rule that an action takes at most one agent and one
+patient. And because each argument carries its own role, **the order stops mattering** —
+the same liberty a Sanskrit sentence gets from its case endings, moved into a type system.
+[More on kāraka roles →](#कारकाणि--kāraka-roles)
+
+Vāk's own front end — lexer, parser, semantic analyser, compiler and virtual machine — is
+**written in Vāk**, 4,178 lines of it. Python builds that toolchain once, the way a C
+compiler is used once to build a self-hosting C compiler, and after that Python is not in
+the loop. [More on the bootstrap →](#स्वयंसिद्धिः--the-bootstrap)
+
+Underneath, this is a real language rather than a demonstration: optional declared types,
+lexical scope, first-class functions with closures, lists and dictionaries, exceptions,
+modules and file I/O. Keywords, types, built-in functions, error names and numerals are
+Sanskrit — not English with a Devanagari skin. Commands are imperative verbs (`मुद्रय`
+"print!", `उत्सृज` "cast forth!"), the catch clause is in the locative case (`दोषे` "in
+case of a fault"), and statements end with a danda `।`.
 
 ```sanskrit
 कार्यम् अभिवादनम्(शब्दः नाम) : शब्दः {
@@ -22,22 +46,15 @@ locative case (`दोषे` "in case of a fault"), and statements end with a d
 नमस्ते आर्यभटः!
 ```
 
-Vāk has **optional declared types**, lexical scope, first-class functions with closures,
-lists and dictionaries, exception handling, modules and file I/O — and a **semantic
-analyser that checks kāraka roles**, the case relations of Sanskrit grammar, as part of the
-type system.
+It runs **five ways** — a tree-walking interpreter, a bytecode VM in Python, that same VM
+written in Vāk, a runtime in C, and a **native back end that compiles a program to a
+standalone executable** needing no Python and no toolchain to run. All five are held to
+byte-identical output by a differential test suite, which is the main reason any of this
+can be trusted.
 
-It runs **four ways** — a tree-walking interpreter, a bytecode VM in Python, the same VM
-written in Vāk, and a **native back end that compiles a program to a standalone `.exe`**
-with no Python and no toolchain needed to run it. All four are held to byte-identical
-output by a differential test suite.
-
-And **Vāk runs Vāk**: its lexer, parser, compiler *and* virtual machine are
-[written in Vāk itself](#स्वयंसिद्धिः--the-bootstrap). They process their own source, the
-bytecode they emit is identical — instruction for instruction — to the Python compiler's,
-and every example produces byte-identical output when lexed, parsed, compiled and executed
-entirely by Vāk code. The Python implementation is pure standard library, kept small and
-readable on purpose, so it can be read as a course in language design.
+And none of it requires a Devanagari keyboard: every keyword has an ASCII spelling, ASCII
+numerals work everywhere, and the [browser playground](https://vidyadheeshp.github.io/vak/playground.html)
+turns romanised typing into Devanagari as you write.
 
 ---
 
