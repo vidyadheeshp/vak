@@ -1744,11 +1744,31 @@ class TestPackaging(unittest.TestCase):
 
     OFFICIAL = "https://pypi.org/pypi?:action=list_classifiers"
 
-    def _classifiers(self) -> list[str]:
-        import tomllib
+    @staticmethod
+    def _project() -> dict:
+        """pyproject's [project] table. tomllib is 3.11+, and Vāk supports
+        3.10, so the classifiers are read without it rather than making the
+        test suite need a newer Python than the package does."""
+        import re
+
         root = pathlib.Path(__file__).resolve().parent.parent
-        with (root / "pyproject.toml").open("rb") as fh:
-            return tomllib.load(fh)["project"]["classifiers"]
+        text = (root / "pyproject.toml").read_text(encoding="utf-8")
+        try:
+            import tomllib
+            return tomllib.loads(text)["project"]
+        except ModuleNotFoundError:
+            pass
+        # a small reader for the two fields these tests look at
+        block = re.search(r"^classifiers = \[(.*?)^\]", text, re.S | re.M)
+        classifiers = re.findall(r'"([^"]+)"', block.group(1)) if block else []
+        licence = re.search(r'^license = "([^"]+)"', text, re.M)
+        project = {"classifiers": classifiers}
+        if licence:
+            project["license"] = licence.group(1)
+        return project
+
+    def _classifiers(self) -> list[str]:
+        return self._project()["classifiers"]
 
     def test_every_classifier_is_one_pypi_defines(self):
         import urllib.error
@@ -1766,10 +1786,7 @@ class TestPackaging(unittest.TestCase):
     def test_no_licence_classifier_alongside_the_licence_expression(self):
         """PEP 639 metadata carries `License-Expression`. PyPI rejects an
         upload that also carries a `License ::` classifier."""
-        import tomllib
-        root = pathlib.Path(__file__).resolve().parent.parent
-        with (root / "pyproject.toml").open("rb") as fh:
-            project = tomllib.load(fh)["project"]
+        project = self._project()
         if "license" in project:
             clashing = [c for c in project["classifiers"] if c.startswith("License ::")]
             self.assertEqual(clashing, [],
