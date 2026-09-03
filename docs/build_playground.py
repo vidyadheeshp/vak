@@ -21,6 +21,7 @@ import json as _json                                          # noqa: E402
 from vaak.translit import tables_for_js                        # noqa: E402
 sys.path.insert(0, str(ROOT / "docs"))
 import analytics                                              # noqa: E402
+import sitemeta                                               # noqa: E402
 
 _t = tables_for_js()
 _combined = (
@@ -301,6 +302,7 @@ footer b { color:var(--ink-soft); font-weight:500; }
   <span class="spacer"></span>
   <span><b>Ctrl/⌘ + Enter</b> runs</span>
 </footer>
+__COPYRIGHT__
 __COUNTER_NOTICE__
 __COUNTER__
 
@@ -581,6 +583,8 @@ page = (PAGE
         .replace("__LIBRARY__", json.dumps(library, ensure_ascii=False))
         .replace("__TRANSLIT__", TR_KEYWORDS + "\n  " + TRANSLIT)
         .replace("__VERSION__", __version__)
+        .replace("__COPYRIGHT__",
+                 f'<p class="counted">{sitemeta.copyright_html()}</p>')
         .replace("__COUNTER_NOTICE__",
                  f'<p class="counted">{analytics.notice()}</p>'
                  if analytics.SITE else "")

@@ -27,6 +27,7 @@ from vaak.tokens import KARAKA_ORDER, KEYWORDS                   # noqa: E402
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import analytics                                                # noqa: E402
+import sitemeta                                                 # noqa: E402
 
 
 def lines(path: pathlib.Path) -> int:
@@ -412,6 +413,9 @@ ul.engines .d {{ font-size:.93rem; color:var(--ink-soft); }}
 footer {{ border-top:1.5px solid var(--ink); margin-top:4rem; padding:1.2rem 0 4rem;
   font-family:var(--sans); font-size:.79rem; color:var(--ink-faint); }}
 footer p {{ margin:.3rem 0; max-width:none; }}
+.copyright {{ font-size:.93em; opacity:.85; }}
+.copyright a {{ color:inherit; text-decoration:underline;
+  text-underline-offset:.15em; }}
 
 /* ------------------------------------------------------------- motion
    Reveals are scroll-triggered; everything is visible without JS, and all
@@ -554,6 +558,7 @@ footer p {{ margin:.3rem 0; max-width:none; }}
   <p>Line counts, keyword and opcode totals and the test count on this page are
   read from the repository when the page is built. The three timings were
   measured by hand and are quoted, not regenerated.</p>
+  {sitemeta.copyright_html()}
   {analytics.notice()}
 </footer>
 {analytics.script()}

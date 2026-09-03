@@ -170,6 +170,9 @@ ul.engines .d { font-size:.93rem; color:var(--ink-soft); }
 footer { border-top:1.5px solid var(--ink); margin-top:4rem; padding:1.2rem 0 4rem;
   font-family:var(--sans); font-size:.79rem; color:var(--ink-faint); }
 footer p { margin:.3rem 0; max-width:none; }
+.copyright { font-size:.93em; opacity:.85; }
+.copyright a { color:inherit; text-decoration:underline;
+  text-underline-offset:.15em; }
 
 /* ------------------------------------------------------------- motion
    Reveals are scroll-triggered; everything is visible without JS, and all
@@ -482,23 +485,10 @@ a string was quadratic, because each append rebuilt the whole of it.</p>
   <p>Line counts, keyword and opcode totals and the test count on this page are
   read from the repository when the page is built. The three timings were
   measured by hand and are quoted, not regenerated.</p>
-  <p>Visits are counted with <a href="https://vak.goatcounter.com">GoatCounter</a> — no cookies, no personal data, and Do Not Track is honoured.</p>
+  <p class="copyright">© 2026 Vidyadheesh Pandurangi. वाक् is free software, released under the <a href="https://github.com/vidyadheeshp/vak/blob/main/LICENSE">MIT Licence</a> — use it, change it, teach with it, ship it.</p>
+  
 </footer>
 
-<!-- गणना — visitor count. No cookies, no personal data, no cross-site
-     tracking, and nothing here can see what you type into the playground.
-     Do Not Track is checked before the script is requested. -->
-<script>
-(function () {
-  var dnt = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
-  if (dnt === "1" || dnt === "yes") return;      // asked not to be counted
-  var s = document.createElement("script");
-  s.async = true;
-  s.src = "https://gc.zgo.at/count.js";
-  s.setAttribute("data-goatcounter", "https://vak.goatcounter.com/count");
-  document.head.appendChild(s);
-})();
-</script>
 
 </div>
 

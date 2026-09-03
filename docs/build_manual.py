@@ -17,6 +17,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 import reference                                                # noqa: E402
+import sitemeta                                                 # noqa: E402
 
 from vaak import __version__                                    # noqa: E402
 from vaak.builtins import BUILTIN_DOCS                          # noqa: E402
@@ -1042,6 +1043,7 @@ footer .verse {{ font-family: var(--serif); font-size: .95rem; color: var(--ink-
   <footer>
     <p class="verse">वाक् इति भाषा — यत्र संस्कृतम् एव आदेशः<span class="danda">॥</span></p>
     <p>{__version__} · {len(BUILTIN_DOCS)} built-ins · five engines, one output</p>
+    {sitemeta.copyright_html()}
   </footer>
 </main>
 </div>

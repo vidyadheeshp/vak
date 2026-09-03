@@ -52,6 +52,7 @@ DEV_KEYWORDS = {w for w in KEYWORDS if any("ऀ" <= c <= "ॿ" for c in w)}
 import re                                                      # noqa: E402
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import analytics                                               # noqa: E402
+import sitemeta                                                # noqa: E402
 
 TOKEN = re.compile(
     r"(#[^\n]*)"
@@ -336,6 +337,9 @@ a {{ color:var(--gold); text-underline-offset:.18em; }}
 footer {{ border-top:1.5px solid var(--ink); margin-top:5rem; padding:1.2rem 0 4rem;
           font-family:var(--sans); font-size:.8rem; color:var(--ink-faint); }}
 footer p {{ margin:.35rem 0; max-width:none; }}
+.copyright {{ font-size:.93em; opacity:.85; }}
+.copyright a {{ color:inherit; text-decoration:underline;
+  text-underline-offset:.15em; }}
 footer .verse {{ font-family:var(--serif); font-size:1rem; color:var(--ink-soft);
                  margin-bottom:.9rem; }}
 footer a {{ color:var(--ink-soft); }}
@@ -508,7 +512,7 @@ vaak प्रोग्राम.vak</code></pre>
      <a href="playground.html">playground</a> ·
      <a href="story.html">the story</a> ·
      <a href="https://github.com/vidyadheeshp/vak">source</a></p>
-  <p>Built by Vidyadheesh Pandurangi.</p>
+  {sitemeta.copyright_html()}
   {analytics.notice()}
 </footer>
 {analytics.script()}
