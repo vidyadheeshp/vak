@@ -2,7 +2,7 @@
   "name": "vak",
   "displayName": "वाक् · Vāk",
   "description": "Language support for Vāk — a Sanskrit-native programming language whose type system is Pāṇini's kāraka grammar.",
-  "version": "0.11.0",
+  "version": "0.11.1",
   "publisher": "vidyadheeshp",
   "license": "MIT",
   "icon": "images/icon-128.png",

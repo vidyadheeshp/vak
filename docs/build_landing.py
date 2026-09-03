@@ -473,9 +473,10 @@ footer a:hover {{ color:var(--gold); }}
       <p class="n">२</p>
       <h3>With pip</h3>
       <p>Python 3.10 or newer, and <b>no third-party packages</b>.</p>
-      <pre><code>pip install git+https://github.com/vidyadheeshp/vak.git
+      <pre><code>pip install vak-lang
 vaak प्रोग्राम.vak</code></pre>
-      <p class="aside">Not on PyPI yet, so install from the repository.</p>
+      <p class="aside">The distribution is <code>vak-lang</code>; the command
+      is <code>vaak</code>.</p>
     </div>
     <div class="way">
       <p class="n">३</p>

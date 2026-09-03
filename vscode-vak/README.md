@@ -53,5 +53,5 @@ Nothing makes Devanagari truly monospaced, but this makes it render correctly.
 
 ---
 
-Version 0.11.0. The grammar in this extension is generated from the
+Version 0.11.1. The grammar in this extension is generated from the
 language's own keyword tables by `build_extension.py`, so it cannot drift.

@@ -111,16 +111,16 @@ The binary here is built for **64-bit Windows**. On Linux or macOS, build your
 own — see [Building the binary](#building-the-binary). The C sources are
 platform-neutral.
 
-**2 · With pip, from GitHub.** Requires **Python 3.10+** and pulls in **no
-third-party packages**.
+**2 · With pip.** Requires **Python 3.10+** and pulls in **no third-party
+packages**.
 
 ```powershell
-pip install git+https://github.com/vidyadheeshp/vak.git
+pip install vak-lang
 vaak प्रोग्राम.vak
 ```
 
-> Vāk is not on PyPI yet, so `pip install vak-lang` will not find it. Install
-> from the repository as above; the `vak` command works the same either way.
+> The distribution is `vak-lang` and the command is `vaak`. The import name is
+> `vaak` too — `vak` on PyPI is an unrelated bioacoustics package.
 
 This gives you the interpreter, the bytecode VM, the native back end, the REPL
 and the standard library, and the `vak` command works from any directory.
@@ -163,7 +163,7 @@ machine.
 ### Checking that it works
 
 ```powershell
-python -m vaak --version          # वाक् (Vāk) 0.11.0
+python -m vaak --version          # वाक् (Vāk) 0.11.1
 python -m vaak --builtins         # the 39 built-in functions
 python -m vaak                    # संवादः — the interactive session
 ```
@@ -257,7 +257,7 @@ run_source('मुद्रय "नमस्ते जगत्"।')
 ### The REPL
 
 ```
-वाक् (Vāk) 0.11.0 — संस्कृतभाषायाः संगणकभाषा
+वाक् (Vāk) 0.11.1 — संस्कृतभाषायाः संगणकभाषा
 सहायता: :सहायता   निर्गमः: :निर्गम  (help / exit)
 वाक्> पूर्णाङ्कः क = ७।
 वाक्> क * क

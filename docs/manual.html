@@ -247,7 +247,7 @@ footer .verse { font-family: var(--serif); font-size: .95rem; color: var(--ink-s
 <nav class="rail" aria-label="Contents">
   <p class="mark">वाक्</p>
   <p class="sub">Vāk · a manual</p>
-  <p class="ver">0.11.0</p>
+  <p class="ver">0.11.1</p>
   <p class="play"><a href="playground.html">क्रीडाक्षेत्रम् · try it in the browser →</a></p>
   <p class="play"><a href="story.html">कथा · how it was built →</a></p>
   <ol>
@@ -315,16 +315,17 @@ needs neither Python nor anything else. Copy it where you like and run it:</p>
 macOS, build your own — see <i>Building the binary</i> below; the C sources are
 platform-neutral.</p>
 
-<h3 class="lib"><span class="way">२</span> With pip, from GitHub
+<h3 class="lib"><span class="way">२</span> With pip
   <span>Python 3.10 or newer</span></h3>
 <p>Vāk pulls in <b>no third-party packages</b>. A standard Python is all it
 needs; it was developed on 3.13.</p>
-<figure class="code sh"><pre><code>pip install git+https://github.com/vidyadheeshp/vak.git
+<figure class="code sh"><pre><code>pip install vak-lang
 vaak प्रोग्राम.vak</code></pre></figure>
 <div class="note">
-  <p><b>Not on PyPI yet.</b> <code>pip install vak-lang</code> will not find
-  anything — install from the repository as above. The <code>vak</code> command
-  is the same either way.</p>
+  <p><b>Three names, and they differ on purpose.</b> The distribution is
+  <code>vak-lang</code>, the command and the import name are <code>vaak</code>.
+  <code>vak</code> on PyPI is an unrelated bioacoustics package, and shadowing
+  it would let pip overwrite one install with the other.</p>
 </div>
 <p>This gives you the interpreter, the bytecode virtual machine, the native back
 end, the REPL and the standard library, and the <code>vak</code> command works
@@ -363,7 +364,7 @@ you type leaves your machine. Use it to try the language before deciding
 whether to install anything.</p>
 
 <h3 class="lib">Checking that it works</h3>
-<figure class="code sh"><pre><code>python -m vaak --version          # वाक् (Vāk) 0.11.0
+<figure class="code sh"><pre><code>python -m vaak --version          # वाक् (Vāk) 0.11.1
 python -m vaak --builtins         # the 39 built-in functions
 python -m vaak                    # संवादः — the interactive session</code></pre></figure>
 <p>Then a program of one line. Put this in <code>परीक्षा.vak</code> and run
@@ -1027,7 +1028,7 @@ brought in with <code>आनय</code>.</p>
 
   <footer>
     <p class="verse">वाक् इति भाषा — यत्र संस्कृतम् एव आदेशः<span class="danda">॥</span></p>
-    <p>0.11.0 · 39 built-ins · five engines, one output</p>
+    <p>0.11.1 · 39 built-ins · five engines, one output</p>
   </footer>
 </main>
 </div>

@@ -47,12 +47,12 @@ TESTS = sum(1 for line in (ROOT / "tests" / "test_vak.py")
             .read_text(encoding="utf-8").splitlines()
             if line.strip().startswith("def test_"))
 
-# Which versions were actually cut.  This is stated rather than inferred: the
-# repository has exactly one commit (वाक् 0.10.0) and vaak/__init__.py says
-# 0.11.0, so those two exist and the other eight numbers on this page do not.
-# Scraping them out of commit subjects would mark any version-like number in any
-# future commit as a release, which is not the claim being made.
-REAL = {"0.10.0", __version__}
+# Which versions were actually cut.  Stated rather than inferred: 0.10.0 and
+# 0.11.0 are tagged releases and __version__ is the current one, so those exist
+# and the other numbers on this page do not.  Scraping them out of commit
+# subjects would mark any version-like number in any future commit as a
+# release, which is not the claim being made.
+REAL = {"0.10.0", "0.11.0", __version__}
 
 # len(KEYWORDS) counts the Devanagari, IAST and ASCII spellings of the same
 # word, so it reads as a far larger vocabulary than Vak actually asks anyone
@@ -159,7 +159,7 @@ a Devanagari keyboard — {len(BUILTIN_DOCS)} built-ins, {EXAMPLES} worked
 examples — and every keyword spelled two ways, so none of it requires a
 Devanagari keyboard.</p>"""),
 
-    ("V", "0.11.0", "कार्यक्षमता", "Making it fast, and being wrong twice", 100, """
+    ("V", "0.11.1", "कार्यक्षमता", "Making it fast, and being wrong twice", 100, """
 <p>The last act is measurement, and it holds the most useful mistakes.</p>
 <p>The obvious suspect was name lookup: every variable was found by comparing
 Devanagari strings, and Devanagari strings all begin with the same byte. So

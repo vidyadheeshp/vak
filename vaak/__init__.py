@@ -17,7 +17,7 @@ from .interpreter import Interpreter
 from .lexer import Lexer, tokenize
 from .parser import Parser, parse
 
-__version__ = "0.11.0"
+__version__ = "0.11.1"
 __all__ = [
     "Lexer", "tokenize", "Parser", "parse", "Analyzer", "analyze", "Report", "Interpreter",
     "VakError", "LexError", "ParseError", "RuntimeVakError", "SemanticError",
