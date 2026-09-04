@@ -122,6 +122,8 @@ DIAGNOSTIC_DOCS: dict[str, tuple[str, str]] = {
                               "that returns nothing"),
     "प्रवाहसूचना": ("सूचना", "a विकल्पः with no अन्यथा — an unmatched value does "
                             "nothing"),
+    "अप्रयुक्तसूचना": ("सूचना", "a variable declared and never read — a leading "
+                                "underscore says it is deliberate"),
 }
 
 

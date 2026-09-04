@@ -110,6 +110,8 @@ class Symbol:
     params: list[A.Param] | None = None     # set for functions
     return_type: str = ANY_TYPE
     native_arity: int | None = None         # set for built-ins
+    declared: bool = False                  # by मान or ध्रुव, not a parameter
+    read: bool = False                      # ever used as a value
 
     @property
     def is_callable(self) -> bool:
@@ -188,8 +190,32 @@ class Analyzer:
                 self._statement(stmt)
                 if self._always_exits(stmt):
                     exited = stmt
+            self._unused(scope)
         finally:
             self.scope = previous
+
+    def _unused(self, scope: Scope) -> None:
+        """A variable declared and never read is nearly always a mistake — a
+        typo in the name that reads it, or a line left behind after an edit.
+        Only मान and ध्रुव declarations are reported: a parameter, a loop
+        variable and a caught error are all named because the language requires
+        a name there, not because the author promised to use it. A leading
+        underscore says the name is deliberate.
+
+        Nothing at the top level is reported. A module's top-level declarations
+        are its exports — गणितम् declares पाई for importers, not for itself —
+        and a script's globals are equally often there to be read by a reader
+        rather than by the program."""
+        if scope.kind == "वैश्विकः":
+            return
+        for symbol in scope.symbols.values():
+            if symbol.declared and not symbol.read and not symbol.name.startswith("_"):
+                self._warn(
+                    "अप्रयुक्तसूचना",
+                    f"{symbol.name!r} घोषितम् किन्तु न प्रयुक्तम् / "
+                    f"{symbol.name!r} is declared but never used",
+                    symbol.line,
+                )
 
     def _hoist(self, statements: list[A.Stmt]) -> None:
         for stmt in statements:
@@ -257,7 +283,8 @@ class Analyzer:
                 f"{node.name!r} is redeclared in the same scope",
                 node.line,
             )
-        self.scope.declare(Symbol(node.name, node.type, node.constant, node.line))
+        self.scope.declare(Symbol(node.name, node.type, node.constant, node.line,
+                                  declared=True))
 
     def _st_Import(self, node: A.Import) -> None:
         """The analyser does not load modules — it only records what an
@@ -566,6 +593,8 @@ class Analyzer:
 
     def _ex_Identifier(self, node: A.Identifier) -> str:
         symbol = self.scope.lookup(node.name)
+        if symbol is not None:
+            symbol.read = True
         if symbol is None:
             self._error(
                 "नामदोषः",
@@ -718,6 +747,10 @@ class Analyzer:
         symbol: Symbol | None = None
         if isinstance(node.callee, A.Identifier):
             symbol = self.scope.lookup(node.callee.name)
+            if symbol is not None:
+                # calling a name reads it; this path never reaches
+                # _ex_Identifier, so it has to say so itself
+                symbol.read = True
             if symbol is None:
                 self._error(
                     "नामदोषः",

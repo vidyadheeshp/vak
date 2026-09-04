@@ -1882,6 +1882,61 @@ class TestStandardLibraryAdditions(unittest.TestCase):
                 with self.assertRaises(RuntimeVakError):
                     self.run_vak(f'आनय "गणितम्"।\nमुद्रय गणितम्.{fn}([])।')
 
+class TestUnusedVariableWarning(unittest.TestCase):
+    """Issue #7. A warning, not an error — the program is still valid."""
+
+    def codes(self, source: str) -> list[str]:
+        return [d.code for d in check_source(source, "प.vak").diagnostics]
+
+    def test_a_declared_and_unread_variable_warns(self):
+        self.assertIn("अप्रयुक्तसूचना",
+                      self.codes("कार्यम् क() { मान अ = ५। }"))
+
+    def test_a_variable_that_is_read_does_not(self):
+        self.assertNotIn("अप्रयुक्तसूचना",
+                         self.codes("कार्यम् क() { मान अ = ५। मुद्रय अ। }"))
+
+    def test_calling_a_variable_counts_as_reading_it(self):
+        """The call path resolves the callee itself and never reaches the
+        identifier handler, so it has to mark the read separately. This was a
+        real false positive before it did."""
+        self.assertNotIn("अप्रयुक्तसूचना", self.codes(
+            "कार्यम् क() { मान फ = कार्यम्() { प्रत्यागच्छ १। }। प्रत्यागच्छ फ()। }"))
+
+    def test_assigning_is_not_reading(self):
+        """Writing to a variable you never read is exactly the mistake this
+        warning is for."""
+        self.assertIn("अप्रयुक्तसूचना",
+                      self.codes("कार्यम् क() { मान अ = ५। अ = ६। }"))
+
+    def test_a_leading_underscore_says_it_is_deliberate(self):
+        self.assertNotIn("अप्रयुक्तसूचना",
+                         self.codes("कार्यम् क() { मान _अ = ५। }"))
+
+    def test_parameters_are_not_reported(self):
+        """A parameter is named because the language requires a name there,
+        not because the author promised to use it."""
+        self.assertNotIn("अप्रयुक्तसूचना",
+                         self.codes("कार्यम् क(अ) { मुद्रय १। }"))
+
+    def test_loop_and_catch_variables_are_not_reported(self):
+        for src in ("कार्यम् क() { प्रत्येकम् (अ अन्तः [१]) { मुद्रय २। } }",
+                    "कार्यम् क() { प्रयत्नः { मुद्रय १। } दोषे (द) { मुद्रय २। } }"):
+            with self.subTest(source=src[:38]):
+                self.assertNotIn("अप्रयुक्तसूचना", self.codes(src))
+
+    def test_top_level_declarations_are_exports_not_mistakes(self):
+        """गणितम् declares पाई for importers, not for itself. Warning about a
+        module's exports would make the warning useless."""
+        self.assertNotIn("अप्रयुक्तसूचना", self.codes("ध्रुव पाई = ३.१४।"))
+
+    def test_it_is_a_warning_and_the_program_still_runs(self):
+        out = io.StringIO()
+        with redirect_stdout(out):
+            run_source("कार्यम् क() { मान अ = ५। मुद्रय \"चलति\"। }" + "\n" + "क()।")
+        self.assertEqual(out.getvalue().strip(), "चलति")
+
+
 class TestPackaging(unittest.TestCase):
     """`twine check` validates the description and nothing else, so an invalid
     trove classifier sails past it and PyPI answers 400 Bad Request with no

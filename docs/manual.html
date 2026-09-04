@@ -902,7 +902,7 @@ its own.</p>
     <h2><span class="dev">दोषसूची</span><span class="eng">Every diagnostic</span></h2>
   </div>
   
-<p>The analyser reports 6 kinds of error and 5 kinds of warning.
+<p>The analyser reports 6 kinds of error and 6 kinds of warning.
 A <b>दोषः</b> stops the program from running; a <b>सूचना</b> is printed and the
 program runs anyway. Every one carries its Sanskrit name, so a message can be
 looked up here.</p>
@@ -916,6 +916,7 @@ looked up here.</p>
     <tr><td><code>प्रवाहदोषः</code></td><td class="iast">दोषः</td><td>विरम or अनुवर्तस्व outside a loop</td></tr>
     <tr><td><code>प्राचलदोषः</code></td><td class="iast">दोषः</td><td>a call passes the wrong number of arguments</td></tr>
     <tr><td><code>अगम्यदोषः</code></td><td class="iast">सूचना</td><td>a statement after प्रत्यागच्छ that can never run</td></tr>
+    <tr><td><code>अप्रयुक्तसूचना</code></td><td class="iast">सूचना</td><td>a variable declared and never read — a leading underscore says it is deliberate</td></tr>
     <tr><td><code>कारकसूचना</code></td><td class="iast">सूचना</td><td>some parameters carry kāraka roles and some do not</td></tr>
     <tr><td><code>पुनर्घोषणा</code></td><td class="iast">सूचना</td><td>a name declared twice in the same scope</td></tr>
     <tr><td><code>प्रतिफलसूचना</code></td><td class="iast">सूचना</td><td>a function promises a return type but has a path that returns nothing</td></tr>
@@ -953,6 +954,12 @@ built, so a reworded message changes here too.</p>
     <pre><code><b class="k" data-r="karyam">कार्यम्</b> क() : <b class="t" data-r="purnankah">पूर्णाङ्कः</b> { <b class="k" data-r="pratyagaccha">प्रत्यागच्छ</b> <i class="n" data-r="1">१</i>। <b class="k" data-r="mudraya">मुद्रय</b> <i class="s">&quot;अगम्यम्&quot;</i>। }
 <b class="k" data-r="mudraya">मुद्रय</b> क()।</code></pre>
     <p class="says">इदम् वाक्यम् कदापि न चलति / unreachable code after Return on line 1</p>
+  </div>
+  <div class="demo">
+    <p class="code">अप्रयुक्तसूचना</p>
+    <pre><code><b class="k" data-r="karyam">कार्यम्</b> क() { <b class="k" data-r="mana">मान</b> अ = <i class="n" data-r="5">५</i>। <b class="k" data-r="mudraya">मुद्रय</b> <i class="s">&quot;अ इति न प्रयुक्तम्&quot;</i>। }
+क()।</code></pre>
+    <p class="says">&#x27;अ&#x27; घोषितम् किन्तु न प्रयुक्तम् / &#x27;अ&#x27; is declared but never used</p>
   </div>
   <div class="demo">
     <p class="code">कारकदोषः</p>
