@@ -338,6 +338,10 @@ footer {{ border-top:1.5px solid var(--ink); margin-top:5rem; padding:1.2rem 0 4
           font-family:var(--sans); font-size:.8rem; color:var(--ink-faint); }}
 footer p {{ margin:.35rem 0; max-width:none; }}
 .copyright {{ font-size:.93em; opacity:.85; }}
+/* provenance belongs where people actually read, not only in the README */
+.provenance {{ font-size:.93em; opacity:.85; max-width:44em; }}
+.provenance a {{ color:inherit; text-decoration:underline;
+  text-underline-offset:.15em; }}
 .copyright a {{ color:inherit; text-decoration:underline;
   text-underline-offset:.15em; }}
 footer .verse {{ font-family:var(--serif); font-size:1rem; color:var(--ink-soft);
@@ -512,6 +516,10 @@ vaak प्रोग्राम.vak</code></pre>
      <a href="playground.html">playground</a> ·
      <a href="story.html">the story</a> ·
      <a href="https://github.com/vidyadheeshp/vak">source</a></p>
+  <p class="provenance">Vāk was designed by a person and implemented with
+  substantial help from a large language model. The split is set out in the
+  <a href="https://github.com/vidyadheeshp/vak#कृत्रिमबुद्धिः--how-this-was-built-and-by-whom">README</a>,
+  and the commit history records it.</p>
   {sitemeta.copyright_html()}
   {analytics.notice()}
 </footer>

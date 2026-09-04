@@ -52,6 +52,11 @@ standalone executable** needing no Python and no toolchain to run. All five are 
 byte-identical output by a differential test suite, which is the main reason any of this
 can be trusted.
 
+> **On how this was built.** Vāk was designed by a person and implemented
+> with substantial help from a large language model. The split is set out in
+> [कृत्रिमबुद्धिः](#कृत्रिमबुद्धिः--how-this-was-built-and-by-whom), and the
+> commit history records it.
+
 And none of it requires a Devanagari keyboard: every keyword has an ASCII spelling, ASCII
 numerals work everywhere, and the [browser playground](https://vidyadheeshp.github.io/vak/playground.html)
 turns romanised typing into Devanagari as you write.
@@ -92,6 +97,7 @@ turns romanised typing into Devanagari as you write.
 - [उदाहरणानि · Sample programs](#उदाहरणानि--sample-programs)
 - [परीक्षाः · Tests](#परीक्षाः--tests)
 - [अग्रिमम् · Roadmap](#अग्रिमम्--roadmap)
+- [कृत्रिमबुद्धिः · How this was built](#कृत्रिमबुद्धिः--how-this-was-built-and-by-whom)
 
 ---
 
@@ -1326,6 +1332,59 @@ Beyond the bootstrap:
 3. **Full akṣara mode** — `दीर्घता` and indexing by syllable, not code point.
 4. **Deeper kāraka semantics** — `भाव` and `कर्मणि` voices; roles that flow through calls.
 5. **Tooling** — a VS Code grammar for `.vak`, a formatter, a Devanagari output mode.
+
+---
+
+## कृत्रिमबुद्धिः · How this was built, and by whom
+
+**Vāk was designed by a person and implemented with substantial help from a
+large language model.** That is stated here rather than left to be discovered,
+because it is material to how you should read everything else in this file.
+
+Concretely, and as far as it can be divided:
+
+**Mine.** The idea of a language whose Sanskrit is load-bearing rather than
+decorative. The central design decision — kāraka roles as a static type system,
+with Pāṇini's one-agent constraint enforced by the analyser. The choice to
+self-host. The three-spellings design, so no Devanagari keyboard is required.
+Every priority call about what to build and what to refuse: no object system
+until the `स्वयम्` question has an answer, no chase after machine learning, no
+claim to be the first Sanskrit programming language. The testing that found
+real bugs, and the judgement about which suggestions to take.
+
+**The model's.** A large share of the code as written: much of the Python
+implementation and the C runtime, the semantic analyser in Vāk, the
+optimisation work, the transliterator, the editor extension, the documentation
+generators and the pages they produce, the packaging and continuous
+integration. Where a decision was mine, the typing usually was not.
+
+**The record.** 25 of the 28 commits carry a `Co-Authored-By: Claude Opus 5`
+trailer. `git log` is the honest account and it has been there from the start;
+this section only says out loud what the history already shows.
+
+### Why this is written down
+
+Two reasons, and neither is contrition.
+
+The first is that some communities have rules about this, and they are entitled
+to them. A project that hides its provenance and is found out deserves what
+follows. If your standard is that a programming language should be typed by a
+human, Vāk does not meet it, and you should know that before you spend time on
+it rather than after.
+
+The second is that the interesting claim survives either way. A language whose
+type system is Pāṇini's kāraka grammar, whose front end compiles itself, and
+whose five engines are held to byte-identical output either exists or it does
+not — and it does. You can install it, read the source, run the tests, and
+disagree with the design. Provenance is a fact about the work; it is not a
+substitute for reading it.
+
+### If you are evaluating this for research or publication
+
+Take the split above as the disclosure. The novel contribution offered is the
+design — kāraka as a type system — not the volume of code. The code is
+evidence that the design works, and it is open, tested and reproducible, which
+is the property that matters for checking a claim.
 
 ---
 
