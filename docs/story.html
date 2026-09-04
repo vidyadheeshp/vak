@@ -473,9 +473,11 @@ a string was quadratic, because each append rebuilt the whole of it.</p>
   Removing 71% of all string comparisons moved the clock 2% and does not appear
   here at all — the gains came from allocation, and from work that need not have
   been done. These three are wall-clock times measured on one Windows machine
-  during the optimisation work, not figures this page regenerates; noise there
-  was about 7%, so anything smaller was re-measured interleaved before being
-  believed.</figcaption>
+  during the optimisation work. They record what changed, and cannot be
+  regenerated — the &ldquo;before&rdquo; code is gone. Current performance can
+  be: <code>python bench/benchmark.py</code> measures Vāk against C, CPython,
+  Node and PHP, and says plainly which of them these workloads are too small to
+  measure rather than printing a number that looks meaningful.</figcaption>
 </div>
 
 <footer>

@@ -23,3 +23,6 @@ _wasm/
 dist/
 *.whl
 *.tar.gz
+
+# benchmark output — machine-specific, regenerate with bench/benchmark.py
+bench/results.json

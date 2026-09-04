@@ -1189,22 +1189,37 @@ python -m vaak examples/12_dosha.vak
 
 ## कार्यक्षमता · Performance
 
-Every program below prints the same answer in every language, and each figure is
-the best of five runs. Startup is measured separately because a language that
-takes 150 ms to boot should not be credited for it.
+Measured, not remembered. `python bench/benchmark.py --json` reproduces every
+figure below on your own machine; the workloads and the method live in
+[bench/benchmark.py](bench/benchmark.py). Best of five whole-process runs, and
+each language must print the same answer or its timing is not reported.
 
-| workload | C ‑O2 | Node/V8 | PHP 8.2 | CPython 3.13 | **वाक्** |
+| workload | C −O2 | CPython | Node/V8 | PHP | वाक् |
 |---|---|---|---|---|---|
-| `fib(30)` — recursion | 0.034 s | 0.160 s | 0.387 s | 0.351 s | **2.377 s** |
-| 8 M-iteration loop | 0.029 s | 0.177 s | 0.633 s | 2.845 s | **5.926 s** |
-| 120 k string appends | 0.032 s | 0.215 s | 1.419 s | 0.950 s | **0.108 s** |
-| 1.2 M list operations | 0.025 s | 0.228 s | 0.257 s | 0.551 s | **1.292 s** |
-| **startup** | 0.043 s | 0.153 s | 0.135 s | 0.067 s | **0.036 s** |
+| `fib(30) — recursion` | < startup | 0.198 s | < startup | 0.139 s | **1.669 s** |
+| `8 M-iteration loop` | < startup | 1.526 s | < startup | 0.090 s | **4.332 s** |
+| `120 k string appends` | < startup | 0.668 s | < startup | < startup | **0.041 s** |
+| `1.2 M list operations` | 0.011 s | 0.237 s | < startup | < startup | **0.909 s** |
+| **startup** | 0.029 s | 0.080 s | 0.203 s | 0.416 s | **0.076 s** |
 
-Relative to CPython, lower being faster: **loops 2.1×, collections 2.3×,
-function calls 6.8×, and string building 0.11× — nine times faster.** Vāk also
-starts faster than every other language here, from a single 737 KB binary with
-nothing to install.
+Work only — each language's own startup has been subtracted. "< startup" means the workload is too small for that language to be measured this way, not that it is instant.
+
+**Against CPython, which is the only language here this can measure honestly:**
+function calls **8.4×** slower, loops **2.8×**, list operations **3.8×** — and
+string building **ten times faster**, because appending grows the string in
+place instead of rebuilding it.
+
+Startup is 0.076 s from a single self-contained binary, close to CPython's and
+well under Node's or PHP's. C still starts faster.
+
+> **Why half the table says "< startup".** These workloads are too small for C
+> and Node: their startup costs more than the work does, so whole-process
+> timing measures the operating system rather than the language. Raw, Node's
+> 8 M-iteration loop came out *faster than Node's own startup*, which is
+> impossible and is what gave the flaw away. Rather than print a number that
+> looks meaningful and is not, those cells say what is actually true. Vāk and
+> CPython are slow enough to be measured this way; the others need a different
+> instrument.
 
 ### What made the difference — and what did not
 
@@ -1316,7 +1331,8 @@ language stops depending on a host language. Progress along that road:
   string building went from quadratic to linear, and a call stopped formatting an
   error message and comparing type *names* for every parameter. See
   [कार्यक्षमता](#कार्यक्षमता--performance).
-- ⬜ **Frame slots.** Function calls remain the weak spot, at about 6.8× CPython.
+- ⬜ **Frame slots.** Function calls remain the weak spot, at about 8.4× CPython
+  (measured — `python bench/benchmark.py`).
   Closing that means locals in a contiguous stack array with no scope object at
   all — which changes the bytecode, both compilers and all five engines, and needs
   upvalues so a closure can outlive its frame. It is a project, not a patch.
