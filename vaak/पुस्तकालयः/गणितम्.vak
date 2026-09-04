@@ -39,6 +39,24 @@
     प्रत्यागच्छ फलम्।
 }
 
+# वर्गमूलम् — the square root, by Newton's method.  There is no floating-point
+# सञ्चयः in the built-ins, so this is the arithmetic the language already has:
+# guess, average the guess with न्/guess, repeat.  Twenty rounds is far more
+# than double precision can distinguish.
+कार्यम् वर्गमूलम्(अङ्कः क) : दशांशः {
+    यदि (क < ०) {
+        उत्सृज { "प्रकारः": "मूल्यदोषः", "सन्देशः": "वर्गमूलम् ऋणसंख्यायाः नास्ति" }।
+    }
+    यदि (क == ०) {
+        प्रत्यागच्छ ०.०।
+    }
+    दशांशः अनुमानम् = क / २.०।
+    आवृत्तिः (२०) {
+        अनुमानम् = (अनुमानम् + क / अनुमानम्) / २.०।
+    }
+    प्रत्यागच्छ अनुमानम्।
+}
+
 # महत्तमः साधारणः भाजकः — the greatest common divisor (Euclid)
 कार्यम् मसाभा(पूर्णाङ्कः अ, पूर्णाङ्कः ब) : पूर्णाङ्कः {
     पूर्णाङ्कः क = पूर्ण(निरपेक्षम्(अ))।

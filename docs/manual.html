@@ -797,7 +797,7 @@ language looks like in use. Bring one in with <code>आनय</code>:</p>
 exactly what the file declares — including the kāraka role each parameter
 takes.</p>
 
-<h3 class="lib"><code>आनय "गणितम्"।</code> <span>Mathematics — two constants and twelve functions.</span></h3>
+<h3 class="lib"><code>आनय "गणितम्"।</code> <span>Mathematics — two constants and thirteen functions.</span></h3>
 <div class="scroll"><table class="kw">
   <thead><tr><th>गणितम्</th><th>what it does</th></tr></thead>
   <tbody>
@@ -808,6 +808,7 @@ takes.</p>
     <tr><td><code>निरपेक्षम्(अङ्कः क) : अङ्कः</code></td><td>the absolute value of क</td></tr>
     <tr><td><code>चिह्नम्(अङ्कः क) : पूर्णाङ्कः</code></td><td>the sign of क — १, ०, or -१</td></tr>
     <tr><td><code>क्रमगुणितम्(पूर्णाङ्कः न्) : पूर्णाङ्कः</code></td><td>न् factorial</td></tr>
+    <tr><td><code>वर्गमूलम्(अङ्कः क) : दशांशः</code></td><td>the square root of क, by Newton&#x27;s method</td></tr>
     <tr><td><code>मसाभा(पूर्णाङ्कः अ, पूर्णाङ्कः ब) : पूर्णाङ्कः</code></td><td>the greatest common divisor of अ and ब</td></tr>
     <tr><td><code>लसागु(पूर्णाङ्कः अ, पूर्णाङ्कः ब) : पूर्णाङ्कः</code></td><td>the least common multiple of अ and ब</td></tr>
     <tr><td><code>अभाज्यः_वा(पूर्णाङ्कः न्) : सत्यता</code></td><td>whether न् is prime</td></tr>
@@ -817,7 +818,7 @@ takes.</p>
     <tr><td><code>घातः(अङ्कः आधारः, पूर्णाङ्कः घाताङ्कः) : अङ्कः</code></td><td>आधारः raised to the power घाताङ्कः</td></tr>
   </tbody>
 </table></div>
-<h3 class="lib"><code>आनय "शब्दाः"।</code> <span>Strings — eight functions over शब्दः.</span></h3>
+<h3 class="lib"><code>आनय "शब्दाः"।</code> <span>Strings — twelve functions over शब्दः.</span></h3>
 <div class="scroll"><table class="kw">
   <thead><tr><th>शब्दाः</th><th>what it does</th></tr></thead>
   <tbody>
@@ -829,6 +830,10 @@ takes.</p>
     <tr><td><code>विलोमः_वा(कर्म शब्दः स) : सत्यता</code></td><td>whether स reads the same in both directions</td></tr>
     <tr><td><code>गणय_अक्षरम्(कर्म शब्दः अक्षरम्, अधिकरणम् शब्दः वाक्यम्) : पूर्णाङ्कः</code></td><td>how many times अक्षरम् occurs in वाक्यम्</td></tr>
     <tr><td><code>शब्दगणना(अधिकरणम् शब्दः वाक्यम्) : कोशः</code></td><td>a dictionary of each word in वाक्यम् and its count</td></tr>
+    <tr><td><code>रिक्तम्_वा(कर्म शब्दः अ) : सत्यता</code></td><td>whether अ is a space, tab, newline or carriage return</td></tr>
+    <tr><td><code>आदौ_छिन्द(कर्म शब्दः स) : शब्दः</code></td><td>स with leading whitespace removed</td></tr>
+    <tr><td><code>अन्ते_छिन्द(कर्म शब्दः स) : शब्दः</code></td><td>स with trailing whitespace removed</td></tr>
+    <tr><td><code>छिन्द(कर्म शब्दः स) : शब्दः</code></td><td>स with whitespace removed from both ends</td></tr>
   </tbody>
 </table></div>
 </section>

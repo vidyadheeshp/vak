@@ -1736,6 +1736,79 @@ class TestTypingAid(unittest.TestCase):
         self.assertNotIn("naama", mapping)
         self.assertEqual(devanagari("naama"), "नाम")
 
+class TestStandardLibraryAdditions(unittest.TestCase):
+    """गणितम्.वर्गमूलम् (issue #1) and शब्दाः.छिन्द (issue #2)."""
+
+    def run_vak(self, source: str) -> str:
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            run_source(source, str(ROOT / "प.vak"))
+        return buf.getvalue().strip()
+
+    # ---------------------------------------------------------- वर्गमूलम्
+    def test_square_root_of_perfect_squares(self):
+        out = self.run_vak(
+            'आनय "गणितम्"।\n'
+            'प्रत्येकम् (क अन्तः [०, १, ४, ९, १६, १४४, १०००० ]) {\n'
+            '    मुद्रय गणितम्.वर्गमूलम्(क)।\n'
+            '}')
+        got = [float(x) for x in out.splitlines()]
+        self.assertEqual(got, [0.0, 1.0, 2.0, 3.0, 4.0, 12.0, 100.0])
+
+    def test_square_root_converges(self):
+        out = self.run_vak('आनय "गणितम्"।\nमुद्रय गणितम्.वर्गमूलम्(२)।')
+        self.assertAlmostEqual(float(out), 2 ** 0.5, places=12)
+
+    def test_square_root_of_a_negative_is_an_error(self):
+        """उत्सृज surfaces as a RuntimeVakError when nothing catches it, and
+        the message should say what went wrong, not only that it did."""
+        with self.assertRaises(RuntimeVakError) as caught:
+            self.run_vak('आनय "गणितम्"।\nमुद्रय गणितम्.वर्गमूलम्(-१)।')
+        self.assertIn("ऋणसंख्यायाः", str(caught.exception))
+
+    def test_square_root_of_a_negative_can_be_caught(self):
+        out = self.run_vak(
+            'आनय "गणितम्"।\n'
+            'प्रयत्नः { मुद्रय गणितम्.वर्गमूलम्(-१)। }\n'
+            'दोषे (त्रुटिः) { मुद्रय त्रुटिः.प्रकारः। }')
+        self.assertEqual(out, "मूल्यदोषः")
+
+    # -------------------------------------------------------------- छिन्द
+    def test_trim_both_ends(self):
+        out = self.run_vak(
+            'आनय "शब्दाः"।\n'
+            'मुद्रय "[" + शब्दाः.छिन्द("   नमस्ते   ") + "]"।')
+        self.assertEqual(out, "[नमस्ते]")
+
+    def test_trim_one_end_at_a_time(self):
+        out = self.run_vak(
+            'आनय "शब्दाः"।\n'
+            'मुद्रय "[" + शब्दाः.आदौ_छिन्द("  क  ") + "]"।\n'
+            'मुद्रय "[" + शब्दाः.अन्ते_छिन्द("  क  ") + "]"।')
+        self.assertEqual(out.splitlines(), ["[क  ]", "[  क]"])
+
+    def test_trim_handles_empty_and_all_whitespace(self):
+        out = self.run_vak(
+            'आनय "शब्दाः"।\n'
+            'मुद्रय "[" + शब्दाः.छिन्द("") + "]"।\n'
+            'मुद्रय "[" + शब्दाः.छिन्द("     ") + "]"।')
+        self.assertEqual(out.splitlines(), ["[]", "[]"])
+
+    def test_trim_leaves_inner_whitespace_alone(self):
+        out = self.run_vak(
+            'आनय "शब्दाः"।\n'
+            'मुद्रय "[" + शब्दाः.छिन्द("  अ ब  ") + "]"।')
+        self.assertEqual(out, "[अ ब]")
+
+    def test_whitespace_predicate_covers_tab_newline_return(self):
+        out = self.run_vak(
+            'आनय "शब्दाः"।\n'
+            'प्रत्येकम् (अ अन्तः [" ", "\\t", "\\n", "\\r", "क", ""]) {\n'
+            '    मुद्रय शब्दाः.रिक्तम्_वा(अ)।\n'
+            '}')
+        self.assertEqual(out.splitlines(),
+                         ["सत्य", "सत्य", "सत्य", "सत्य", "असत्य", "असत्य"])
+
 class TestPackaging(unittest.TestCase):
     """`twine check` validates the description and nothing else, so an invalid
     trove classifier sails past it and PyPI answers 400 Bad Request with no

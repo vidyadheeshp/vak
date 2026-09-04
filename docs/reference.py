@@ -46,6 +46,7 @@ LIB_DOCS: dict[str, str] = {
     "माध्यम्": "the arithmetic mean of the list",
     "मध्यमा": "the median of the list",
     "घातः": "आधारः raised to the power घाताङ्कः",
+    "वर्गमूलम्": "the square root of क, by Newton's method",
     # शब्दाः
     "आदौ_अस्ति": "whether पूर्णः begins with आदिः",
     "अन्ते_अस्ति": "whether पूर्णः ends with अन्तः_",
@@ -55,11 +56,15 @@ LIB_DOCS: dict[str, str] = {
     "विलोमः_वा": "whether स reads the same in both directions",
     "गणय_अक्षरम्": "how many times अक्षरम् occurs in वाक्यम्",
     "शब्दगणना": "a dictionary of each word in वाक्यम् and its count",
+    "रिक्तम्_वा": "whether अ is a space, tab, newline or carriage return",
+    "आदौ_छिन्द": "स with leading whitespace removed",
+    "अन्ते_छिन्द": "स with trailing whitespace removed",
+    "छिन्द": "स with whitespace removed from both ends",
 }
 
 MODULE_BLURB: dict[str, str] = {
-    "गणितम्": "Mathematics — two constants and twelve functions.",
-    "शब्दाः": "Strings — eight functions over शब्दः.",
+    "गणितम्": "Mathematics — two constants and thirteen functions.",
+    "शब्दाः": "Strings — twelve functions over शब्दः.",
 }
 
 
