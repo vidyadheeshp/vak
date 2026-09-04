@@ -121,3 +121,58 @@
 कार्यम् घातः(अङ्कः आधारः, पूर्णाङ्कः घाताङ्कः) : अङ्कः {
     प्रत्यागच्छ आधारः ^ घाताङ्कः।
 }
+
+# बहुलकः — सर्वाधिकं वारं आगच्छन् अङ्कः / the value that occurs most often.
+#
+# The list is sorted and the longest run taken, rather than counted in a कोशः,
+# because that settles the tie rule as a side effect: when two values occur
+# equally often the smaller is returned, and the answer does not depend on the
+# order the values arrived in.  Say so, since "the mode" of a multi-modal list
+# is otherwise a matter of opinion.
+कार्यम् बहुलकः(अपादानम् सूची अङ्काः) : अङ्कः {
+    पूर्णाङ्कः न् = दीर्घता(अङ्काः)।
+    यदि (न् == ०) {
+        उत्सृज { "प्रकारः": "मूल्यदोषः", "सन्देशः": "रिक्तायाः सूच्याः बहुलकः नास्ति" }।
+    }
+    सूची क्रमिताः = क्रम(अङ्काः)।
+    अङ्कः श्रेष्ठम् = क्रमिताः[०]।
+    पूर्णाङ्कः श्रेष्ठगणना = १।
+    अङ्कः वर्तमानम् = क्रमिताः[०]।
+    पूर्णाङ्कः गणना = १।
+    प्रत्येकम् (क अन्तः परास(१, न्)) {
+        यदि (क्रमिताः[क] == वर्तमानम्) {
+            गणना = गणना + १।
+        } अन्यथा {
+            वर्तमानम् = क्रमिताः[क]।
+            गणना = १।
+        }
+        यदि (गणना > श्रेष्ठगणना) {
+            श्रेष्ठगणना = गणना।
+            श्रेष्ठम् = वर्तमानम्।
+        }
+    }
+    प्रत्यागच्छ श्रेष्ठम्।
+}
+
+# विचरणम् — समष्टिविचरणम् / the population variance: the mean of the squared
+# deviations from the mean.  Population and not sample, so the divisor is न्
+# and not न् − १; a single value therefore has a variance of zero rather than
+# an error, which is the right answer for a population of one.
+कार्यम् विचरणम्(अपादानम् सूची अङ्काः) : दशांशः {
+    पूर्णाङ्कः न् = दीर्घता(अङ्काः)।
+    यदि (न् == ०) {
+        उत्सृज { "प्रकारः": "मूल्यदोषः", "सन्देशः": "रिक्तायाः सूच्याः विचरणम् नास्ति" }।
+    }
+    अङ्कः मध्यम् = माध्यम्(अङ्काः)।
+    दशांशः योगः = ०.०।
+    प्रत्येकम् (अ अन्तः अङ्काः) {
+        दशांशः अन्तरम् = अ - मध्यम्।
+        योगः = योगः + अन्तरम् * अन्तरम्।
+    }
+    प्रत्यागच्छ योगः / न्।
+}
+
+# प्रमाणविचलनम् — विचरणस्य वर्गमूलम् / the standard deviation.
+कार्यम् प्रमाणविचलनम्(अपादानम् सूची अङ्काः) : दशांशः {
+    प्रत्यागच्छ वर्गमूलम्(विचरणम्(अङ्काः))।
+}

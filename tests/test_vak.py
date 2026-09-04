@@ -1808,6 +1808,79 @@ class TestStandardLibraryAdditions(unittest.TestCase):
             '}')
         self.assertEqual(out.splitlines(),
                          ["सत्य", "सत्य", "सत्य", "सत्य", "असत्य", "असत्य"])
+    # -------------------------------------------------------- प्रतिस्थापय
+    def test_replace_every_occurrence(self):
+        out = self.run_vak(
+            'आनय "शब्दाः"।\n'
+            'मुद्रय शब्दाः.प्रतिस्थापय("नमस्ते जगत्", "जगत्", "विश्व")।\n'
+            'मुद्रय शब्दाः.प्रतिस्थापय("अअअ", "अ", "ब")।')
+        self.assertEqual(out.splitlines(), ["नमस्ते विश्व", "बबब"])
+
+    def test_replacement_containing_the_target_does_not_feed_itself(self):
+        """The scan steps over what it wrote, so this terminates and doubles
+        rather than looping forever."""
+        out = self.run_vak(
+            'आनय "शब्दाः"।\n'
+            'मुद्रय शब्दाः.प्रतिस्थापय("अअ", "अ", "अअ")।')
+        self.assertEqual(out, "अअअअ")
+
+    def test_replace_with_empty_deletes(self):
+        out = self.run_vak(
+            'आनय "शब्दाः"।\n'
+            'मुद्रय "[" + शब्दाः.प्रतिस्थापय("ककक", "क", "") + "]"।')
+        self.assertEqual(out, "[]")
+
+    def test_empty_target_returns_the_string_unchanged(self):
+        """An empty needle matches everywhere and would never advance."""
+        out = self.run_vak(
+            'आनय "शब्दाः"।\n'
+            'मुद्रय "[" + शब्दाः.प्रतिस्थापय("क", "", "ख") + "]"।')
+        self.assertEqual(out, "[क]")
+
+    def test_replace_with_no_match_is_the_identity(self):
+        out = self.run_vak(
+            'आनय "शब्दाः"।\n'
+            'मुद्रय शब्दाः.प्रतिस्थापय("abc", "z", "y")।')
+        self.assertEqual(out, "abc")
+
+    # -------------------------------------- बहुलकः, विचरणम्, प्रमाणविचलनम्
+    def test_mode(self):
+        out = self.run_vak(
+            'आनय "गणितम्"।\n'
+            'मुद्रय गणितम्.बहुलकः([१, २, २, ३, ३, ३])।\n'
+            'मुद्रय गणितम्.बहुलकः([७])।')
+        self.assertEqual(out.splitlines(), ["3", "7"])
+
+    def test_mode_breaks_a_tie_toward_the_smaller_value(self):
+        """Documented behaviour, not an accident: sorting first makes it
+        deterministic regardless of the order the values arrived in."""
+        out = self.run_vak(
+            'आनय "गणितम्"।\n'
+            'मुद्रय गणितम्.बहुलकः([३, १, १, २, २])।\n'
+            'मुद्रय गणितम्.बहुलकः([२, २, १, १, ३])।')
+        self.assertEqual(out.splitlines(), ["1", "1"])
+
+    def test_variance_and_standard_deviation(self):
+        """The textbook example: population variance 4, so σ is 2."""
+        out = self.run_vak(
+            'आनय "गणितम्"।\n'
+            'मुद्रय गणितम्.विचरणम्([२, ४, ४, ४, ५, ५, ७, ९])।\n'
+            'मुद्रय गणितम्.प्रमाणविचलनम्([२, ४, ४, ४, ५, ५, ७, ९])।')
+        got = [float(x) for x in out.splitlines()]
+        self.assertAlmostEqual(got[0], 4.0, places=10)
+        self.assertAlmostEqual(got[1], 2.0, places=10)
+
+    def test_variance_of_one_value_is_zero(self):
+        """Population, not sample — so a population of one has no spread,
+        rather than dividing by zero."""
+        out = self.run_vak('आनय "गणितम्"।\nमुद्रय गणितम्.विचरणम्([५])।')
+        self.assertAlmostEqual(float(out), 0.0, places=12)
+
+    def test_empty_list_is_an_error_for_all_three(self):
+        for fn in ("बहुलकः", "विचरणम्", "प्रमाणविचलनम्"):
+            with self.subTest(function=fn):
+                with self.assertRaises(RuntimeVakError):
+                    self.run_vak(f'आनय "गणितम्"।\nमुद्रय गणितम्.{fn}([])।')
 
 class TestPackaging(unittest.TestCase):
     """`twine check` validates the description and nothing else, so an invalid

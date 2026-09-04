@@ -47,6 +47,9 @@ LIB_DOCS: dict[str, str] = {
     "मध्यमा": "the median of the list",
     "घातः": "आधारः raised to the power घाताङ्कः",
     "वर्गमूलम्": "the square root of क, by Newton's method",
+    "बहुलकः": "the most frequent value; the smaller one when two tie",
+    "विचरणम्": "the population variance — the mean squared deviation",
+    "प्रमाणविचलनम्": "the population standard deviation",
     # शब्दाः
     "आदौ_अस्ति": "whether पूर्णः begins with आदिः",
     "अन्ते_अस्ति": "whether पूर्णः ends with अन्तः_",
@@ -60,11 +63,12 @@ LIB_DOCS: dict[str, str] = {
     "आदौ_छिन्द": "स with leading whitespace removed",
     "अन्ते_छिन्द": "स with trailing whitespace removed",
     "छिन्द": "स with whitespace removed from both ends",
+    "प्रतिस्थापय": "वाक्यम् with every पुरातनम् replaced by नूतनम्",
 }
 
 MODULE_BLURB: dict[str, str] = {
-    "गणितम्": "Mathematics — two constants and thirteen functions.",
-    "शब्दाः": "Strings — twelve functions over शब्दः.",
+    "गणितम्": "Mathematics — two constants and sixteen functions.",
+    "शब्दाः": "Strings — thirteen functions over शब्दः.",
 }
 
 
