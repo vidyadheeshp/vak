@@ -214,3 +214,35 @@ if __name__ == "__main__":                                   # pragma: no cover
     print(f"diagnostics: {len(diagnostics())}   error kinds: {len(error_kinds())}")
     print(f"cli flags: {len(cli_flags())}")
     print("drift:", f"{len(bad)} problem(s)" if bad else "none")
+
+# ------------------------------------------------- दोषदर्शनम् · seeing a fault
+# The manual listed eleven diagnostics and never showed one happening. The
+# test suite has 42 deliberately broken programs, one per diagnostic kind, and
+# they are the shortest possible demonstration of each — but they live under
+# tests/ where a learner will not find them.
+#
+# This runs the real analyser over that battery and pairs each code with the
+# program that provokes it and the message it produces, so the manual teaches
+# by cause and effect and cannot drift: if a message is reworded, the page
+# changes with it.
+BROKEN_DIR = ROOT / "tests" / "दुष्टनमूनाः"
+
+
+def demonstrations() -> list[tuple[str, str, str]]:
+    """(code, the shortest program that triggers it, the message it gives)."""
+    from vaak import check_source
+
+    best: dict[str, tuple[str, str]] = {}
+    for path in sorted(BROKEN_DIR.glob("*.vak")):
+        source = path.read_text(encoding="utf-8").strip()
+        try:
+            report = check_source(source, path.name)
+        except Exception:                       # a lexer or parser fault, not ours
+            continue
+        for diagnostic in report.diagnostics:
+            code = diagnostic.code
+            # the shortest example of each kind reads best
+            if code not in best or len(source) < len(best[code][0]):
+                best[code] = (source, diagnostic.message)
+    return [(code, src, msg) for code, (src, msg) in sorted(best.items())]
+

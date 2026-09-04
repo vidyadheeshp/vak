@@ -200,6 +200,15 @@ h3.lib { margin: 2.2rem 0 .2rem; font-size: 1.02rem; font-weight: 500;
   padding-bottom: .5rem; border-bottom: 1px solid var(--rule); }
 h3.lib span { font-family: var(--sans); font-size: .78rem; font-weight: 400;
   color: var(--ink-faint); }
+/* cause above, effect below — the pairing is the teaching */
+.demos { display: grid; gap: .9rem; margin: 1.3rem 0; }
+.demo { border-left: 2px solid var(--rule); padding-left: .9rem; }
+.demo .code { margin: 0 0 .3rem; font-family: var(--mono); font-size: .8rem;
+  color: var(--gold); }
+.demo pre { margin: 0 0 .35rem; }
+.demo .says { margin: 0; font-family: var(--sans); font-size: .8rem;
+  color: var(--ink-soft); }
+.demo .says::before { content: "→ "; color: var(--ink-faint); }
 /* the three installation routes are numbered because they are alternatives,
    not steps — the badge says "pick one", the ordering says nothing else */
 h3.lib span.way { display: inline-flex; align-items: center;
@@ -932,6 +941,75 @@ hold:</p>
         <b class="k" data-r="mudraya">मुद्रय</b> <i class="s">&quot;गणने दोषः / a runtime error&quot;</i>।
     }
 }</code></pre></figure>
+
+<h3 class="lib">Each one, happening</h3>
+<p>A list of diagnostics teaches less than watching one fire. Below is the
+shortest program that provokes each, and the message the analyser actually
+gives — both taken from the test suite and regenerated whenever this page is
+built, so a reworded message changes here too.</p>
+<div class="demos">
+  <div class="demo">
+    <p class="code">अगम्यदोषः</p>
+    <pre><code><b class="k" data-r="karyam">कार्यम्</b> क() : <b class="t" data-r="purnankah">पूर्णाङ्कः</b> { <b class="k" data-r="pratyagaccha">प्रत्यागच्छ</b> <i class="n" data-r="1">१</i>। <b class="k" data-r="mudraya">मुद्रय</b> <i class="s">&quot;अगम्यम्&quot;</i>। }
+<b class="k" data-r="mudraya">मुद्रय</b> क()।</code></pre>
+    <p class="says">इदम् वाक्यम् कदापि न चलति / unreachable code after Return on line 1</p>
+  </div>
+  <div class="demo">
+    <p class="code">कारकदोषः</p>
+    <pre><code><b class="k" data-r="karyam">कार्यम्</b> क(अ) { <b class="k" data-r="mudraya">मुद्रय</b> अ। }
+क(<b class="ka">कर्म</b>: <i class="n" data-r="1">१</i>)।</code></pre>
+    <p class="says">क: कर्म इति कारकम् नास्ति / declares no कर्म parameter</p>
+  </div>
+  <div class="demo">
+    <p class="code">कारकसूचना</p>
+    <pre><code><b class="k" data-r="karyam">कार्यम्</b> क(<b class="ka">कर्ता</b> अ, ब) { <b class="k" data-r="mudraya">मुद्रय</b> अ। }</code></pre>
+    <p class="says">क: केचन प्राचलाः कारकयुक्ताः, केचन न / only 1 of 2 parameters carry a कारकम्</p>
+  </div>
+  <div class="demo">
+    <p class="code">ध्रुवदोषः</p>
+    <pre><code><b class="k" data-r="dhruva">ध्रुव</b> क = <i class="n" data-r="5">५</i>। क = <i class="n" data-r="6">६</i>।</code></pre>
+    <p class="says">ध्रुवः &#x27;क&#x27; न परिवर्तनीयः / cannot reassign the constant &#x27;क&#x27;</p>
+  </div>
+  <div class="demo">
+    <p class="code">नामदोषः</p>
+    <pre><code>अज्ञातम् = <i class="n" data-r="5">५</i>।</code></pre>
+    <p class="says">अपरिभाषितम् नाम &#x27;अज्ञातम्&#x27; — प्रथमम् &#x27;मान&#x27; इति उपयुज्यताम् / undefined name &#x27;अज्ञातम्&#x27;</p>
+  </div>
+  <div class="demo">
+    <p class="code">पुनर्घोषणा</p>
+    <pre><code><b class="k" data-r="mana">मान</b> क = <i class="n" data-r="1">१</i>। <b class="k" data-r="mana">मान</b> क = <i class="n" data-r="2">२</i>।</code></pre>
+    <p class="says">&#x27;क&#x27; अस्मिन् एव परिवेशे पुनः घोष्यते / &#x27;क&#x27; is redeclared in the same scope</p>
+  </div>
+  <div class="demo">
+    <p class="code">प्रकारदोषः</p>
+    <pre><code><b class="k" data-r="mudraya">मुद्रय</b> -<i class="s">&quot;अ&quot;</i>।</code></pre>
+    <p class="says">&#x27;-&#x27; अङ्कम् इच्छति, शब्दः दत्तः / unary &#x27;-&#x27; needs a number, got शब्दः</p>
+  </div>
+  <div class="demo">
+    <p class="code">प्रतिफलसूचना</p>
+    <pre><code><b class="k" data-r="karyam">कार्यम्</b> क(अ) : <b class="t" data-r="purnankah">पूर्णाङ्कः</b> { <b class="k" data-r="yadi">यदि</b> (अ) { <b class="k" data-r="pratyagaccha">प्रत्यागच्छ</b> <i class="n" data-r="1">१</i>। } }</code></pre>
+    <p class="says">क: पूर्णाङ्कः इति प्रतिज्ञातम्, किन्तु मार्गः अस्ति यत्र किमपि न प्रत्यागच्छति / declared पूर्णाङ्कः but some path returns nothing</p>
+  </div>
+  <div class="demo">
+    <p class="code">प्रवाहदोषः</p>
+    <pre><code><b class="k" data-r="virama">विरम</b>।</code></pre>
+    <p class="says">&#x27;विरम&#x27; पाशस्य बहिः / &#x27;विरम&#x27; outside a loop</p>
+  </div>
+  <div class="demo">
+    <p class="code">प्रवाहसूचना</p>
+    <pre><code><b class="k" data-r="mana">मान</b> क = <i class="n" data-r="1">१</i>।
+<b class="k" data-r="vikalpah">विकल्पः</b> (क) {
+    <b class="k" data-r="pakshe">पक्षे</b> <i class="n" data-r="1">१</i>: <b class="k" data-r="mudraya">मुद्रय</b> <i class="s">&quot;अ&quot;</i>। <b class="k" data-r="mudraya">मुद्रय</b> अज्ञातम्।
+    <b class="k" data-r="pakshe">पक्षे</b> <i class="n" data-r="2">२</i>: <b class="k" data-r="virama">विरम</b>।
+}</code></pre>
+    <p class="says">विकल्पे &#x27;अन्यथा&#x27; नास्ति — अमिलितः विषयः किमपि न करोति / no अन्यथा, so a subject that matches nothing does nothing</p>
+  </div>
+  <div class="demo">
+    <p class="code">प्राचलदोषः</p>
+    <pre><code><b class="k" data-r="mudraya">मुद्रय</b> दीर्घता(<i class="n" data-r="1">१</i>, <i class="n" data-r="2">२</i>, <i class="n" data-r="3">३</i>)।</code></pre>
+    <p class="says">दीर्घता: 1 प्राचलाः अपेक्षिताः, 3 दत्ताः / expected 1 argument(s), got 3</p>
+  </div>
+</div>
 </section>
 <section id="padakoshah">
   <div class="head">

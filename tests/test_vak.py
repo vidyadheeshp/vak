@@ -1973,6 +1973,24 @@ class TestDocumentation(unittest.TestCase):
         kinds = [k for k, _ in ref.error_kinds() if k not in man]
         self.assertEqual(kinds, [], f"undocumented error kinds: {kinds}")
 
+    def test_every_diagnostic_is_shown_happening(self):
+        """The manual lists the diagnostics and also demonstrates each one.
+        A list teaches less than watching one fire, so the demonstration must
+        cover every code the analyser can emit — not most of them."""
+        ref = self._reference()
+        shown = {code for code, _src, _msg in ref.demonstrations()}
+        missing = [c for c in ref.diagnostic_codes() if c not in shown]
+        self.assertEqual(missing, [],
+                         f"no broken-program example provokes: {missing}")
+
+    def test_the_demonstrations_are_real_analyser_output(self):
+        """Each demonstration must actually produce the message it claims."""
+        from vaak import check_source
+        for code, src, msg in self._reference().demonstrations():
+            with self.subTest(diagnostic=code):
+                report = check_source(src, "demo.vak")
+                self.assertIn(msg, [d.message for d in report.diagnostics])
+
     def test_every_command_line_flag_is_documented(self):
         man = self._manual()
         missing = [f for f, _, _ in self._reference().cli_flags() if f not in man]

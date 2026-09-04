@@ -678,6 +678,16 @@ _kind_rows = chr(10).join(
     f'    <tr><td><code>{html.escape(codeword)}</code></td>'
     f'<td>{html.escape(english)}</td></tr>'
     for codeword, english in reference.error_kinds())
+# Each diagnostic shown happening: the shortest program that provokes it and
+# the message the real analyser gives, so the page teaches by cause and effect.
+_demos = chr(10).join(
+    f'''  <div class="demo">
+    <p class="code">{html.escape(codeword)}</p>
+    <pre><code>{highlight(src)}</code></pre>
+    <p class="says">{html.escape(msg)}</p>
+  </div>'''
+    for codeword, src, msg in reference.demonstrations())
+
 _errors = sum(1 for _, k, _ in reference.diagnostics() if k == "दोषः")
 _warns = len(reference.diagnostics()) - _errors
 
@@ -707,7 +717,16 @@ hold:</p>
     यदि (त्रुटिः.प्रकारः == "कार्यकालदोषः") {
         मुद्रय "गणने दोषः / a runtime error"।
     }
-}''')}"""))
+}''')}
+
+<h3 class="lib">Each one, happening</h3>
+<p>A list of diagnostics teaches less than watching one fire. Below is the
+shortest program that provokes each, and the message the analyser actually
+gives — both taken from the test suite and regenerated whenever this page is
+built, so a reworded message changes here too.</p>
+<div class="demos">
+{_demos}
+</div>"""))
 
 parts.append(section("padakoshah", "पदकोशः", "Every keyword", f"""
 <p>Each keyword may be written in Devanagari, in IAST transliteration, or in
@@ -969,6 +988,15 @@ h3.lib {{ margin: 2.2rem 0 .2rem; font-size: 1.02rem; font-weight: 500;
   padding-bottom: .5rem; border-bottom: 1px solid var(--rule); }}
 h3.lib span {{ font-family: var(--sans); font-size: .78rem; font-weight: 400;
   color: var(--ink-faint); }}
+/* cause above, effect below — the pairing is the teaching */
+.demos {{ display: grid; gap: .9rem; margin: 1.3rem 0; }}
+.demo {{ border-left: 2px solid var(--rule); padding-left: .9rem; }}
+.demo .code {{ margin: 0 0 .3rem; font-family: var(--mono); font-size: .8rem;
+  color: var(--gold); }}
+.demo pre {{ margin: 0 0 .35rem; }}
+.demo .says {{ margin: 0; font-family: var(--sans); font-size: .8rem;
+  color: var(--ink-soft); }}
+.demo .says::before {{ content: "→ "; color: var(--ink-faint); }}
 /* the three installation routes are numbered because they are alternatives,
    not steps — the badge says "pick one", the ordering says nothing else */
 h3.lib span.way {{ display: inline-flex; align-items: center;
