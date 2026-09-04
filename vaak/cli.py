@@ -197,8 +197,52 @@ def run_file(path: Path, show_tokens: bool = False, show_ast: bool = False,
         return 130
 
 
+HISTORY_LIMIT = 1000
+
+
+def history_path() -> Path:
+    """Where the संवादः remembers what you typed."""
+    return Path.home() / ".vaak_history"
+
+
+def enable_history() -> object | None:
+    """Load the REPL's history and arrange to save it on exit.
+
+    readline is not in the standard library on Windows — which is where Vāk is
+    developed — so every part of this is optional. A missing module, an
+    unreadable home directory or a read-only disk each mean history does not
+    persist, which is a small loss and never a reason to refuse to start.
+
+    Returns the readline module when history is live, and None otherwise, so a
+    caller can tell without catching anything.
+    """
+    try:
+        import atexit
+        import readline
+    except ImportError:                 # Windows, or a build without it
+        return None
+
+    path = history_path()
+    try:
+        readline.read_history_file(str(path))
+    except (OSError, ValueError):       # absent, or written by something else
+        pass
+    readline.set_history_length(HISTORY_LIMIT)
+
+    def save() -> None:
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            readline.write_history_file(str(path))
+        except OSError:                 # read-only home, full disk
+            pass
+
+    atexit.register(save)
+    return readline
+
+
 def repl() -> int:
     print(BANNER)
+    enable_history()
     interpreter = Interpreter("<संवादः>")
     buffer: list[str] = []
 

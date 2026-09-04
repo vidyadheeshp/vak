@@ -261,6 +261,13 @@ python -m vaak --vm प्रोग्राम.vak     # compile to bytecode, r
 starts a REPL:</p>
 {shell('''./वाक्.exe --परीक्षा प्रोग्राम.vak    # report problems, run nothing
 python -m vaak                        # संवादः — the REPL''')}
+<div class="note">
+  <p><b>The संवादः remembers.</b> What you type is kept in
+  <code>~/.vaak_history</code> and read back next time, so the up arrow reaches
+  yesterday's session. This needs Python's <code>readline</code>, which is not
+  in the standard library on Windows — there the REPL works exactly as before
+  and simply forgets between sessions.</p>
+</div>
 <p>The full set of options, read from the argument parser itself. Four carry a
 Sanskrit alias:</p>
 <div class="scroll"><table class="kw">

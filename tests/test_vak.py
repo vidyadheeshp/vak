@@ -1937,6 +1937,83 @@ class TestUnusedVariableWarning(unittest.TestCase):
         self.assertEqual(out.getvalue().strip(), "चलति")
 
 
+class TestReplHistory(unittest.TestCase):
+    """Issue #9. readline is not in the standard library on Windows, which is
+    where Vāk is developed, so the live path is exercised with a stand-in and
+    the absent path is exercised for real."""
+
+    def setUp(self):
+        from vaak import cli
+        self.cli = cli
+        self._real_path = cli.history_path
+
+    def tearDown(self):
+        self.cli.history_path = self._real_path
+        sys.modules.pop("readline", None)
+
+    @staticmethod
+    def _fake_readline(calls):
+        import types
+        fake = types.ModuleType("readline")
+        fake.read_history_file = lambda p: calls.append(("read", p))
+        fake.write_history_file = lambda p: calls.append(("write", p))
+        fake.set_history_length = lambda n: calls.append(("limit", n))
+        return fake
+
+    def test_history_goes_beside_the_users_home(self):
+        self.assertEqual(self.cli.history_path().name, ".vaak_history")
+        self.assertEqual(self.cli.history_path().parent, pathlib.Path.home())
+
+    def test_without_readline_it_returns_none_and_does_not_raise(self):
+        """The Windows case, and any build without readline. History not
+        persisting is a small loss; refusing to start a REPL is not."""
+        import builtins
+        real_import = builtins.__import__
+
+        def blocked(name, *args, **kwargs):
+            if name == "readline":
+                raise ImportError("no readline")
+            return real_import(name, *args, **kwargs)
+
+        builtins.__import__ = blocked
+        try:
+            self.assertIsNone(self.cli.enable_history())
+        finally:
+            builtins.__import__ = real_import
+
+    def test_with_readline_it_reads_on_start_and_writes_on_exit(self):
+        import atexit
+        calls: list = []
+        sys.modules["readline"] = self._fake_readline(calls)
+        self.cli.history_path = lambda: pathlib.Path(tempfile.mkdtemp()) / ".vaak_history"
+
+        registered: list = []
+        real_register = atexit.register
+        atexit.register = lambda fn, *a, **k: (registered.append(fn), fn)[1]
+        try:
+            self.assertIsNotNone(self.cli.enable_history())
+        finally:
+            atexit.register = real_register
+
+        self.assertEqual([c[0] for c in calls], ["read", "limit"])
+        self.assertEqual(len(registered), 1, "nothing would save the history")
+        registered[0]()
+        self.assertEqual([c[0] for c in calls], ["read", "limit", "write"])
+
+    def test_an_unwritable_history_location_is_survivable(self):
+        """A read-only home or a full disk must not take the REPL down."""
+        calls: list = []
+        sys.modules["readline"] = self._fake_readline(calls)
+        self.cli.history_path = lambda: pathlib.Path("Z:/nowhere/at/all/.vaak_history")
+        self.cli.enable_history()          # must not raise
+
+    def test_the_limit_is_applied(self):
+        calls: list = []
+        sys.modules["readline"] = self._fake_readline(calls)
+        self.cli.history_path = lambda: pathlib.Path(tempfile.mkdtemp()) / ".vaak_history"
+        self.cli.enable_history()
+        self.assertIn(("limit", self.cli.HISTORY_LIMIT), calls)
+
 class TestPackaging(unittest.TestCase):
     """`twine check` validates the description and nothing else, so an invalid
     trove classifier sails past it and PyPI answers 400 Bad Request with no
