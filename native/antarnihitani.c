@@ -38,6 +38,57 @@ static int deva_anka_sankhya(const char *s, int offset, int len) {
 }
 
 /* ------------------------------------------------------------ मुद्रणम् */
+/* दोषलिख — the same as लिख, but to the fault stream. A program that cannot
+   separate diagnostics from output cannot be piped into another. */
+/* कणगणितम् — bit operations. Functions rather than operators because
+   `^` is already exponentiation in Vak, so XOR could not have its usual
+   symbol, and six new operators would need tokens and precedence in two
+   parsers and three machines. */
+static long long purnankah_va(Mulyam m, const char *who) {
+    if (m.prakara != P_PURNANKA) {
+        dosha_utsrja(who, "पूर्णाङ्कः अपेक्षितः / expected पूर्णाङ्कः");
+    }
+    return m.as.purnanka;
+}
+
+static Mulyam a_pratichchhedah(Mulyam *pra, int n) { (void)n;
+    return purnanka_mulyam(purnankah_va(pra[0], "प्रतिच्छेदः")
+                          & purnankah_va(pra[1], "प्रतिच्छेदः")); }
+
+static Mulyam a_samyogah(Mulyam *pra, int n) { (void)n;
+    return purnanka_mulyam(purnankah_va(pra[0], "संयोगः")
+                          | purnankah_va(pra[1], "संयोगः")); }
+
+static Mulyam a_viyogah(Mulyam *pra, int n) { (void)n;
+    return purnanka_mulyam(purnankah_va(pra[0], "वियोगः")
+                          ^ purnankah_va(pra[1], "वियोगः")); }
+
+static Mulyam a_purakah(Mulyam *pra, int n) { (void)n;
+    return purnanka_mulyam(~purnankah_va(pra[0], "पूरकः")); }
+
+static Mulyam a_vamasarah(Mulyam *pra, int n) { (void)n;
+    long long c = purnankah_va(pra[1], "वामसारः");
+    if (c < 0) dosha_utsrja("वामसारः",
+        "ऋणात्मकम् सरणम् न सम्भवति / shift count may not be negative");
+    return purnanka_mulyam(purnankah_va(pra[0], "वामसारः") << c); }
+
+static Mulyam a_dakshinasarah(Mulyam *pra, int n) { (void)n;
+    long long c = purnankah_va(pra[1], "दक्षिणसारः");
+    if (c < 0) dosha_utsrja("दक्षिणसारः",
+        "ऋणात्मकम् सरणम् न सम्भवति / shift count may not be negative");
+    return purnanka_mulyam(purnankah_va(pra[0], "दक्षिणसारः") >> c); }
+
+static Mulyam a_dosha_likh(Mulyam *pra, int n) {
+    for (int i = 0; i < n; i++) {
+        if (i) fputs(" ", stderr);
+        char *s = shabdakr(pra[i], false);
+        fputs(s, stderr);
+        free(s);
+    }
+    fputs("\n", stderr);
+    return shunyam_mulyam();
+}
+
 static Mulyam a_likh(Mulyam *pra, int n) {
     for (int i = 0; i < n; i++) {
         if (i) fputs(" ", stdout);
@@ -912,6 +963,13 @@ static Mulyam a_dosha(Mulyam *pra, int n) {
 /* ------------------------------------------------------------- सूचिका */
 const Antarnihitam ANTARNIHITANI[] = {
     { "लिख", -1, a_likh },
+    { "दोषलिख", -1, a_dosha_likh },
+    { "प्रतिच्छेदः", 2, a_pratichchhedah },
+    { "संयोगः", 2, a_samyogah },
+    { "वियोगः", 2, a_viyogah },
+    { "पूरकः", 1, a_purakah },
+    { "वामसारः", 2, a_vamasarah },
+    { "दक्षिणसारः", 2, a_dakshinasarah },
     { "मुद्रय", -1, a_likh },
     { "पठ", -1, a_patha },
     { "प्रकार", 1, a_prakara },

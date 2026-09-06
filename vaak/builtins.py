@@ -7,6 +7,8 @@ so both `लिख("नमस्ते")` and `likh("namaste")` work.
 
 from __future__ import annotations
 
+import sys
+
 import math
 import random as _random
 from pathlib import Path
@@ -28,6 +30,76 @@ def _fail(msg: str) -> None:
 def _likh(*args: Any) -> None:
     """लिख — write the arguments to the screen, separated by spaces."""
     print(" ".join(stringify(a) for a in args))
+
+
+def _dosha_likh(*args: Any) -> None:
+    """दोषलिख — write to the fault stream rather than the ordinary one.
+
+    Without this a program cannot separate its diagnostics from its output,
+    which matters the moment anyone pipes one Vāk program into another: a
+    warning would arrive in the middle of the data.
+    """
+    print(" ".join(stringify(a) for a in args), file=sys.stderr)
+
+
+# --------------------------------------------------------------------------
+# कणगणितम् — bit operations
+#
+# Functions rather than operators, deliberately. `^` is already exponentiation
+# in Vāk and is used in the shipped examples, so XOR could not have its usual
+# symbol; and a set of six new operators would need tokens, precedence levels
+# and dispatch in both parsers, both compilers and three virtual machines.
+# Named functions need none of that, and they match how Vāk already supplies
+# योग, क्रम and विभज.
+#
+# The names are the set-theoretic ones, because that is what bit operations
+# are: a bit pattern is a set, AND is intersection, OR is union, XOR is the
+# symmetric difference, NOT is the complement.
+def _integer(value: Any, who: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise RuntimeVakError(f"{who}: पूर्णाङ्कः अपेक्षितः, {type_name(value)} दत्तः / "
+                       f"expected पूर्णाङ्कः, got {type_name(value)}")
+    return value
+
+
+def _pratichchhedah(a: Any, b: Any) -> int:
+    """प्रतिच्छेदः — bitwise and, the intersection of two bit patterns."""
+    return _integer(a, "प्रतिच्छेदः") & _integer(b, "प्रतिच्छेदः")
+
+
+def _samyogah(a: Any, b: Any) -> int:
+    """संयोगः — bitwise or, the union."""
+    return _integer(a, "संयोगः") | _integer(b, "संयोगः")
+
+
+def _viyogah(a: Any, b: Any) -> int:
+    """वियोगः — bitwise exclusive or, the symmetric difference."""
+    return _integer(a, "वियोगः") ^ _integer(b, "वियोगः")
+
+
+def _purakah(a: Any) -> int:
+    """पूरकः — bitwise not, the complement. Integers are arbitrary-precision
+    and signed, so this is ~n = -(n+1), as in Python, and not a width-limited
+    flip as in C."""
+    return ~_integer(a, "पूरकः")
+
+
+def _vamasarah(a: Any, n: Any) -> int:
+    """वामसारः — shift left."""
+    count = _integer(n, "वामसारः")
+    if count < 0:
+        raise RuntimeVakError("वामसारः: ऋणात्मकम् सरणम् न सम्भवति / "
+                       "shift count may not be negative")
+    return _integer(a, "वामसारः") << count
+
+
+def _dakshinasarah(a: Any, n: Any) -> int:
+    """दक्षिणसारः — arithmetic shift right; the sign is preserved."""
+    count = _integer(n, "दक्षिणसारः")
+    if count < 0:
+        raise RuntimeVakError("दक्षिणसारः: ऋणात्मकम् सरणम् न सम्भवति / "
+                       "shift count may not be negative")
+    return _integer(a, "दक्षिणसारः") >> count
 
 
 def _patha(prompt: Any = "") -> str:
@@ -399,6 +471,20 @@ def _dosha(message: Any = "दोषः", code: Any = "उपयोक्तृ�
 # --------------------------------------------------------------------------
 _REGISTRY: list[tuple[str, str, Any, int, str, str]] = [
     ("लिख", "likh", _likh, -1, "मुद्रयति / print values", "शून्यम्"),
+    ("दोषलिख", "doshalikh", _dosha_likh, -1,
+     "दोषप्रवाहे मुद्रयति / print to the error stream", "शून्यम्"),
+    ("प्रतिच्छेदः", "pratichchhedah", _pratichchhedah, 2,
+     "कणशः संयोगः / bitwise and", "पूर्णाङ्कः"),
+    ("संयोगः", "samyogah", _samyogah, 2,
+     "कणशः विकल्पः / bitwise or", "पूर्णाङ्कः"),
+    ("वियोगः", "viyogah", _viyogah, 2,
+     "कणशः भेदः / bitwise exclusive or", "पूर्णाङ्कः"),
+    ("पूरकः", "purakah", _purakah, 1,
+     "कणशः निषेधः / bitwise not", "पूर्णाङ्कः"),
+    ("वामसारः", "vamasarah", _vamasarah, 2,
+     "वामतः सारणम् / shift left", "पूर्णाङ्कः"),
+    ("दक्षिणसारः", "dakshinasarah", _dakshinasarah, 2,
+     "दक्षिणतः सारणम् / shift right", "पूर्णाङ्कः"),
     ("पठ", "patha", _patha, -1, "उपयोक्तुः पङ्क्तिम् पठति / read a line", "शब्दः"),
     ("प्रकार", "prakara", _prakara, 1, "मूल्यस्य प्रकारः / type of a value", "शब्दः"),
     ("संख्या", "sankhya", _sankhya, 1, "अङ्कः करोति / convert to number", "अङ्कः"),

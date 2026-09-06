@@ -30,7 +30,10 @@
 # अन्तर्निहितानाम् नामानि — vaak/builtins.py इत्यस्मात् एव जनितानि।
 # Generated from vaak/builtins.py by docs-free tooling, so the two cannot drift.
 ध्रुव सूची अन्तर्निहितनामानि = [
-    "लिख", "likh", "पठ", "patha", "प्रकार", "prakara", "संख्या", "sankhya", "शब्द",
+    "लिख", "likh", "दोषलिख", "doshalikh",
+    "प्रतिच्छेदः", "pratichchhedah", "संयोगः", "samyogah",
+    "वियोगः", "viyogah", "पूरकः", "purakah",
+    "वामसारः", "vamasarah", "दक्षिणसारः", "dakshinasarah", "पठ", "patha", "प्रकार", "prakara", "संख्या", "sankhya", "शब्द",
     "shabda", "देवनागरी", "devanagari", "दीर्घता", "dirghata", "सूची", "suchi",
     "परास", "parasa", "योजय", "yojaya", "निष्कास", "nishkasa", "अस्ति", "asti",
     "कुञ्जिकाः", "kunjika", "मूल्यानि", "mulyani", "क्रम", "krama", "विपर्यय",

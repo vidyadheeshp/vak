@@ -2014,6 +2014,105 @@ class TestReplHistory(unittest.TestCase):
         self.cli.enable_history()
         self.assertIn(("limit", self.cli.HISTORY_LIMIT), calls)
 
+class TestErrorStream(unittest.TestCase):
+    """दोषलिख writes to stderr. Without it a program cannot separate its
+    diagnostics from its output, and piping one Vāk program into another
+    would interleave warnings with data."""
+
+    PROGRAM = ('मुद्रय "फलम्"।\n'
+               'दोषलिख("सूचना")।')
+
+    def test_it_goes_to_stderr_not_stdout(self):
+        out, err = io.StringIO(), io.StringIO()
+        import contextlib
+        with redirect_stdout(out), contextlib.redirect_stderr(err):
+            run_source(self.PROGRAM, "प.vak")
+        self.assertEqual(out.getvalue().strip(), "फलम्")
+        self.assertEqual(err.getvalue().strip(), "सूचना")
+
+    def test_every_engine_separates_the_streams_the_same_way(self):
+        """The five-engine rule reaches the streams too: it is not enough that
+        each engine prints the right bytes, they must print them to the right
+        place."""
+        path = pathlib.Path(tempfile.mkdtemp()) / "प.vak"
+        path.write_text(self.PROGRAM, encoding="utf-8")
+        env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
+        for flags in ([], ["--vm"], ["--self"]):
+            with self.subTest(engine=" ".join(flags) or "interpreter"):
+                done = subprocess.run(
+                    [sys.executable, "-m", "vaak", *flags, str(path)],
+                    capture_output=True, cwd=str(ROOT), env=env)
+                self.assertEqual(done.stdout.decode("utf-8").strip(), "फलम्")
+                self.assertEqual(done.stderr.decode("utf-8").strip(), "सूचना")
+
+    def test_it_is_documented_and_known_to_every_engine(self):
+        from vaak.builtins import BUILTIN_DOCS
+        self.assertIn("दोषलिख", {b[0] for b in BUILTIN_DOCS})
+        for f in ("स्वयंसिद्धिः/अर्थविश्लेषकः.vak",
+                  "स्वयंसिद्धिः/संकलकः.vak",
+                  "native/antarnihitani.c"):
+            with self.subTest(file=f):
+                text = (ROOT / f).read_text(encoding="utf-8")
+                self.assertIn("दोषलिख", text,
+                              f"{f} does not know about दोषलिख")
+
+
+class TestBitOperations(unittest.TestCase):
+    """कणगणितम् — bit operations as built-in functions rather than operators,
+    because ^ is already exponentiation in Vāk and six new operators would
+    need tokens and precedence in two parsers and three machines."""
+
+    def run_vak(self, src: str) -> str:
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            run_source(src, "प.vak")
+        return buf.getvalue().strip()
+
+    def test_the_six_operations(self):
+        cases = [("प्रतिच्छेदः(१२, १०)", 12 & 10),
+                 ("संयोगः(१२, १०)", 12 | 10),
+                 ("वियोगः(१२, १०)", 12 ^ 10),
+                 ("पूरकः(१२)", ~12),
+                 ("वामसारः(१, ४)", 1 << 4),
+                 ("दक्षिणसारः(१६, २)", 16 >> 2)]
+        for expr, want in cases:
+            with self.subTest(expression=expr):
+                self.assertEqual(self.run_vak(f"मुद्रय {expr}।"), str(want))
+
+    def test_complement_is_arbitrary_precision_not_width_limited(self):
+        """Integers are signed and unbounded, so ~n is -(n+1) as in Python,
+        not a flip within a fixed width as in C. Worth pinning down: it is the
+        one bit operation whose answer depends on that choice."""
+        self.assertEqual(self.run_vak("मुद्रय पूरकः(०)।"), "-1")
+        self.assertEqual(self.run_vak("मुद्रय पूरकः(-१)।"), "0")
+
+    def test_shifting_past_64_bits_does_not_wrap(self):
+        self.assertEqual(self.run_vak("मुद्रय वामसारः(१, ७०)।"), str(1 << 70))
+
+    def test_a_negative_shift_is_an_error(self):
+        with self.assertRaises(RuntimeVakError):
+            self.run_vak("मुद्रय वामसारः(१, -१)।")
+
+    def test_a_non_integer_is_an_error(self):
+        for expr in ('प्रतिच्छेदः("क", १)', "संयोगः(१.५, १)", "पूरकः(सत्य)"):
+            with self.subTest(expression=expr):
+                with self.assertRaises(RuntimeVakError):
+                    self.run_vak(f"मुद्रय {expr}।")
+
+    def test_every_engine_knows_them(self):
+        """A builtin missing from one engine's table is a divergence, and the
+        C enum mistake that P_ and K_ made possible is exactly why this is
+        checked rather than assumed."""
+        names = ["प्रतिच्छेदः", "संयोगः", "वियोगः", "पूरकः",
+                 "वामसारः", "दक्षिणसारः"]
+        for f in ("स्वयंसिद्धिः/अर्थविश्लेषकः.vak", "स्वयंसिद्धिः/संकलकः.vak",
+                  "native/antarnihitani.c"):
+            text = (ROOT / f).read_text(encoding="utf-8")
+            for name in names:
+                with self.subTest(file=f, builtin=name):
+                    self.assertIn(name, text)
+
+
 class TestPackaging(unittest.TestCase):
     """`twine check` validates the description and nothing else, so an invalid
     trove classifier sails past it and PyPI answers 400 Bad Request with no

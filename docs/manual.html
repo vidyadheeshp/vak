@@ -277,7 +277,7 @@ footer .verse { font-family: var(--serif); font-size: .95rem; color: var(--ink-s
       <li><a href="#yantram"><span class="n">१५</span><span class="d">यन्त्रम्</span><span class="e">How Vāk runs</span></a></li>
       <li><a href="#doshasuchi"><span class="n">१६</span><span class="d">दोषसूची</span><span class="e">Every diagnostic</span></a></li>
       <li><a href="#padakoshah"><span class="n">१७</span><span class="d">पदकोशः</span><span class="e">Every keyword</span></a></li>
-      <li><a href="#antarnihitani"><span class="n">१८</span><span class="d">अन्तर्निहितानि</span><span class="e">The 39 built-ins</span></a></li>
+      <li><a href="#antarnihitani"><span class="n">१८</span><span class="d">अन्तर्निहितानि</span><span class="e">The 46 built-ins</span></a></li>
   </ol>
   <div class="controls">
     <button id="canon" aria-pressed="false">देवनागरी → roman</button>
@@ -1075,7 +1075,7 @@ constructs have such a pair.</p>
 <section id="antarnihitani">
   <div class="head">
     <p class="num">१८</p>
-    <h2><span class="dev">अन्तर्निहितानि</span><span class="eng">The 39 built-ins</span></h2>
+    <h2><span class="dev">अन्तर्निहितानि</span><span class="eng">The 46 built-ins</span></h2>
   </div>
   
 <p>Available everywhere without an import. Two more —
@@ -1085,6 +1085,13 @@ brought in with <code>आनय</code>.</p>
   <thead><tr><th>नाम</th><th>roman</th><th>what it does</th></tr></thead>
   <tbody>
     <tr><td><code>लिख</code></td><td class="iast">likh</td><td>मुद्रयति / print values</td></tr>
+    <tr><td><code>दोषलिख</code></td><td class="iast">doshalikh</td><td>दोषप्रवाहे मुद्रयति / print to the error stream</td></tr>
+    <tr><td><code>प्रतिच्छेदः</code></td><td class="iast">pratichchhedah</td><td>कणशः संयोगः / bitwise and</td></tr>
+    <tr><td><code>संयोगः</code></td><td class="iast">samyogah</td><td>कणशः विकल्पः / bitwise or</td></tr>
+    <tr><td><code>वियोगः</code></td><td class="iast">viyogah</td><td>कणशः भेदः / bitwise exclusive or</td></tr>
+    <tr><td><code>पूरकः</code></td><td class="iast">purakah</td><td>कणशः निषेधः / bitwise not</td></tr>
+    <tr><td><code>वामसारः</code></td><td class="iast">vamasarah</td><td>वामतः सारणम् / shift left</td></tr>
+    <tr><td><code>दक्षिणसारः</code></td><td class="iast">dakshinasarah</td><td>दक्षिणतः सारणम् / shift right</td></tr>
     <tr><td><code>पठ</code></td><td class="iast">patha</td><td>उपयोक्तुः पङ्क्तिम् पठति / read a line</td></tr>
     <tr><td><code>प्रकार</code></td><td class="iast">prakara</td><td>मूल्यस्य प्रकारः / type of a value</td></tr>
     <tr><td><code>संख्या</code></td><td class="iast">sankhya</td><td>अङ्कः करोति / convert to number</td></tr>
@@ -1129,7 +1136,7 @@ brought in with <code>आनय</code>.</p>
 
   <footer>
     <p class="verse">वाक् इति भाषा — यत्र संस्कृतम् एव आदेशः<span class="danda">॥</span></p>
-    <p>0.11.1 · 39 built-ins · five engines, one output</p>
+    <p>0.11.1 · 46 built-ins · five engines, one output</p>
     <p class="copyright">© 2026 Vidyadheesh Pandurangi. वाक् is free software, released under the <a href="https://github.com/vidyadheeshp/vak/blob/main/LICENSE">MIT Licence</a> — use it, change it, teach with it, ship it.</p>
     <p>Visits are counted with <a href="https://vak.goatcounter.com">GoatCounter</a> — no cookies, no personal data, and Do Not Track is honoured.</p>
   </footer>
