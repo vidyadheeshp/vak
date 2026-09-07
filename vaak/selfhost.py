@@ -98,9 +98,28 @@ def compile_kosha_with_vak(source: str) -> dict:
 
 
 def run_with_vak(source: str) -> Any:
-    """Lex, parse, compile AND run — every stage in Vāk, including the VM."""
+    """Lex, parse, compile AND run — every stage in Vāk, including the VM.
+
+    यन्त्रम्.vak reports a fault by throwing a कोशः, and वाक्.vak catches it in
+    its own मुख्यम्.  Driven from here that handler is bypassed, so the throw is
+    translated back into the error Python raises for the same fault — otherwise
+    an ordinary division by zero surfaces as a Python traceback.
+    """
+    from .interpreter import VakThrow
+    from .errors import RuntimeVakError
+
     tools = toolchain()
-    return tools["run"].call(tools["interpreter"], [compile_kosha_with_vak(source)])
+    try:
+        return tools["run"].call(tools["interpreter"], [compile_kosha_with_vak(source)])
+    except VakThrow as thrown:
+        payload = thrown.payload
+        if not isinstance(payload, dict) or "सन्देशः" not in payload:
+            raise
+        raise RuntimeVakError(
+            str(payload["सन्देशः"]),
+            int(payload.get("पङ्क्तिः") or 0),
+            code=str(payload.get("प्रकारः") or "कार्यकालदोषः"),
+        ) from None
 
 
 def compile_with_vak(source: str, filename: str = "<वाक्>") -> Any:

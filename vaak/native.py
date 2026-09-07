@@ -77,6 +77,27 @@ def c_string(text: str) -> str:
     return "".join(out)
 
 
+def default_fields(param) -> tuple:
+    """The five C fields that carry a parameter's default, in struct order.
+
+    A default is always a literal — number, string, boolean or शून्य — so it
+    can be written straight into static data and no engine has to evaluate
+    anything when it binds arguments.
+    """
+    if not getattr(param, "has_default", False):
+        return ("0", "K_SHUNYAM", "0", "0.0", "NULL")
+    value = param.default
+    if value is None:
+        return ("1", "K_SHUNYAM", "0", "0.0", "NULL")
+    if isinstance(value, bool):
+        return ("1", "K_SATYATA", "1" if value else "0", "0.0", "NULL")
+    if isinstance(value, int):
+        return ("1", "K_PURNANKA", f"{value}LL", "0.0", "NULL")
+    if isinstance(value, float):
+        return ("1", "K_DASHAMSHA", "0", repr(value), "NULL")
+    return ("1", "K_SHABDA", "0", "0.0", c_string(str(value)))
+
+
 def c_double(value: float) -> str:
     if value != value:
         return "(0.0/0.0)"
@@ -134,13 +155,14 @@ class Emitter:
         inner = self.emit_chunk(fn.chunk)
         name = self.fresh("karyam")
         params = ", ".join(
-            "{ %s, %s, %s }" % (
+            "{ %s, %s, %s, %s, %s, %s, %s, %s }" % (
                 c_string(p.name),
                 c_string(p.type),
                 c_string(p.karaka) if p.karaka else "NULL",
+                *default_fields(p),
             )
             for p in fn.params
-        ) or "{ NULL, NULL, NULL }"
+        ) or "{ NULL, NULL, NULL, 0, K_SHUNYAM, 0, 0.0, NULL }"
         self.lines.append(f"static const Prachala {name}_prachalah[] = {{{params}}};")
         self.lines.append(
             f"static const SankalitaKaryam {name} = {{ {c_string(fn.name)}, "

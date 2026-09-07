@@ -599,6 +599,19 @@ their surroundings.</p>
 <b class="k" data-r="mudraya">मुद्रय</b> क्षेत्रफलम्(<i class="n" data-r="6">६</i>, <i class="n" data-r="7">७</i>), दश(<i class="n" data-r="5">५</i>)।</code></pre></figure>
 <p>Functions are hoisted: a function may call one defined later in the same
 block.</p>
+<p>A parameter may carry a default, which must be written out — a number, a
+string, <code>सत्य</code>, <code>असत्य</code> or <code>शून्य</code>. Nothing is
+computed at the call, so the value cannot be shared between calls and the
+mutable-default trap familiar from Python cannot arise.</p>
+<figure class="code"><pre><code><b class="k" data-r="karyam">कार्यम्</b> अभिवादय(<b class="t" data-r="shabdah">शब्दः</b> नाम, <b class="t" data-r="shabdah">शब्दः</b> वचनम् = <i class="s">&quot;नमस्ते&quot;</i>) : <b class="t" data-r="shabdah">शब्दः</b> {
+    <b class="k" data-r="pratyagaccha">प्रत्यागच्छ</b> वचनम् + <i class="s">&quot;, &quot;</i> + नाम + <i class="s">&quot;।&quot;</i>।
+}
+
+<b class="k" data-r="mudraya">मुद्रय</b> अभिवादय(<i class="s">&quot;रामः&quot;</i>)।              <i class="c"># नमस्ते, रामः।</i>
+<b class="k" data-r="mudraya">मुद्रय</b> अभिवादय(<i class="s">&quot;रामः&quot;</i>, <i class="s">&quot;स्वागतम्&quot;</i>)।   <i class="c"># स्वागतम्, रामः।</i></code></pre></figure>
+<p>Where the parameters are unmarked, a default may not sit before a parameter
+that has none — position is all the call has to go on. Where every parameter
+declares its <a href="#karakani">kāraka</a>, that restriction lifts.</p>
 </section>
 <section id="sangrahah">
   <div class="head">
@@ -682,6 +695,32 @@ sentence. All three of these calls are the same call:</p>
 <figure class="code"><pre><code>छानय(अङ्काः, समः)।
 छानय(<b class="ka">अपादानम्</b>: अङ्काः, <b class="ka">करणम्</b>: समः)।
 छानय(<b class="ka">करणम्</b>: समः, <b class="ka">अपादानम्</b>: अङ्काः)।</code></pre></figure>
+<h3>अनुक्तम् कारकम् — the role that goes unsaid</h3>
+<p>Sanskrit does not require every kāraka to appear. <i lang="sa">देवदत्तः
+पचति</i> — “Devadatta cooks” — is a whole sentence, and it states neither what
+is cooked nor by what means. Those roles exist; this sentence does not name
+them.</p>
+<p>A parameter with a default says exactly that. The role is part of the action,
+and this call leaves it unexpressed.</p>
+<figure class="code"><pre><code><b class="k" data-r="karyam">कार्यम्</b> छानय(<b class="ka">अपादानम्</b> <b class="t" data-r="suchi">सूची</b> संग्रहः, <b class="ka">करणम्</b> <b class="t" data-r="kimapi">किमपि</b> परीक्षा = <b class="k" data-r="shunya">शून्य</b>) : <b class="t" data-r="suchi">सूची</b> {
+    <b class="k" data-r="yadi">यदि</b> (परीक्षा == <b class="k" data-r="shunya">शून्य</b>) { <b class="k" data-r="pratyagaccha">प्रत्यागच्छ</b> संग्रहः। }
+    ...
+}
+
+छानय(<b class="ka">अपादानम्</b>: अङ्काः)।              <i class="c"># करणम् अनुक्तम् — everything comes back</i>
+छानय(<b class="ka">करणम्</b>: समः, <b class="ka">अपादानम्</b>: अङ्काः)।   <i class="c"># both stated, in the other order</i></code></pre></figure>
+<p>Because the roles are named rather than counted, a default may sit anywhere in
+the parameter list — not only at the end, as a language with positional
+arguments must insist. A call names the roles it supplies and says nothing about
+the rest:</p>
+<figure class="code"><pre><code><b class="k" data-r="karyam">कार्यम्</b> लिखतु(<b class="ka">कर्ता</b> <b class="t" data-r="shabdah">शब्दः</b> लेखकः,
+              <b class="ka">करणम्</b> <b class="t" data-r="shabdah">शब्दः</b> साधनम् = <i class="s">&quot;लेखन्या&quot;</i>,
+              <b class="ka">कर्म</b> <b class="t" data-r="shabdah">शब्दः</b> ग्रन्थः) : <b class="t" data-r="shabdah">शब्दः</b> { ... }
+
+लिखतु(<b class="ka">कर्ता</b>: <i class="s">&quot;कालिदासः&quot;</i>, <b class="ka">कर्म</b>: <i class="s">&quot;मेघदूतम्&quot;</i>)।   <i class="c"># साधनम् अनुक्तम्</i></code></pre><figcaption>The करणम् sits in the middle and is still the one left out.</figcaption></figure>
+<p>A role that is neither supplied nor defaulted is an error, and the message
+names it — <code>न्यूनाः प्राचलाः: कर्म</code> — because with the order free, a
+position would tell the reader nothing about which role is missing.</p>
 <div class="note">
   <p><b>What gets checked.</b> Pāṇini's rule that an action has one agent and one
   patient is enforced: two <code>कर्ता</code> parameters, or two

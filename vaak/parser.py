@@ -128,6 +128,11 @@ class Parser:
             self.current.col,
         )
 
+    def _error(self, message: str) -> None:
+        """Refuse at the current token. `_expect` reports what it wanted and
+        what it found; this reports a rule the source broke."""
+        raise ParseError(message, self.current.line, self.current.col)
+
     def _end_of_statement(self) -> None:
         """Statement terminators (; । ॥) are welcome but optional."""
         while self._match(T.SEMI):
@@ -255,6 +260,34 @@ class Parser:
         body = self.block()
         return FunctionDecl(name.lexeme, params, body, return_type, kw.line)
 
+    def _literal_default(self, who: str):
+        """A parameter default must be a literal — a number, a string, सत्य,
+        असत्य or शून्य. Anything else would have to be evaluated, and the
+        question of *when* is where Python's mutable-default trap comes from."""
+        negate = self._match(T.MINUS)
+        tok = self.tokens[self.pos]
+        if tok.type is T.NUMBER:
+            self.pos += 1
+            value = tok.value
+            return -value if negate else value
+        if negate:
+            self._error(f"{who}: ऋणचिह्नम् अङ्कम् एव इच्छति / "
+                        f"a minus sign needs a number after it")
+        if tok.type is T.STRING:
+            self.pos += 1
+            return tok.value
+        if tok.type is T.TRUE:
+            self.pos += 1
+            return True
+        if tok.type is T.FALSE:
+            self.pos += 1
+            return False
+        if tok.type is T.NULL:
+            self.pos += 1
+            return None
+        self._error(f"{who}: प्राचलस्य मूल्यम् साक्षात् एव भवितव्यम् / "
+                    f"a parameter default must be a literal")
+
     def params(self) -> list[Param]:
         self._expect(T.LPAREN, "'(' अपेक्षितम् / expected '(' after the function name")
         params: list[Param] = []
@@ -267,11 +300,36 @@ class Parser:
                 tok = self._expect(T.IDENT, "प्राचलनाम अपेक्षितम् / expected a parameter name")
                 if self._match(T.COLON):           # अ : पूर्णाङ्कः
                     declared = self._read_type()
-                params.append(Param(tok.lexeme, declared, karaka))
+                default, has_default = None, False
+                if self._match(T.ASSIGN):           # अ = ५
+                    default = self._literal_default(tok.lexeme)
+                    has_default = True
+                params.append(Param(tok.lexeme, declared, karaka, default, has_default))
                 if not self._match(T.COMMA):
                     break
         self._expect(T.RPAREN, "')' अपेक्षितम् / expected ')' after the parameters")
+        self._check_default_order(params)
         return params
+
+    def _check_default_order(self, params: list[Param]) -> None:
+        """विभक्तिः क्रमम् मोचयति — the case ending frees the word order.
+
+        Where every parameter names its kāraka, position carries no
+        information at all, so a default may sit anywhere in the list and a
+        call names the roles it supplies. Where any parameter is unmarked, a
+        call has only position to go on, and a default before a required
+        parameter becomes the trap `def f(a=1, b)` is in Python — so it is
+        refused, in the same place and for the same reason.
+        """
+        if params and all(p.karaka for p in params):
+            return
+        for earlier, later in zip(params, params[1:]):
+            if earlier.has_default and not later.has_default:
+                self._error(
+                    f"'{later.name}': प्राचलः विनामूल्यम् मूल्ययुक्तस्य अनन्तरम् न स्थातव्यः, "
+                    f"यदि न सर्वे प्राचलाः कारकयुक्ताः / a parameter without a default "
+                    f"may not follow one with a default unless every parameter "
+                    f"declares its kāraka")
 
     def _read_karaka(self) -> str | None:
         """A kāraka marker, if one opens this parameter.

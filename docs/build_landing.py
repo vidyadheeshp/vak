@@ -145,6 +145,17 @@ KARAKA = '''कार्यम् छानय(अपादानम् सू�
 मुद्रय छानय(अपादानम्: अङ्काः, करणम्: समः)।
 मुद्रय छानय(करणम्: समः, अपादानम्: अङ्काः)।'''
 
+ANUKTAM = '''# अनुक्तम् कारकम् — कारकम् अस्ति, अस्मिन् आह्वाने न उक्तम्।
+# The करणम् sits in the middle and is still the one left out.
+कार्यम् लिखतु(कर्ता शब्दः लेखकः,
+              करणम् शब्दः साधनम् = "लेखन्या",
+              कर्म शब्दः ग्रन्थः) : शब्दः {
+    प्रत्यागच्छ लेखकः + " '" + ग्रन्थः + "' " + साधनम् + " लिखति"।
+}
+
+मुद्रय लिखतु(कर्ता: "कालिदासः", कर्म: "मेघदूतम्")।
+मुद्रय लिखतु(कर्म: "रघुवंशम्", करणम्: "तूलिकया", कर्ता: "कालिदासः")।'''
+
 SWITCH = '''कार्यम् वासरनाम(कर्म पूर्णाङ्कः वारः) : शब्दः {
     विकल्पः (वारः) {
         पक्षे १: प्रत्यागच्छ "सोमवासरः"।
@@ -407,6 +418,18 @@ footer a:hover {{ color:var(--gold); }}
   parameters is an error, so is a label naming a role the function never declared.
   Word order is deliberately <em>not</em> constrained — that is the whole point of
   marking the roles.</p>
+  <h3>अनुक्तम् कारकम् · the role that goes unsaid</h3>
+  <p>Sanskrit does not require every kāraka to appear. <i>देवदत्तः पचति</i> —
+  “Devadatta cooks” — is a whole sentence, and it names neither what is cooked nor
+  by what means. Those roles exist; this sentence does not state them. A parameter
+  with a default says exactly that.</p>
+  <p>And because the roles are named rather than counted, the default may sit
+  <b>anywhere</b> in the list — not only at the end, as a language with positional
+  arguments has to insist:</p>
+  {demo(ANUKTAM, "A positional language cannot leave out an argument in the middle. Marked roles can.")}
+  <p>A role that is neither supplied nor defaulted is an error that names it —
+  <code>न्यूनाः प्राचलाः: कर्म</code> — because with the order free, a position
+  would tell you nothing about which role is missing.</p>
 </section>
 
 <section id="भाषा">

@@ -451,8 +451,27 @@ class Analyzer:
         self._check_karakas(node.name, node.params, node.return_type, node.line)
         self._function_body(symbol, node.params, node.body, node.return_type, node.line)
 
+    def _check_defaults(self, who: str, params: list[A.Param], line: int) -> None:
+        """A default must fit the type its parameter declares. Catching this at
+        the definition means the mismatch is reported once, where it was
+        written, rather than at every call that relies on it."""
+        from .values import type_name
+        for param in params:
+            if not param.has_default:
+                continue
+            given = type_name(param.default)
+            if not self._assignable(given, param.type):
+                self._error(
+                    "प्रकारदोषः",
+                    f"{who}: प्राचलः {param.name!r}: {param.type} अपेक्षितः, "
+                    f"मूलमूल्यम् {given} / default is {given}, "
+                    f"but the parameter is declared {param.type}",
+                    line,
+                )
+
     def _function_body(self, symbol: Symbol, params: list[A.Param], body: A.Block,
                        return_type: str, line: int) -> None:
+        self._check_defaults(symbol.name, params, line)
         scope = Scope(self.scope, "कार्यम्")
         for param in params:
             scope.declare(Symbol(param.name, param.type, line=line))
@@ -776,15 +795,21 @@ class Analyzer:
             return symbol.return_type
 
         if symbol.params is not None:                    # a कार्यम् written in Vāk
-            if len(node.args) != len(symbol.params):
+            least = sum(1 for p in symbol.params if not p.has_default)
+            total = len(symbol.params)
+            if not (least <= len(node.args) <= total):
+                wanted = str(total) if least == total else f"{least}–{total}"
                 self._error(
                     "प्राचलदोषः",
-                    f"{symbol.name}: {len(symbol.params)} प्राचलाः अपेक्षिताः, "
-                    f"{len(node.args)} दत्ताः / expected {len(symbol.params)} argument(s), "
+                    f"{symbol.name}: {wanted} प्राचलाः अपेक्षिताः, "
+                    f"{len(node.args)} दत्ताः / expected {wanted} argument(s), "
                     f"got {len(node.args)}",
                     node.line,
                 )
             else:
+                self._report_unfilled(
+                    symbol, node,
+                    [i < len(node.args) for i in range(total)])
                 for param, given in zip(symbol.params, arg_types):
                     if not self._assignable(given, param.type):
                         self._error(
@@ -819,8 +844,10 @@ class Analyzer:
             )
             return
         available = {p.karaka for p in symbol.params if p.karaka}
+        sound = True
         for label in labels:
             if label not in available:
+                sound = False
                 self._error(
                     "कारकदोषः",
                     f"{symbol.name}: {label} इति कारकम् नास्ति / declares no {label} parameter",
@@ -828,17 +855,69 @@ class Analyzer:
                 )
         for label in dict.fromkeys(labels):   # first-occurrence order, so it is stable
             if labels.count(label) > 1:
+                sound = False
                 self._error(
                     "कारकदोषः",
                     f"{symbol.name}: {label} द्विः दत्तम् / the {label} argument is given twice",
                     node.line,
                 )
-        if len(node.args) != len(symbol.params):
+        # An unexpressed kāraka is ordinary Sanskrit — देवदत्तः पचति states
+        # neither करणम् nor कर्म — so a role whose parameter has a default may
+        # simply be left out, wherever it sits in the list.
+        least = sum(1 for p in symbol.params if not p.has_default)
+        total = len(symbol.params)
+        if not (least <= len(node.args) <= total):
+            wanted = str(total) if least == total else f"{least}–{total}"
             self._error(
                 "प्राचलदोषः",
-                f"{symbol.name}: {len(symbol.params)} प्राचलाः अपेक्षिताः, "
-                f"{len(node.args)} दत्ताः / expected {len(symbol.params)} argument(s), "
+                f"{symbol.name}: {wanted} प्राचलाः अपेक्षिताः, "
+                f"{len(node.args)} दत्ताः / expected {wanted} argument(s), "
                 f"got {len(node.args)}",
+                node.line,
+            )
+            return
+        # Only worth asking which slots are empty once the labels themselves
+        # make sense: a rejected label fills nothing, and reporting the hole it
+        # leaves would blame the call twice for one mistake.
+        if sound:
+            self._report_unfilled(symbol, node, self._slots_filled(symbol, node))
+
+    @staticmethod
+    def _slots_filled(symbol: Symbol, node: A.Call) -> list[bool]:
+        """Which parameters this call supplies — the same placement the two
+        interpreters do at run time, done here on the names alone.
+
+        Labelled arguments go to the slot their kāraka names; the rest fall
+        into what is left, in order.
+        """
+        positions = {p.karaka: i for i, p in enumerate(symbol.params) if p.karaka}
+        filled = [False] * len(symbol.params)
+        for label in node.arg_karakas:
+            if label in positions:
+                filled[positions[label]] = True
+        free = (i for i, done in enumerate(filled) if not done)
+        for label in node.arg_karakas:
+            if label is None:
+                index = next(free, None)
+                if index is None:
+                    break
+                filled[index] = True
+        return filled
+
+    def _report_unfilled(self, symbol: Symbol, node: A.Call,
+                         filled: list[bool]) -> None:
+        """A parameter both unsupplied and undefaulted, named rather than
+        counted: with the order free, its position would tell the reader
+        nothing about which one it is."""
+        absent = [p.karaka or p.name
+                  for p, done in zip(symbol.params, filled)
+                  if not done and not p.has_default]
+        if absent:
+            named = ", ".join(absent)
+            self._error(
+                "प्राचलदोषः",
+                f"{symbol.name}: न्यूनाः प्राचलाः: {named} / "
+                f"missing argument(s): {named}",
                 node.line,
             )
 

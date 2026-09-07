@@ -403,6 +403,43 @@ static void chaukatim_yojaya(const Khanda *k, Parivesha *p, const Avarana *a, in
     c->pralambitam = false;
 }
 
+/* मूलमूल्यम् — the literal an unstated parameter falls back to.  Defaults are
+   restricted to literals precisely so this can be built here, with no
+   evaluation and nothing shared between calls. */
+static Mulyam mula_mulyam(const Prachala *pr) {
+    switch (pr->mula_prakara) {
+    case K_PURNANKA:  return purnanka_mulyam(pr->mula_purnanka);
+    case K_DASHAMSHA: return dashamsha_mulyam(pr->mula_dashamsha);
+    case K_SATYATA:   return satyata_mulyam(pr->mula_purnanka != 0);
+    case K_SHABDA:    return shabda_mulyam(pr->mula_shabda,
+                                           (int)strlen(pr->mula_shabda));
+    default:          return shunyam_mulyam();
+    }
+}
+
+/* यः प्राचलः न दत्तः न च मूलमूल्ययुक्तः, तस्य नाम — न गणना।  कारकाणि क्रमम्
+   मोचयन्ति, अतः स्थानम् पठितारम् किमपि न वदति. */
+static void nyunan_utsrja(const SankalitaKaryam *k, const bool *purnani) {
+    char nyunani[256];
+    size_t len = 0;
+    bool asti = false;
+    for (int i = 0; i < k->prachala_ganana; i++) {
+        if (purnani[i] || k->prachalah[i].mulam_asti) continue;
+        const Prachala *pr = &k->prachalah[i];
+        asti = true;
+        /* snprintf returns the length it *would* have written, so adding it
+           back unchecked walks len past the buffer.  Stop appending instead. */
+        if (len + 1 >= sizeof nyunani) continue;
+        int wrote = snprintf(nyunani + len, sizeof nyunani - len, "%s%s",
+                             len ? ", " : "", pr->karakam ? pr->karakam : pr->nama);
+        if (wrote < 0) break;
+        len = (size_t)wrote >= sizeof nyunani - len ? sizeof nyunani - 1 : len + (size_t)wrote;
+    }
+    if (asti)
+        dosha_utsrja("प्राचलदोषः", "न्यूनाः प्राचलाः: %s / missing argument(s): %s",
+                     nyunani, nyunani);
+}
+
 static void karakaih_kramaya(const SankalitaKaryam *k, Mulyam *prachalah, int ganana,
                              const char **karakah, Mulyam *out) {
     bool purnani[32];
@@ -438,11 +475,16 @@ static void karakaih_kramaya(const SankalitaKaryam *k, Mulyam *prachalah, int ga
         out[next] = prachalah[i];
         purnani[next] = true;
     }
+    /* अनुक्तम् कारकम् — an unexpressed kāraka.  देवदत्तः पचति is a whole
+       sentence stating neither करणम् nor कर्म; a parameter with a default is
+       the same thing.  Because the roles are named, any defaulted parameter
+       may be dropped, not only the trailing ones. */
     for (int i = 0; i < k->prachala_ganana; i++)
-        if (!purnani[i]) {
-            dosha_utsrja("प्राचलदोषः", "न्यूनाः प्राचलाः / missing argument(s)");
-            return;
+        if (!purnani[i] && k->prachalah[i].mulam_asti) {
+            out[i] = mula_mulyam(&k->prachalah[i]);
+            purnani[i] = true;
         }
+    nyunan_utsrja(k, purnani);
 }
 
 static void ahvanam_kuru(Mulyam ahveyam, Mulyam *prachalah, int ganana,
@@ -486,14 +528,39 @@ static void ahvanam_kuru(Mulyam ahveyam, Mulyam *prachalah, int ganana,
     } else {
         for (int i = 0; i < ganana && i < 32; i++) kramitah[i] = prachalah[i];
     }
-    if (ganana != k->prachala_ganana) {
+    /* मूलमूल्यानि — how many arguments must be supplied: a count, not the
+       index of the first default, because where every parameter names its
+       kāraka a default may sit anywhere.  An unexpressed kāraka is ordinary
+       Sanskrit; a defaulted parameter is the same thing. */
+    int nyunam = 0;
+    for (int i = 0; i < k->prachala_ganana; i++)
+        if (!k->prachalah[i].mulam_asti) nyunam++;
+    if (ganana < nyunam || ganana > k->prachala_ganana) {
+        char ishtam[32];
+        if (nyunam == k->prachala_ganana)
+            snprintf(ishtam, sizeof ishtam, "%d", k->prachala_ganana);
+        else
+            snprintf(ishtam, sizeof ishtam, "%d–%d", nyunam, k->prachala_ganana);
         dosha_utsrja("प्राचलदोषः",
-                     "%s: %d प्राचलाः अपेक्षिताः, %d प्राप्ताः / "
-                     "expected %d argument(s), got %d",
-                     k->nama, k->prachala_ganana, ganana, k->prachala_ganana, ganana);
+                     "%s: %s प्राचलाः अपेक्षिताः, %d प्राप्ताः / "
+                     "expected %s argument(s), got %d",
+                     k->nama, ishtam, ganana, ishtam, ganana);
         for (int i = 0; i < ganana; i++) muncha(kramitah[i]);
         return;
     }
+    /* arguments fill parameters left to right; what is left takes its default */
+    if (ganana < k->prachala_ganana) {
+        bool purnani[32];
+        for (int i = 0; i < k->prachala_ganana; i++) purnani[i] = i < ganana;
+        nyunan_utsrja(k, purnani);
+        if (DOSHA_ASTI) {
+            for (int i = 0; i < ganana; i++) muncha(kramitah[i]);
+            return;
+        }
+        for (int i = ganana; i < k->prachala_ganana; i++)
+            kramitah[i] = mula_mulyam(&k->prachalah[i]);
+    }
+    ganana = k->prachala_ganana;
 
     Parivesha *p = parivesha_rachaya(a->parivesha);
     for (int i = 0; i < k->prachala_ganana; i++) {

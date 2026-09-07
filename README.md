@@ -413,6 +413,23 @@ before the line that defines it.
 
 A function with no `प्रत्यागच्छ` returns `शून्य`.
 
+A parameter may carry a **default**, which must be written out — a number, a string,
+`सत्य`, `असत्य` or `शून्य`. Nothing is evaluated at the call, so a default cannot be
+shared between calls and Python's mutable-default trap cannot arise.
+
+```sanskrit
+कार्यम् अभिवादय(शब्दः नाम, शब्दः वचनम् = "नमस्ते") : शब्दः {
+    प्रत्यागच्छ वचनम् + ", " + नाम + "।"।
+}
+
+अभिवादय("रामः")                  # नमस्ते, रामः।
+अभिवादय("रामः", "स्वागतम्")       # स्वागतम्, रामः।
+```
+
+Where the parameters are unmarked, a default may not precede one without a default —
+position is all the call has to go on. Where every parameter declares its
+[kāraka](#कारकाणि--kāraka-roles), that restriction lifts.
+
 ### सूचयः कोशाश्च · Lists and dictionaries
 
 ```sanskrit
@@ -527,6 +544,24 @@ be passed by role, in any sequence:
 छानय(करणम्: समः_वा, अपादानम्: अङ्काः)        # the same call, reordered
 छानय(अङ्काः, करणम्: समः_वा)                  # mixed
 ```
+
+**अनुक्तम् कारकम् — the role that goes unsaid.** Sanskrit does not require every kāraka
+to appear: *देवदत्तः पचति* — "Devadatta cooks" — is a whole sentence, and it names neither
+what is cooked nor by what means. A parameter with a default says exactly that: the role
+is part of the action, and this call leaves it unexpressed.
+
+```sanskrit
+कार्यम् छानय(अपादानम् सूची संग्रहः, करणम् किमपि परीक्षा = शून्य) : सूची { ... }
+
+छानय(अपादानम्: अङ्काः)                       # करणम् अनुक्तम् — everything comes back
+छानय(करणम्: समः_वा, अपादानम्: अङ्काः)         # both stated, in the other order
+```
+
+Because the roles are named rather than counted, a default may sit **anywhere** in the
+parameter list, not only at the end as a positional language must insist — so a करणम् in
+the middle is still the one a call may leave out. A role neither supplied nor defaulted is
+an error that names it (`न्यूनाः प्राचलाः: कर्म`), since with the order free a position
+would tell the reader nothing about which role is missing.
 
 The analyser enforces the grammar of roles: **one कर्ता and one कर्म at most** (Pāṇini
 allows only one of each per action), every label must name a role the function actually

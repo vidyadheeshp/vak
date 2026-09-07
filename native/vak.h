@@ -120,16 +120,25 @@ typedef struct {                /* आवरणम् — a closure */
 } Avarana;
 
 /* ------------------------------------------------- संकलितम् / compiled code */
-typedef struct {                /* प्राचलः */
-    const char *nama;
-    const char *prakara;
-    const char *karakam;        /* NULL when the parameter declares no role */
-} Prachala;
-
 typedef enum {                  /* what a constant descriptor holds */
     K_PURNANKA, K_DASHAMSHA, K_SHABDA, K_SATYATA, K_SHUNYAM,
     K_KARYAM, K_SUCHI_SHABDANAM
 } DhruvaPrakara;
+
+typedef struct {                /* प्राचलः */
+    const char *nama;
+    const char *prakara;
+    const char *karakam;        /* NULL when the parameter declares no role */
+    /* मूलमूल्यम् — a default, and it is always a literal.  Storing the value
+       rather than an expression is why no engine has to run code at binding
+       time, and why a default cannot be shared between calls the way Python's
+       mutable defaults are. */
+    int mulam_asti;
+    DhruvaPrakara mula_prakara;
+    int64_t mula_purnanka;      /* also holds सत्य/असत्य as 1/0 */
+    double mula_dashamsha;
+    const char *mula_shabda;
+} Prachala;
 
 typedef struct Dhruva {
     DhruvaPrakara prakara;

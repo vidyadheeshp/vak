@@ -118,11 +118,22 @@ class Param:
     name: str
     type: str = "किमपि"
     karaka: str | None = None
+    # A default is a *literal*, never an expression. That is a deliberate
+    # restriction: Python evaluates a default once at definition time, so a
+    # mutable default is shared between calls and is one of the best-known
+    # traps in the language. A literal cannot be shared and cannot surprise,
+    # and every engine can simply copy it rather than run code at binding time.
+    default: object = None
+    has_default: bool = False
 
     def __str__(self) -> str:
         parts = [p for p in (self.karaka, None if self.type == "किमपि" else self.type)]
         parts = [p for p in parts if p]
-        return " ".join(parts + [self.name])
+        shown = " ".join(parts + [self.name])
+        if self.has_default:
+            from .values import stringify
+            shown += f" = {stringify(self.default)}"
+        return shown
 
 
 @dataclass

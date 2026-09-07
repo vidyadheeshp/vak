@@ -105,7 +105,8 @@ def to_kosha(node: Any) -> Any:
                 "पङ्क्तिः": line}
     if isinstance(node, A.Param):
         return {"रूपम्": form, "नाम": node.name, "प्रकारः": node.type,
-                "कारकम्": node.karaka}
+                "कारकम्": node.karaka,
+                "मूलमूल्यम्": node.default, "मूलमस्ति": node.has_default}
     if isinstance(node, A.ExpressionStmt):
         return {"रूपम्": form, "पदम्": to_kosha(node.expr), "पङ्क्तिः": line}
     if isinstance(node, A.VarDecl):
@@ -192,7 +193,8 @@ def kosha_to_chunk(kosha: dict) -> Any:
         if isinstance(value, dict) and value.get("रूपम्") == "संकलितकार्यम्":
             return CompiledFunction(
                 name=value["नाम"],
-                params=[A.Param(p["नाम"], p["प्रकारः"], p["कारकम्"])
+                params=[A.Param(p["नाम"], p["प्रकारः"], p["कारकम्"],
+                                p.get("मूलमूल्यम्"), bool(p.get("मूलमस्ति")))
                         for p in value["प्राचलाः"]],
                 return_type=value["प्रतिफलप्रकारः"],
                 chunk=kosha_to_chunk(value["खण्डः"]),

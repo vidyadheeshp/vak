@@ -392,7 +392,20 @@ their surroundings.</p>
 मान दश = योजकः(१०)।
 मुद्रय क्षेत्रफलम्(६, ७), दश(५)।''')}
 <p>Functions are hoisted: a function may call one defined later in the same
-block.</p>"""))
+block.</p>
+<p>A parameter may carry a default, which must be written out — a number, a
+string, <code>सत्य</code>, <code>असत्य</code> or <code>शून्य</code>. Nothing is
+computed at the call, so the value cannot be shared between calls and the
+mutable-default trap familiar from Python cannot arise.</p>
+{code('''कार्यम् अभिवादय(शब्दः नाम, शब्दः वचनम् = "नमस्ते") : शब्दः {
+    प्रत्यागच्छ वचनम् + ", " + नाम + "।"।
+}
+
+मुद्रय अभिवादय("रामः")।              # नमस्ते, रामः।
+मुद्रय अभिवादय("रामः", "स्वागतम्")।   # स्वागतम्, रामः।''')}
+<p>Where the parameters are unmarked, a default may not sit before a parameter
+that has none — position is all the call has to go on. Where every parameter
+declares its <a href="#karakani">kāraka</a>, that restriction lifts.</p>"""))
 
 # ---------------------------------------------------------------- ६ · संग्रहाः
 parts.append(section("sangrahah", "संग्रहाः", "Lists and dictionaries", f"""
@@ -469,6 +482,33 @@ sentence. All three of these calls are the same call:</p>
 {code('''छानय(अङ्काः, समः)।
 छानय(अपादानम्: अङ्काः, करणम्: समः)।
 छानय(करणम्: समः, अपादानम्: अङ्काः)।''')}
+<h3>अनुक्तम् कारकम् — the role that goes unsaid</h3>
+<p>Sanskrit does not require every kāraka to appear. <i lang="sa">देवदत्तः
+पचति</i> — “Devadatta cooks” — is a whole sentence, and it states neither what
+is cooked nor by what means. Those roles exist; this sentence does not name
+them.</p>
+<p>A parameter with a default says exactly that. The role is part of the action,
+and this call leaves it unexpressed.</p>
+{code('''कार्यम् छानय(अपादानम् सूची संग्रहः, करणम् किमपि परीक्षा = शून्य) : सूची {
+    यदि (परीक्षा == शून्य) { प्रत्यागच्छ संग्रहः। }
+    ...
+}
+
+छानय(अपादानम्: अङ्काः)।              # करणम् अनुक्तम् — everything comes back
+छानय(करणम्: समः, अपादानम्: अङ्काः)।   # both stated, in the other order''')}
+<p>Because the roles are named rather than counted, a default may sit anywhere in
+the parameter list — not only at the end, as a language with positional
+arguments must insist. A call names the roles it supplies and says nothing about
+the rest:</p>
+{code('''कार्यम् लिखतु(कर्ता शब्दः लेखकः,
+              करणम् शब्दः साधनम् = "लेखन्या",
+              कर्म शब्दः ग्रन्थः) : शब्दः { ... }
+
+लिखतु(कर्ता: "कालिदासः", कर्म: "मेघदूतम्")।   # साधनम् अनुक्तम्''',
+      "The करणम् sits in the middle and is still the one left out.")}
+<p>A role that is neither supplied nor defaulted is an error, and the message
+names it — <code>न्यूनाः प्राचलाः: कर्म</code> — because with the order free, a
+position would tell the reader nothing about which role is missing.</p>
 <div class="note">
   <p><b>What gets checked.</b> Pāṇini's rule that an action has one agent and one
   patient is enforced: two <code>कर्ता</code> parameters, or two

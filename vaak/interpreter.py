@@ -499,10 +499,13 @@ class Interpreter:
                 f"{type_name(callee)} आह्वातुं न शक्यते / {type_name(callee)} is not callable",
                 node.line, code="प्रकारदोषः",
             )
-        if callee.arity >= 0 and len(args) != callee.arity:
+        least = getattr(callee, "required", callee.arity)
+        if callee.arity >= 0 and not (least <= len(args) <= callee.arity):
+            wanted = (str(callee.arity) if least == callee.arity
+                      else f"{least}–{callee.arity}")
             raise RuntimeVakError(
-                f"{callee.name}: {callee.arity} प्राचलाः अपेक्षिताः, {len(args)} प्राप्ताः / "
-                f"expected {callee.arity} argument(s), got {len(args)}",
+                f"{callee.name}: {wanted} प्राचलाः अपेक्षिताः, {len(args)} प्राप्ताः / "
+                f"expected {wanted} argument(s), got {len(args)}",
                 node.line, code="प्राचलदोषः",
             )
         try:

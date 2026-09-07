@@ -271,6 +271,36 @@ footer a:hover { color:var(--gold); }
   parameters is an error, so is a label naming a role the function never declared.
   Word order is deliberately <em>not</em> constrained — that is the whole point of
   marking the roles.</p>
+  <h3>अनुक्तम् कारकम् · the role that goes unsaid</h3>
+  <p>Sanskrit does not require every kāraka to appear. <i>देवदत्तः पचति</i> —
+  “Devadatta cooks” — is a whole sentence, and it names neither what is cooked nor
+  by what means. Those roles exist; this sentence does not state them. A parameter
+  with a default says exactly that.</p>
+  <p>And because the roles are named rather than counted, the default may sit
+  <b>anywhere</b> in the list — not only at the end, as a language with positional
+  arguments has to insist:</p>
+  <figure class="demo">
+  <div class="src"><pre><code><i class="c"># अनुक्तम् कारकम् — कारकम् अस्ति, अस्मिन् आह्वाने न उक्तम्।</i>
+<i class="c"># The करणम् sits in the middle and is still the one left out.</i>
+<b class="k">कार्यम्</b> लिखतु(<b class="ka">कर्ता</b> <b class="t">शब्दः</b> लेखकः,
+              <b class="ka">करणम्</b> <b class="t">शब्दः</b> साधनम् = <i class="s">&quot;लेखन्या&quot;</i>,
+              <b class="ka">कर्म</b> <b class="t">शब्दः</b> ग्रन्थः) : <b class="t">शब्दः</b> {
+    <b class="k">प्रत्यागच्छ</b> लेखकः + <i class="s">&quot; &#x27;&quot;</i> + ग्रन्थः + <i class="s">&quot;&#x27; &quot;</i> + साधनम् + <i class="s">&quot; लिखति&quot;</i>।
+}
+
+<b class="k">मुद्रय</b> लिखतु(<b class="ka">कर्ता</b>: <i class="s">&quot;कालिदासः&quot;</i>, <b class="ka">कर्म</b>: <i class="s">&quot;मेघदूतम्&quot;</i>)।
+<b class="k">मुद्रय</b> लिखतु(<b class="ka">कर्म</b>: <i class="s">&quot;रघुवंशम्&quot;</i>, <b class="ka">करणम्</b>: <i class="s">&quot;तूलिकया&quot;</i>, <b class="ka">कर्ता</b>: <i class="s">&quot;कालिदासः&quot;</i>)।</code></pre></div>
+  <div class="res">
+    <p class="lbl">फलम् · what it prints</p>
+    <pre><code>कालिदासः &#x27;मेघदूतम्&#x27; लेखन्या लिखति
+कालिदासः &#x27;रघुवंशम्&#x27; तूलिकया लिखति</code></pre>
+    <a class="try" href="playground.html#code=IyDgpIXgpKjgpYHgpJXgpY3gpKTgpK7gpY0g4KSV4KS-4KSw4KSV4KSu4KWNIOKAlCDgpJXgpL7gpLDgpJXgpK7gpY0g4KSF4KS44KWN4KSk4KS_LCDgpIXgpLjgpY3gpK7gpL_gpKjgpY0g4KSG4KS54KWN4KS14KS-4KSo4KWHIOCkqCDgpIngpJXgpY3gpKTgpK7gpY3gpaQKIyBUaGUg4KSV4KSw4KSj4KSu4KWNIHNpdHMgaW4gdGhlIG1pZGRsZSBhbmQgaXMgc3RpbGwgdGhlIG9uZSBsZWZ0IG91dC4K4KSV4KS-4KSw4KWN4KSv4KSu4KWNIOCksuCkv-CkluCkpOClgSjgpJXgpLDgpY3gpKTgpL4g4KS24KSs4KWN4KSm4KSDIOCksuClh-CkluCkleCkgywKICAgICAgICAgICAgICDgpJXgpLDgpKPgpK7gpY0g4KS24KSs4KWN4KSm4KSDIOCkuOCkvuCkp-CkqOCkruCljSA9ICLgpLLgpYfgpJbgpKjgpY3gpK_gpL4iLAogICAgICAgICAgICAgIOCkleCksOCljeCkriDgpLbgpKzgpY3gpKbgpIMg4KSX4KWN4KSw4KSo4KWN4KSl4KSDKSA6IOCktuCkrOCljeCkpuCkgyB7CiAgICDgpKrgpY3gpLDgpKTgpY3gpK_gpL7gpJfgpJrgpY3gpJsg4KSy4KWH4KSW4KSV4KSDICsgIiAnIiArIOCkl-CljeCksOCkqOCljeCkpeCkgyArICInICIgKyDgpLjgpL7gpKfgpKjgpK7gpY0gKyAiIOCksuCkv-CkluCkpOCkvyLgpaQKfQoK4KSu4KWB4KSm4KWN4KSw4KSvIOCksuCkv-CkluCkpOClgSjgpJXgpLDgpY3gpKTgpL46ICLgpJXgpL7gpLLgpL_gpKbgpL7gpLjgpIMiLCDgpJXgpLDgpY3gpK46ICLgpK7gpYfgpJjgpKbgpYLgpKTgpK7gpY0iKeClpArgpK7gpYHgpKbgpY3gpLDgpK8g4KSy4KS_4KSW4KSk4KWBKOCkleCksOCljeCkrjogIuCksOCkmOClgeCkteCkguCktuCkruCljSIsIOCkleCksOCko-CkruCljTogIuCkpOClguCksuCkv-CkleCkr-CkviIsIOCkleCksOCljeCkpOCkvjogIuCkleCkvuCksuCkv-CkpuCkvuCkuOCkgyIp4KWk">चालय · run this yourself →</a>
+  </div>
+  <figcaption>A positional language cannot leave out an argument in the middle. Marked roles can.</figcaption>
+</figure>
+  <p>A role that is neither supplied nor defaulted is an error that names it —
+  <code>न्यूनाः प्राचलाः: कर्म</code> — because with the order free, a position
+  would tell you nothing about which role is missing.</p>
 </section>
 
 <section id="भाषा">
@@ -345,7 +375,7 @@ pratyekam (n antah [1, 2, 3, 4]) { mudraya n, <i class="s">&quot;-&gt;&quot;</i>
   <div class="facts">
     <div><b>5</b><span>engines, one output</span></div>
     <div><b>46</b><span>built-in functions</span></div>
-    <div><b>260</b><span>tests</span></div>
+    <div><b>275</b><span>tests</span></div>
     <div><b>6</b><span>kāraka roles</span></div>
     <div><b>146 KB</b><span>gzipped — the whole toolchain, in your browser</span></div>
   </div>

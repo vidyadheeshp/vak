@@ -28,6 +28,7 @@ from .opcodes import Op
 from .values import (
     VakCallable,
     check_type,
+    fill_defaults,
     is_truthy,
     order_by_karaka,
     stringify,
@@ -143,12 +144,15 @@ class VM:
         params = closure.fn.params
         if any(labels):
             args = order_by_karaka(closure, args, labels, line)
-        if len(args) != len(params):
+        least = sum(1 for p in params if not p.has_default)
+        if not (least <= len(args) <= len(params)):
+            wanted = str(len(params)) if least == len(params) else f"{least}–{len(params)}"
             raise RuntimeVakError(
-                f"{closure.fn.name}: {len(params)} प्राचलाः अपेक्षिताः, {len(args)} प्राप्ताः / "
-                f"expected {len(params)} argument(s), got {len(args)}",
+                f"{closure.fn.name}: {wanted} प्राचलाः अपेक्षिताः, {len(args)} प्राप्ताः / "
+                f"expected {wanted} argument(s), got {len(args)}",
                 line, code="प्राचलदोषः",
             )
+        args = fill_defaults(params, args, line)
         env = Environment(closure.env)
         for param, arg in zip(params, args):
             check_type(arg, param.type, f"{closure.fn.name} इत्यस्य प्राचलः {param.name!r}", line)

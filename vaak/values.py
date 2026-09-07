@@ -45,11 +45,21 @@ class VakFunction(VakCallable):
     def arity(self) -> int:  # type: ignore[override]
         return len(self.params)
 
+    @property
+    def required(self) -> int:
+        """How many arguments must be supplied.
+
+        A count, not the index of the first default: where every parameter
+        names its kāraka, a default may sit anywhere in the list.
+        """
+        return sum(1 for param in self.params if not param.has_default)
+
     def call(self, interpreter, args: list[Any], line: int = 0) -> Any:
         from .environment import Environment
         from .interpreter import ReturnSignal
 
         env = Environment(self.closure)
+        args = fill_defaults(self.params, args, line)
         for param, arg in zip(self.params, args):
             check_type(arg, param.type, f"{self.name} इत्यस्य प्राचलः {param.name!r}", line)
             env.define(param.name, arg)
@@ -85,6 +95,37 @@ class NativeFunction(VakCallable):
 
     def __repr__(self) -> str:
         return f"<अन्तर्निहितम् {self.name}>"
+
+
+def missing_arguments(params: list, filled: list, line: int = 0) -> None:
+    """Refuse a call that leaves a parameter both unsupplied and undefaulted.
+
+    The message names the roles rather than counting them: with the vibhakti
+    freeing the order, position cannot tell the reader which one is absent.
+    """
+    from .errors import RuntimeVakError
+
+    absent = [p.karaka or p.name
+              for p, done in zip(params, filled) if not done and not p.has_default]
+    if absent:
+        named = ", ".join(absent)
+        raise RuntimeVakError(
+            f"न्यूनाः प्राचलाः: {named} / missing argument(s): {named}",
+            line, code="प्राचलदोषः",
+        )
+
+
+def fill_defaults(params: list, args: list, line: int = 0) -> list:
+    """Extend a positional argument list with the defaults it left unstated.
+
+    Arguments fill parameters left to right; whatever is left over takes its
+    literal default. Because it is a literal there is nothing to evaluate and
+    nothing shared between calls — the mutable-default trap cannot arise.
+    """
+    if len(args) >= len(params):
+        return list(args)
+    missing_arguments(params, [i < len(args) for i in range(len(params))], line)
+    return list(args) + [p.default for p in params[len(args):]]
 
 
 def order_by_karaka(callee: Any, args: list, labels: list, line: int = 0) -> list:
@@ -138,12 +179,23 @@ def order_by_karaka(callee: Any, args: list, labels: list, line: int = 0) -> lis
         slots[index] = value
         filled[index] = True
 
-    if not all(filled):
-        missing = ", ".join(p.karaka or p.name for p, done in zip(params, filled) if not done)
-        raise RuntimeVakError(
-            f"न्यूनाः प्राचलाः: {missing} / missing argument(s): {missing}",
-            line, code="प्राचलदोषः",
-        )
+    # अनुक्तम् कारकम् — an unexpressed kāraka.
+    #
+    # Sanskrit does not require every kāraka to appear: देवदत्तः पचति is a
+    # whole sentence with no करणम् and no कर्म expressed. A parameter with a
+    # default is the same thing — the role exists, and this sentence does not
+    # state it.
+    #
+    # Because the roles are named, *any* defaulted parameter may be left out,
+    # not only the trailing ones. Positional defaults can only be dropped from
+    # the right; role-labelled ones can be dropped from anywhere, which is the
+    # same freedom the vibhakti gives a Sanskrit sentence.
+    for i, (param, done) in enumerate(zip(params, filled)):
+        if not done and getattr(param, "has_default", False):
+            slots[i] = param.default
+            filled[i] = True
+
+    missing_arguments(params, filled, line)
     return slots
 
 

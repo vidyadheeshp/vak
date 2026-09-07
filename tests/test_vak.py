@@ -2113,6 +2113,182 @@ class TestBitOperations(unittest.TestCase):
                     self.assertIn(name, text)
 
 
+# A signature whose defaulted करणम् sits *between* two required roles, so the
+# call that drops it could not be written with positional defaults at all.
+WRITE_WITH = (
+    'कार्यम् लिख(कर्ता शब्दः क, करणम् शब्दः स = "लेखन्या", कर्म शब्दः ग) : शब्दः {\n'
+    '    प्रत्यागच्छ क + " " + स + " " + ग।\n'
+    "}\n"
+    'मुद्रय लिख(कर्ता: "कालिदासः", कर्म: "मेघदूतम्")।'
+)
+
+
+class TestDefaultArguments(unittest.TestCase):
+    """मूलमूल्यानि — a parameter that need not be stated.
+
+    अनुक्तम् कारकम्: Sanskrit does not require every kāraka to appear.
+    देवदत्तः पचति is a whole sentence naming neither the करणम् nor the कर्म.
+    A parameter with a default is the same thing — the role exists, and this
+    call does not state it.
+    """
+
+    LIST_FILTER = (
+        "कार्यम् छानय(अपादानम् सूची संग्रहः, करणम् किमपि परीक्षा = शून्य) : सूची {\n"
+        "    यदि (परीक्षा == शून्य) { प्रत्यागच्छ संग्रहः। }\n"
+        "    सूची फलम् = []।\n"
+        "    प्रत्येकम् (स अन्तः संग्रहः) { यदि (परीक्षा(स)) { योजय(फलम्, स)। } }\n"
+        "    प्रत्यागच्छ फलम्।\n"
+        "}\n"
+        "मान अ = [१, २, ३, ४]।\n"
+    )
+
+    def codes(self, source: str) -> list[str]:
+        return [d.code for d in check_source(source).diagnostics if d.fatal]
+
+    def vak_vm_output(self, source: str) -> str:
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            run_with_vak(source)
+        return buf.getvalue().strip()
+
+    def assert_all_engines(self, source: str, expected: str):
+        """The invariant the language rests on: one output, every engine."""
+        self.assertEqual(output(source), expected, "tree-walker")
+        self.assertEqual(vm_output(source), expected, "SanskritVM")
+        self.assertEqual(self.vak_vm_output(source), expected, "यन्त्रम्.vak")
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            VM("<प>").run(compile_with_vak(source, "<प>"))
+        self.assertEqual(buf.getvalue().strip(), expected, "compiled by Vāk")
+
+    # ------------------------------------------------------ the plain case
+    def test_an_omitted_argument_takes_its_default(self):
+        self.assert_all_engines(
+            "कार्यम् क(अ, ब = ५) { प्रत्यागच्छ अ + ब। } मुद्रय क(१), क(१, २)।",
+            "6 3")
+
+    def test_every_literal_kind_may_be_a_default(self):
+        for literal, printed in (("५", "5"), ("-५", "-5"), ("२.५", "2.5"),
+                                 ('"क"', "क"), ("सत्य", "सत्य"),
+                                 ("असत्य", "असत्य"), ("शून्य", "शून्यम्")):
+            with self.subTest(default=literal):
+                self.assert_all_engines(
+                    "कार्यम् क(ब = " + literal + ") { प्रत्यागच्छ ब। } मुद्रय क()।",
+                    printed)
+
+    # ------------------------------------------- अनुक्तम् कारकम्, out of order
+    def test_a_karaka_labelled_argument_may_be_omitted(self):
+        self.assert_all_engines(
+            self.LIST_FILTER + "मुद्रय छानय(अपादानम्: अ)।", "[1, 2, 3, 4]")
+
+    def test_a_default_may_be_dropped_from_anywhere_not_only_the_right(self):
+        """The point of doing this with roles rather than positions. A
+        positional default can only be dropped from the right; a labelled one
+        can be dropped from the middle, which is the freedom the vibhakti
+        gives a sentence."""
+        self.assert_all_engines(WRITE_WITH, "कालिदासः लेखन्या मेघदूतम्")
+
+    def test_the_role_may_still_be_stated_in_any_order(self):
+        self.assert_all_engines(
+            self.LIST_FILTER
+            + "मुद्रय छानय(करणम्: कार्यम्(क) { प्रत्यागच्छ क > २। }, अपादानम्: अ)।",
+            "[3, 4]")
+
+    # -------------------------------------------------------- what is refused
+    def test_only_a_literal_may_be_a_default(self):
+        """Deliberately narrow. A literal costs nothing to rebuild per call,
+        so Python's mutable-default trap cannot arise and no engine has to
+        evaluate code while binding arguments."""
+        for bad in ("[]", "{}", "१ + १", "क()", "अ"):
+            with self.subTest(default=bad):
+                with self.assertRaises(ParseError):
+                    parse(tokenize("कार्यम् क(ब = " + bad + ") { प्रत्यागच्छ ब। }"))
+
+    def test_a_default_may_not_precede_a_required_parameter(self):
+        with self.assertRaises(ParseError):
+            parse(tokenize("कार्यम् क(अ = १, ब) { प्रत्यागच्छ ब। }"))
+
+    def test_a_default_is_checked_against_the_declared_type(self):
+        self.assertEqual(self.codes('कार्यम् क(पूर्णाङ्कः ब = "अ") { प्रत्यागच्छ ब। }'),
+                         ["प्रकारदोषः"])
+        self.assertEqual(self.codes("कार्यम् क(पूर्णाङ्कः ब = ५) { प्रत्यागच्छ ब। }"), [])
+        self.assertEqual(self.codes("कार्यम् क(किमपि ब = शून्य) { प्रत्यागच्छ ब। }"), [])
+
+    def test_arity_became_a_range(self):
+        src = "कार्यम् क(अ, ब = ५) { प्रत्यागच्छ अ + ब। }\n"
+        self.assertEqual(self.codes(src + "मुद्रय क()।"), ["प्राचलदोषः"])
+        self.assertEqual(self.codes(src + "मुद्रय क(१, २, ३)।"), ["प्राचलदोषः"])
+        self.assertEqual(self.codes(src + "मुद्रय क(१)।"), [])
+
+    def test_the_range_is_shown_as_least_to_total(self):
+        diagnostics = check_source(
+            "कार्यम् क(अ, ब = ५) { प्रत्यागच्छ अ + ब। } मुद्रय क()।").diagnostics
+        self.assertIn("1–2", diagnostics[0].message)
+
+    def test_a_missing_role_names_itself(self):
+        """The diagnostic has to say *which* kāraka was not supplied — with
+        roles free to appear in any order, position cannot tell the reader."""
+        source = self.LIST_FILTER + "मुद्रय छानय(करणम्: शून्य)।"
+        for name, engine in (("tree", output), ("vm", vm_output),
+                             ("यन्त्रम्.vak", self.vak_vm_output)):
+            with self.subTest(engine=name):
+                with self.assertRaises(RuntimeVakError) as caught:
+                    engine(source)
+                self.assertIn("न्यूनाः प्राचलाः: अपादानम्", str(caught.exception))
+
+    # ------------------------------------------------------------ round trip
+    def test_the_default_survives_the_kosha(self):
+        """कोशः is how the Vāk-written compiler and the Python VM exchange a
+        chunk. A default dropped in that exchange would show up only as a
+        wrong answer, far from its cause."""
+        source = 'कार्यम् क(पूर्णाङ्कः ब = ५, शब्दः स = "अ") { प्रत्यागच्छ ब। }'
+        mine = chunk_to_kosha(compile_program(parse(tokenize(source))))
+        theirs = chunk_to_kosha(compile_with_vak(source, "<वाक्>"))
+        self.assertEqual(mine, theirs)
+        self.assertIn("मूलमूल्यम्", repr(mine))
+
+
+@unittest.skipIf(GCC is None, "C-संकलकः न प्राप्तः / no C compiler available")
+class TestDefaultArgumentsNatively(unittest.TestCase):
+    """The C runtime rebuilds a default from the literal stored in its
+    Prachala rather than carrying a value, so it is the engine where a
+    divergence would appear first."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.dir = Path(tempfile.mkdtemp(prefix="vak-mula-"))
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.dir, ignore_errors=True)
+
+    def native_output(self, source: str, name: str = "mula") -> str:
+        path = self.dir / (name + ".vak")
+        path.write_text(source, encoding="utf-8")
+        exe = build_executable(source, path, self.dir)
+        proc = subprocess.run([str(exe.resolve())], capture_output=True)
+        self.assertEqual(proc.returncode, 0,
+                         proc.stderr.decode("utf-8", "replace")[:400])
+        return proc.stdout.decode("utf-8", "replace").replace("\r\n", "\n").strip()
+
+    def test_an_omitted_argument_takes_its_default(self):
+        self.assertEqual(
+            self.native_output(
+                "कार्यम् क(अ, ब = ५) { प्रत्यागच्छ अ + ब। } मुद्रय क(१), क(१, २)।"),
+            "6 3")
+
+    def test_every_literal_kind_rebuilds(self):
+        self.assertEqual(
+            self.native_output(
+                'कार्यम् क(अ = ५, ब = २.५, स = "क", द = सत्य, य = शून्य) '
+                "{ प्रत्यागच्छ [अ, ब, स, द, य]। } मुद्रय क()।", "sarve"),
+            '[5, 2.5, "क", सत्य, शून्यम्]')
+
+    def test_a_role_dropped_from_the_middle(self):
+        self.assertEqual(self.native_output(WRITE_WITH, "madhye"),
+                         "कालिदासः लेखन्या मेघदूतम्")
+
+
 class TestPackaging(unittest.TestCase):
     """`twine check` validates the description and nothing else, so an invalid
     trove classifier sails past it and PyPI answers 400 Bad Request with no
