@@ -18,7 +18,7 @@ from dataclasses import dataclass, field, fields, is_dataclass
 from typing import Any
 
 from . import ast_nodes as A
-from .builtins import BUILTIN_SIGNATURES
+from .builtins import BUILTIN_CANONICAL, BUILTIN_SIGNATURES
 from .errors import VakError
 from .opcodes import OPERANDS, SANSKRIT, Op
 from .tokens import ANY_TYPE
@@ -461,7 +461,9 @@ class Compiler:
         place = self._resolve(node.name)
         if place is None:
             if node.name in BUILTIN_SIGNATURES and node.name not in self.shadowed:
-                self.chunk.emit(Op.GET_BUILTIN, self.chunk.constant(node.name),
+                # the name the runtimes know, not the one that was typed
+                self.chunk.emit(Op.GET_BUILTIN,
+                                self.chunk.constant(BUILTIN_CANONICAL[node.name]),
                                 line=node.line)
                 return
             self.chunk.emit(Op.GET_VAR, self.chunk.constant(node.name), line=node.line)

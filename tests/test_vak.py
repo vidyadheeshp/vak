@@ -24,6 +24,7 @@ if str(ROOT) not in sys.path:
 
 from vaak import check_source, run_source        # noqa: E402
 from vaak.analyzer import SemanticError          # noqa: E402
+from vaak.builtins import BUILTIN_DOCS           # noqa: E402
 from vaak.compiler import compile_program        # noqa: E402
 from vaak.kosha import chunk_to_kosha, to_kosha  # noqa: E402
 from vaak.native import build_executable, find_gcc  # noqa: E402
@@ -2099,18 +2100,31 @@ class TestBitOperations(unittest.TestCase):
                 with self.assertRaises(RuntimeVakError):
                     self.run_vak(f"मुद्रय {expr}।")
 
-    def test_every_engine_knows_them(self):
-        """A builtin missing from one engine's table is a divergence, and the
-        C enum mistake that P_ and K_ made possible is exactly why this is
-        checked rather than assumed."""
-        names = ["प्रतिच्छेदः", "संयोगः", "वियोगः", "पूरकः",
-                 "वामसारः", "दक्षिणसारः"]
-        for f in ("स्वयंसिद्धिः/अर्थविश्लेषकः.vak", "स्वयंसिद्धिः/संकलकः.vak",
-                  "native/antarnihitani.c"):
-            text = (ROOT / f).read_text(encoding="utf-8")
-            for name in names:
-                with self.subTest(file=f, builtin=name):
-                    self.assertIn(name, text)
+    def test_every_engine_computes_them_alike(self):
+        """Every engine, not every file.
+
+        This began as a grep of three source files for each name. It passed,
+        and all six of these were missing from यन्त्रम्.vak — the engine the
+        grep did not list. Reading source proves a name was typed somewhere;
+        only running it proves an engine can do the arithmetic.
+
+        TestEveryEngineKnowsEveryBuiltin generalises this to all 46.
+        """
+        for expr, want in [("प्रतिच्छेदः(१२, १०)", 12 & 10),
+                           ("संयोगः(१२, १०)", 12 | 10),
+                           ("वियोगः(१२, १०)", 12 ^ 10),
+                           ("पूरकः(१२)", ~12),
+                           ("वामसारः(१, ४)", 1 << 4),
+                           ("दक्षिणसारः(१६, २)", 16 >> 2)]:
+            source = f"मुद्रय {expr}।"
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                run_with_vak(source)
+            for engine, printed in [("tree", output(source)),
+                                    ("vm", vm_output(source)),
+                                    ("यन्त्रम्.vak", buf.getvalue().strip())]:
+                with self.subTest(expression=expr, engine=engine):
+                    self.assertEqual(printed, str(want))
 
 
 # A signature whose defaulted करणम् sits *between* two required roles, so the
@@ -2287,6 +2301,195 @@ class TestDefaultArgumentsNatively(unittest.TestCase):
     def test_a_role_dropped_from_the_middle(self):
         self.assertEqual(self.native_output(WRITE_WITH, "madhye"),
                          "कालिदासः लेखन्या मेघदूतम्")
+
+
+class TestEveryEngineKnowsEveryBuiltin(unittest.TestCase):
+    """पञ्चयन्त्राणि, एकः कोशः — five engines, one set of built-ins.
+
+    This class exists because a textual version of it did not work. The bit
+    operations shipped with a test that grepped three source files for each
+    name; it passed, and all seven built-ins from that commit were missing
+    from यन्त्रम्.vak — the one engine the grep did not name. Four engines had
+    them and the fifth did not, which is precisely the divergence the whole
+    project is built to prevent.
+
+    So neither check here reads source. One resolves every name on every
+    engine, the other calls a builtin on every engine and requires the answers
+    to match. A file the author forgot cannot be forgotten twice.
+    """
+
+    #: Built-ins that cannot be called in a test: they read stdin, touch the
+    #: filesystem, return the time or a random number, or raise by design.
+    #: They are still covered by the name-resolution test below.
+    IMPURE = {
+        "पठ", "काल", "यादृच्छिक", "दोष", "प्राचलाः", "खण्डम्_चालय",
+        "सञ्चिकापठ", "सञ्चिकापङ्क्तयः", "सञ्चिकालिख", "सञ्चिकायोजय",
+        "सञ्चिकास्ति", "सञ्चिकानाशय", "निर्देशिका", "लिख", "दोषलिख",
+    }
+
+    #: One call per built-in, chosen to give a printable answer.
+    CALLS = {
+        "प्रतिच्छेदः": "प्रतिच्छेदः(१२, १०)", "संयोगः": "संयोगः(१२, १०)",
+        "वियोगः": "वियोगः(१२, १०)", "पूरकः": "पूरकः(१२)",
+        "वामसारः": "वामसारः(१, ४)", "दक्षिणसारः": "दक्षिणसारः(१६, २)",
+        "प्रकार": 'प्रकार("अ")', "संख्या": 'संख्या("१२")', "शब्द": "शब्द(१२)",
+        "देवनागरी": "देवनागरी(१२)", "दीर्घता": "दीर्घता([१, २, ३])",
+        "सूची": 'सूची("अआ")', "परास": "परास(३)", "योजय": "योजय([१], २)",
+        "निष्कास": "निष्कास([१, २], ०)", "अस्ति": "अस्ति([१, २], २)",
+        "कुञ्जिकाः": 'कुञ्जिकाः({"अ": १})', "मूल्यानि": 'मूल्यानि({"अ": १})',
+        "क्रम": "क्रम([३, १, २])", "विपर्यय": "विपर्यय([१, २])",
+        "विभज": 'विभज("अ,ब", ",")', "संयोज": 'संयोज(["अ", "ब"], "-")',
+        "योग": "योग([१, २, ३])", "न्यूनतम": "न्यूनतम([३, १])",
+        "अधिकतम": "अधिकतम([३, १])", "मूल": "मूल(१६)", "पूर्ण": "पूर्ण(३.७)",
+        "अक्षराणि": 'अक्षराणि("वाक्")', "संकेतः": 'संकेतः("अ")',
+        "वर्णः": "वर्णः(२३०५)", "अंशः": "अंशः([१, २, ३], १)",
+        "मुद्रय": None,          # a statement, not a callable name
+    }
+
+    def engines(self, source: str) -> dict[str, str]:
+        """What each Python-hosted engine prints. The native binary is covered
+        by the name-resolution test, which compiles once for all of them."""
+        out = {"tree": output(source), "vm": vm_output(source)}
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            run_with_vak(source)
+        out["यन्त्रम्.vak"] = buf.getvalue().strip()
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            VM("<प>").run(compile_with_vak(source, "<प>"))
+        out["compiled by Vāk"] = buf.getvalue().strip()
+        return out
+
+    def test_every_name_resolves_on_every_engine(self):
+        """Binding a built-in to a name proves each engine's *front end* knows
+        it — the analyser accepts it and the compiler emits a reference rather
+        than an undefined name. Built-ins are first-class values, so this needs
+        no argument for any of them and one program covers all 46 at once.
+
+        It does not prove the name can be *called*: the compiler settles that a
+        name is a built-in and emits आ_अन्तर्निहितम्_गृहाण, so the runtime
+        dispatch is never consulted here. That is what the differential below
+        is for, and removing one entry from यन्त्रम्.vak's dispatch was used to
+        confirm it fails when it should."""
+        names = [n for n, _roman, _doc in BUILTIN_DOCS if n != "मुद्रय"]
+        source = "\n".join(f"मान न्_{i} = {name}। मुद्रय प्रकार(न्_{i})।"
+                           for i, name in enumerate(names))
+        expected = "\n".join(["कार्यम्"] * len(names))
+        for engine, printed in self.engines(source).items():
+            with self.subTest(engine=engine):
+                self.assertEqual(printed, expected)
+
+    def test_every_pure_builtin_answers_alike_on_every_engine(self):
+        """Resolving a name is not the same as being able to call it: a
+        built-in can sit in the name table and be missing from the dispatch.
+        This calls one and requires the engines to agree, which is the
+        project's own standard of proof."""
+        for name, _roman, _doc in BUILTIN_DOCS:
+            if name in self.IMPURE or self.CALLS.get(name) is None:
+                continue
+            with self.subTest(builtin=name):
+                answers = self.engines(f"मुद्रय {self.CALLS[name]}।")
+                distinct = set(answers.values())
+                self.assertEqual(len(distinct), 1,
+                                 f"{name}: engines disagree — {answers}")
+
+    def test_a_builtin_answers_to_its_roman_spelling_on_every_engine(self):
+        """Every built-in has an ASCII spelling so the language can be written
+        without a Devanagari keyboard. That worked in three engines and not in
+        the other two, for every built-in, until the compilers were made to
+        emit the canonical name: the C runtime and यन्त्रम्.vak key their tables
+        in Devanagari, and were being handed `dirghata`.
+
+        Romanised *keywords* were never affected — the lexer folds those into
+        one token. Built-in names are ordinary identifiers and get no fold.
+        """
+        for roman, devanagari in [("dirghata", "दीर्घता"), ("purakah", "पूरकः"),
+                                  ("yoga", "योग"), ("vamasarah", "वामसारः")]:
+            with self.subTest(builtin=roman):
+                call = {"dirghata": '([१, २, ३])', "purakah": "(१२)",
+                        "yoga": "([१, २, ३])", "vamasarah": "(१, ४)"}[roman]
+                answers = self.engines(f"मुद्रय {roman}{call}।")
+                answers.update(self.engines(f"मुद्रय {devanagari}{call}।"))
+                self.assertEqual(len(set(answers.values())), 1,
+                                 f"{roman}/{devanagari}: {answers}")
+
+    def test_the_declared_name_tables_have_not_drifted(self):
+        """Two Vāk files declare their own list of built-in names, and the two
+        lists are deliberately different shapes:
+
+        संकलकः.vak matches names as the programmer typed them, so it must hold
+        *both* spellings — and it is paired, Devanagari then roman, which is
+        what lets it map either to the canonical one without a second table.
+
+        यन्त्रम्.vak only ever sees what the compiler emitted, and the compiler
+        emits the canonical name, so Devanagari alone is correct there. Listing
+        roman names in it would be dead weight that looked like coverage.
+
+        Read with Vāk's own parser rather than a regex: this checks a data table
+        against its source of truth, not behaviour inferred from text.
+        """
+        devanagari = {n for n, _r, _d in BUILTIN_DOCS}
+        roman = {r for _n, r, _d in BUILTIN_DOCS}
+
+        def declared(stem: str) -> list[str]:
+            path = ROOT / "स्वयंसिद्धिः" / f"{stem}.vak"
+            program = parse(tokenize(path.read_text(encoding="utf-8"), str(path)))
+            for statement in program.statements:
+                if getattr(statement, "name", None) == "अन्तर्निहितनामानि":
+                    return [e.value for e in statement.value.elements]
+            self.fail(f"अन्तर्निहितनामानि not found in {path.name}")
+
+        compiler = declared("संकलकः")
+        self.assertEqual(devanagari - set(compiler), set(), "संकलकः.vak: missing")
+        self.assertEqual(roman - set(compiler), set(), "संकलकः.vak: missing roman")
+        self.assertEqual(set(compiler) - devanagari - roman, set(),
+                         "संकलकः.vak: named but not a built-in")
+        # the pairing is load-bearing: अन्तर्निहितमूलनाम reads the head of a pair
+        self.assertEqual(len(compiler) % 2, 0, "संकलकः.vak: table is not paired")
+        for i in range(0, len(compiler), 2):
+            with self.subTest(pair=compiler[i]):
+                self.assertIn(compiler[i], devanagari)
+                self.assertIn(compiler[i + 1], roman)
+                self.assertIn((compiler[i], compiler[i + 1]),
+                              {(n, r) for n, r, _d in BUILTIN_DOCS})
+
+        machine = set(declared("यन्त्रम्"))
+        self.assertEqual(devanagari - machine, set(), "यन्त्रम्.vak: missing")
+        self.assertEqual(machine & roman, set(),
+                         "यन्त्रम्.vak: roman names here are dead weight")
+        self.assertEqual(machine - devanagari - {"मुद्रय"}, set(),
+                         "यन्त्रम्.vak: named but not a built-in")
+
+    def test_the_call_table_covers_every_pure_builtin(self):
+        """The guard on the guard. A built-in added without an entry here
+        would silently skip the differential above — which is the same shape
+        of hole the grep had."""
+        uncovered = [n for n, _r, _d in BUILTIN_DOCS
+                     if n not in self.IMPURE and n not in self.CALLS]
+        self.assertEqual(uncovered, [],
+                         "add a call for these to CALLS, or list them in IMPURE")
+
+
+@unittest.skipIf(GCC is None, "C-संकलकः न प्राप्तः / no C compiler available")
+class TestNativeKnowsEveryBuiltin(unittest.TestCase):
+    """The fifth engine, checked the same way — separately because it compiles."""
+
+    def test_every_name_resolves_natively(self):
+        names = [n for n, _roman, _doc in BUILTIN_DOCS if n != "मुद्रय"]
+        source = "\n".join(f"मान न्_{i} = {name}। मुद्रय प्रकार(न्_{i})।"
+                           for i, name in enumerate(names))
+        directory = Path(tempfile.mkdtemp(prefix="vak-builtins-"))
+        try:
+            path = directory / "sarve.vak"
+            path.write_text(source, encoding="utf-8")
+            exe = build_executable(source, path, directory)
+            proc = subprocess.run([str(exe.resolve())], capture_output=True)
+            self.assertEqual(proc.returncode, 0,
+                             proc.stderr.decode("utf-8", "replace")[:400])
+            printed = proc.stdout.decode("utf-8", "replace").replace("\r\n", "\n")
+            self.assertEqual(printed.strip(), "\n".join(["कार्यम्"] * len(names)))
+        finally:
+            shutil.rmtree(directory, ignore_errors=True)
 
 
 class TestPackaging(unittest.TestCase):

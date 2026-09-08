@@ -551,6 +551,19 @@ BUILTIN_DOCS: list[tuple[str, str, str]] = [
     (dev, iast, doc) for dev, iast, _fn, _arity, doc, _rtype in _REGISTRY
 ]
 
+#: Every accepted spelling to the one the runtimes answer to.
+#:
+#: The lexer already folds the three orthographies of a *keyword* into one
+#: token, so यदि and yadi are indistinguishable by the time anything downstream
+#: sees them. Built-in names are ordinary identifiers and get no such fold, so
+#: the compiler does it here instead — otherwise a program written in ASCII
+#: reaches the C runtime and the Vāk-written VM asking for `dirghata`, and
+#: those tables are keyed in Devanagari.
+BUILTIN_CANONICAL: dict[str, str] = {}
+for _dev, _iast, _fn, _arity, _doc, _rtype in _REGISTRY:
+    BUILTIN_CANONICAL[_dev] = _dev
+    BUILTIN_CANONICAL[_iast] = _dev
+
 # name -> (arity, return type) — what the semantic analyser checks calls against.
 BUILTIN_SIGNATURES: dict[str, tuple[int, str]] = {}
 for _dev, _iast, _fn, _arity, _doc, _rtype in _REGISTRY:
