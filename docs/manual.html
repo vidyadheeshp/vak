@@ -277,7 +277,7 @@ footer .verse { font-family: var(--serif); font-size: .95rem; color: var(--ink-s
       <li><a href="#yantram"><span class="n">१५</span><span class="d">यन्त्रम्</span><span class="e">How Vāk runs</span></a></li>
       <li><a href="#doshasuchi"><span class="n">१६</span><span class="d">दोषसूची</span><span class="e">Every diagnostic</span></a></li>
       <li><a href="#padakoshah"><span class="n">१७</span><span class="d">पदकोशः</span><span class="e">Every keyword</span></a></li>
-      <li><a href="#antarnihitani"><span class="n">१८</span><span class="d">अन्तर्निहितानि</span><span class="e">The 46 built-ins</span></a></li>
+      <li><a href="#antarnihitani"><span class="n">१८</span><span class="d">अन्तर्निहितानि</span><span class="e">The 48 built-ins</span></a></li>
   </ol>
   <div class="controls">
     <button id="canon" aria-pressed="false">देवनागरी → roman</button>
@@ -612,6 +612,45 @@ mutable-default trap familiar from Python cannot arise.</p>
 <p>Where the parameters are unmarked, a default may not sit before a parameter
 that has none — position is all the call has to go on. Where every parameter
 declares its <a href="#karakani">kāraka</a>, that restriction lifts.</p>
+<h3>प्रयुज् · applying a call you did not write</h3>
+<p>Sometimes the arguments are computed rather than written out.
+<code>प्रयुज्</code> — <i>prayuj</i>, “to yoke, to apply” — takes a
+<code>कार्यम्</code> and either a <code>सूची</code>, which fills the parameters
+in order, or a <code>कोशः</code> whose keys are kāraka names, which fills them
+by role:</p>
+<figure class="code"><pre><code>प्रयुज्(योगः, [<i class="n" data-r="1">१</i>, <i class="n" data-r="2">२</i>, <i class="n" data-r="3">३</i>])।                        <i class="c"># योगः(१, २, ३)</i>
+प्रयुज्(लिखतु, {<i class="s">&quot;कर्ता&quot;</i>: <i class="s">&quot;कालिदासः&quot;</i>, <i class="s">&quot;कर्म&quot;</i>: <i class="s">&quot;मेघदूतम्&quot;</i>})।</code></pre><figcaption>The second form is a call whose roles were decided while the program ran.</figcaption></figure>
+<p>This is what a wrapper needs — a function standing in front of another
+without knowing how many arguments it takes:</p>
+<figure class="code"><pre><code><b class="k" data-r="karyam">कार्यम्</b> गणयित्वा(<b class="k" data-r="karyam">कार्यम्</b> क, <b class="t" data-r="suchi">सूची</b> अर्घाः) {
+    <b class="k" data-r="mudraya">मुद्रय</b> <i class="s">&quot;आह्वानम्:&quot;</i>, दीर्घता(अर्घाः)।
+    <b class="k" data-r="pratyagaccha">प्रत्यागच्छ</b> प्रयुज्(क, अर्घाः)।
+}</code></pre></figure>
+<p><code>प्रयुज्</code> becomes a single instruction, because the number of
+arguments is only known once the program is running. That has one consequence
+worth stating plainly: it must be <em>called</em>, and cannot be passed around
+as a value. All five engines refuse the indirect form rather than three
+allowing it and two not.</p>
+<h3>लक्षणम् · what a कार्यम् declares</h3>
+<p><i>Lakṣaṇa</i> is the grammarians' word for a defining characteristic — the
+mark by which a thing is known. A function's mark is its parameters, and
+<code>लक्षणम्</code> hands them back as an ordinary <code>कोशः</code>:</p>
+<figure class="code"><pre><code><b class="t" data-r="koshah">कोशः</b> ल = लक्षणम्(छानय)।
+<b class="k" data-r="mudraya">मुद्रय</b> ल.नाम, ल.प्राचलसंख्या, ल.प्रतिफलप्रकारः।
+<b class="k" data-r="pratyekam">प्रत्येकम्</b> (प्रा <b class="k" data-r="antah">अन्तः</b> ल.प्राचलाः) {
+    <b class="k" data-r="mudraya">मुद्रय</b> प्रा.कारकम्, प्रा.प्रकारः, प्रा.नाम, प्रा.मूलमस्ति।
+}</code></pre><figcaption>छानय 2 सूची / अपादानम् सूची संग्रहः असत्य / करणम् किमपि परीक्षा सत्य</figcaption></figure>
+<p>The two are meant to be used together: read the roles a function wants, then
+build the call from them.</p>
+<figure class="code"><pre><code><b class="t" data-r="koshah">कोशः</b> अर्घाः = {}।
+<b class="k" data-r="pratyekam">प्रत्येकम्</b> (प्रा <b class="k" data-r="antah">अन्तः</b> लक्षणम्(लिखतु).प्राचलाः) {
+    <b class="k" data-r="yadi">यदि</b> (<b class="k" data-r="na">न</b> प्रा.मूलमस्ति) { अर्घाः[प्रा.कारकम्] = मूल्यम्_आनय(प्रा.कारकम्)। }
+}
+<b class="k" data-r="pratyagaccha">प्रत्यागच्छ</b> प्रयुज्(लिखतु, अर्घाः)।</code></pre><figcaption>Every role the function requires, gathered by name and applied.</figcaption></figure>
+<p>For a built-in, <code>प्रतिफलप्रकारः</code> comes back as
+<code>किमपि</code>. That is the analyser's knowledge rather than the
+runtime's, and two of the five engines have no way to reach it — reporting it
+from the three that can would be a divergence.</p>
 </section>
 <section id="sangrahah">
   <div class="head">
@@ -1114,7 +1153,7 @@ constructs have such a pair.</p>
 <section id="antarnihitani">
   <div class="head">
     <p class="num">१८</p>
-    <h2><span class="dev">अन्तर्निहितानि</span><span class="eng">The 46 built-ins</span></h2>
+    <h2><span class="dev">अन्तर्निहितानि</span><span class="eng">The 48 built-ins</span></h2>
   </div>
   
 <p>Available everywhere without an import. Two more —
@@ -1160,6 +1199,8 @@ brought in with <code>आनय</code>.</p>
     <tr><td><code>यादृच्छिक</code></td><td class="iast">yadrcchika</td><td>यादृच्छिकः अङ्कः / random number</td></tr>
     <tr><td><code>काल</code></td><td class="iast">kala</td><td>कालः / current time in seconds</td></tr>
     <tr><td><code>प्राचलाः</code></td><td class="iast">prachalah</td><td>आदेशपङ्क्त्याः प्राचलाः / command-line arguments</td></tr>
+    <tr><td><code>प्रयुज्</code></td><td class="iast">prayuj</td><td>कार्यम् सूच्या कोशेन वा प्रयुङ्क्ते / apply a function to computed arguments</td></tr>
+    <tr><td><code>लक्षणम्</code></td><td class="iast">lakshanam</td><td>कार्यस्य प्राचलाः कारकाणि च / a function&#x27;s parameters and their roles</td></tr>
     <tr><td><code>खण्डम्_चालय</code></td><td class="iast">khandam_chalaya</td><td>संकलितम् खण्डम् चालयति / run a compiled chunk</td></tr>
     <tr><td><code>दोष</code></td><td class="iast">dosha</td><td>दोषम् उत्पादयति / raise an error</td></tr>
     <tr><td><code>सञ्चिकापठ</code></td><td class="iast">sanchikapatha</td><td>सञ्चिकाम् पठति / read a whole file</td></tr>
@@ -1175,7 +1216,7 @@ brought in with <code>आनय</code>.</p>
 
   <footer>
     <p class="verse">वाक् इति भाषा — यत्र संस्कृतम् एव आदेशः<span class="danda">॥</span></p>
-    <p>0.11.1 · 46 built-ins · five engines, one output</p>
+    <p>0.11.1 · 48 built-ins · five engines, one output</p>
     <p class="copyright">© 2026 Vidyadheesh Pandurangi. वाक् is free software, released under the <a href="https://github.com/vidyadheeshp/vak/blob/main/LICENSE">MIT Licence</a> — use it, change it, teach with it, ship it.</p>
     <p>Visits are counted with <a href="https://vak.goatcounter.com">GoatCounter</a> — no cookies, no personal data, and Do Not Track is honoured.</p>
   </footer>

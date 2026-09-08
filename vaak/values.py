@@ -97,6 +97,38 @@ class NativeFunction(VakCallable):
         return f"<अन्तर्निहितम् {self.name}>"
 
 
+def apply_arguments(bundle: Any, line: int = 0) -> tuple[list, list]:
+    """Unpack what प्रयुज् was handed into arguments and their kāraka labels.
+
+    A सूची is positional — प्रयुज्(क, [१, २]) is क(१, २).
+    A कोशः is by role — प्रयुज्(क, {"कर्ता": अ}) is क(कर्ता: अ), and its keys
+    must be kāraka names, because those are the only labels a call may carry.
+
+    Shared by every engine so the two forms cannot drift apart.
+    """
+    from .errors import RuntimeVakError
+    from .tokens import KARAKA_NAMES
+
+    if isinstance(bundle, list):
+        return list(bundle), [None] * len(bundle)
+    if isinstance(bundle, dict):
+        args, labels = [], []
+        for key, value in bundle.items():
+            role = KARAKA_NAMES.get(key)
+            if role is None:
+                raise RuntimeVakError(
+                    f"'{key}' इति कारकम् न / '{key}' is not a kāraka",
+                    line, code="कारकदोषः",
+                )
+            args.append(value)
+            labels.append(role)
+        return args, labels
+    raise RuntimeVakError(
+        "प्रयुज् सूचीम् कोशम् वा इच्छति / प्रयुज् expects a सूची or a कोशः",
+        line, code="प्रकारदोषः",
+    )
+
+
 def missing_arguments(params: list, filled: list, line: int = 0) -> None:
     """Refuse a call that leaves a parameter both unsupplied and undefaulted.
 

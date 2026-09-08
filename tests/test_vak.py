@@ -2332,6 +2332,7 @@ class TestEveryEngineKnowsEveryBuiltin(unittest.TestCase):
         "प्रतिच्छेदः": "प्रतिच्छेदः(१२, १०)", "संयोगः": "संयोगः(१२, १०)",
         "वियोगः": "वियोगः(१२, १०)", "पूरकः": "पूरकः(१२)",
         "वामसारः": "वामसारः(१, ४)", "दक्षिणसारः": "दक्षिणसारः(१६, २)",
+        "लक्षणम्": "लक्षणम्(दीर्घता).नाम", "प्रयुज्": 'प्रयुज्(दीर्घता, ["अआ"])',
         "प्रकार": 'प्रकार("अ")', "संख्या": 'संख्या("१२")', "शब्द": "शब्द(१२)",
         "देवनागरी": "देवनागरी(१२)", "दीर्घता": "दीर्घता([१, २, ३])",
         "सूची": 'सूची("अआ")', "परास": "परास(३)", "योजय": "योजय([१], २)",
@@ -2490,6 +2491,216 @@ class TestNativeKnowsEveryBuiltin(unittest.TestCase):
             self.assertEqual(printed.strip(), "\n".join(["कार्यम्"] * len(names)))
         finally:
             shutil.rmtree(directory, ignore_errors=True)
+
+
+class TestApplyAndReflection(unittest.TestCase):
+    """प्रयुज् च लक्षणम् — building a call, and asking what a कार्यम् wants.
+
+    Until these, a Vāk program could not forward an argument list, write a
+    wrapper around an arbitrary function, or ask a function what roles it
+    declares. All three are ordinary things to want, and none of them is about
+    Sanskrit: the language simply had no apply and no reflection.
+    """
+
+    FILTER = ('कार्यम् छानय(अपादानम् सूची संग्रहः, करणम् किमपि परीक्षा = शून्य) : सूची {\n'
+              '    प्रत्यागच्छ संग्रहः।\n'
+              '}\n')
+    WRITE = ('कार्यम् लिखतु(कर्ता शब्दः क, करणम् शब्दः स = "लेखन्या",\n'
+             '              कर्म शब्दः ग) : शब्दः {\n'
+             '    प्रत्यागच्छ क + "|" + ग + "|" + स।\n'
+             '}\n')
+
+    def engines(self, source: str) -> dict[str, str]:
+        out = {"tree": output(source), "vm": vm_output(source)}
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            run_with_vak(source)
+        out["यन्त्रम्.vak"] = buf.getvalue().strip()
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            VM("<प>").run(compile_with_vak(source, "<प>"))
+        out["compiled by Vāk"] = buf.getvalue().strip()
+        return out
+
+    def assert_agree(self, source: str, expected: str):
+        for engine, printed in self.engines(source).items():
+            with self.subTest(engine=engine):
+                self.assertEqual(printed, expected)
+
+    # ------------------------------------------------------------- प्रयुज्
+    def test_a_list_is_applied_positionally(self):
+        self.assert_agree("कार्यम् य(अ, ब, स) { प्रत्यागच्छ अ + ब + स। }\n"
+                          "मुद्रय प्रयुज्(य, [१, २, ३])।", "6")
+
+    def test_a_kosha_is_applied_by_role(self):
+        self.assert_agree(self.WRITE + 'मुद्रय प्रयुज्(लिखतु, '
+                          '{"कर्ता": "क", "कर्म": "ग"})।', "क|ग|लेखन्या")
+
+    def test_a_role_key_may_use_any_of_its_spellings(self):
+        """कारकनामानि accepts three spellings per role in source, so the keys
+        of an applied कोशः must accept them too — otherwise a program written
+        in ASCII could not use this form at all."""
+        for keys in ('{"कर्ता": "क", "कर्म": "ग"}',
+                     '{"karta": "क", "karma": "ग"}',
+                     '{"कर्मन्": "ग", "कर्ता": "क"}'):
+            with self.subTest(keys=keys):
+                self.assert_agree(self.WRITE + f"मुद्रय प्रयुज्(लिखतु, {keys})।",
+                                  "क|ग|लेखन्या")
+
+    def test_a_defaulted_role_may_be_left_out_of_the_kosha(self):
+        self.assert_agree(self.FILTER + 'मुद्रय प्रयुज्(छानय, '
+                          '{"अपादानम्": [१, २]})।', "[1, 2]")
+
+    def test_a_builtin_can_be_applied(self):
+        # दीर्घता counts code points, so वाक् is व ा क ् — four, not two aksharas
+        self.assert_agree('मुद्रय प्रयुज्(दीर्घता, ["वाक्"])।', "4")
+
+    def test_an_inline_closure_can_be_applied(self):
+        """The closure exists only on the stack. The C runtime freed it the
+        moment the call began and then read it — see the native test below."""
+        self.assert_agree("मुद्रय प्रयुज्(कार्यम्(अ, ब) { प्रत्यागच्छ अ * ब। }, "
+                          "[६, ७])।", "42")
+
+    def test_a_wrapper_can_forward_an_argument_list(self):
+        """The thing that was impossible: one function standing in front of
+        another without knowing how many arguments it takes."""
+        self.assert_agree(
+            "कार्यम् गणयित्वा(कार्यम् क, सूची अर्घाः) {\n"
+            '    मुद्रय "आह्वानम्:", दीर्घता(अर्घाः)।\n'
+            "    प्रत्यागच्छ प्रयुज्(क, अर्घाः)।\n"
+            "}\n"
+            "कार्यम् य(अ, ब, स) { प्रत्यागच्छ अ + ब + स। }\n"
+            "मुद्रय गणयित्वा(य, [१, २, ३])।", "आह्वानम्: 3\n6")
+
+    # ------------------------------------------------------ what it refuses
+    def test_a_key_that_is_not_a_karaka_is_refused(self):
+        for engine, run in [("tree", output), ("vm", vm_output)]:
+            with self.subTest(engine=engine):
+                with self.assertRaises(RuntimeVakError) as caught:
+                    run(self.FILTER + 'मुद्रय प्रयुज्(छानय, {"नाम": १})।')
+                self.assertIn("इति कारकम् न", str(caught.exception))
+
+    def test_the_bundle_must_be_a_list_or_a_dictionary(self):
+        with self.assertRaises(RuntimeVakError):
+            output("कार्यम् क(अ) { प्रत्यागच्छ अ। } मुद्रय प्रयुज्(क, ५)।")
+
+    def test_it_must_be_called_directly(self):
+        """प्रयुज् becomes one instruction, and an instruction cannot be
+        handed around as a value. Three engines could have supported the
+        indirect form and two could not, so all five refuse it."""
+        source = ("कार्यम् क(अ) { प्रत्यागच्छ अ। }\n"
+                  "मान ग = प्रयुज्।\n"
+                  "मुद्रय ग(क, [१])।")
+        for engine, run in [("tree", output), ("vm", vm_output)]:
+            with self.subTest(engine=engine):
+                with self.assertRaises(RuntimeVakError) as caught:
+                    run(source)
+                self.assertIn("साक्षात् एव आह्वातव्यम्", str(caught.exception))
+
+    def test_a_local_named_prayuj_shadows_the_form(self):
+        self.assert_agree(
+            "कार्यम् बाह्यम्() {\n"
+            '    मान प्रयुज् = कार्यम्(अ, ब) { प्रत्यागच्छ "आच्छादितम्"। }।\n'
+            "    प्रत्यागच्छ प्रयुज्(१, २)।\n"
+            "}\n"
+            "मुद्रय बाह्यम्()।", "आच्छादितम्")
+
+    # ------------------------------------------------------------ लक्षणम्
+    def test_a_function_reports_its_parameters_and_roles(self):
+        source = self.FILTER + ("कोशः ल = लक्षणम्(छानय)।\n"
+                                "मुद्रय ल.नाम, ल.प्राचलसंख्या, ल.प्रतिफलप्रकारः।\n"
+                                "प्रत्येकम् (प्रा अन्तः ल.प्राचलाः) {\n"
+                                "    मुद्रय प्रा.कारकम्, प्रा.प्रकारः, प्रा.नाम, प्रा.मूलमस्ति।\n"
+                                "}")
+        self.assert_agree(source,
+                          "छानय 2 सूची\n"
+                          "अपादानम् सूची संग्रहः असत्य\n"
+                          "करणम् किमपि परीक्षा सत्य")
+
+    def test_a_default_comes_back_with_the_parameter(self):
+        self.assert_agree(
+            'कार्यम् क(शब्दः स = "नमस्ते") { प्रत्यागच्छ स। }\n'
+            "मुद्रय लक्षणम्(क).प्राचलाः[०].मूलमूल्यम्।", "नमस्ते")
+
+    def test_a_builtin_reports_its_arity_and_nothing_it_cannot_know(self):
+        """किमपि for the return type, deliberately: that is the analyser's
+        knowledge, and two of the five engines have no way to reach it.
+        Reporting it from three and not the others would be a divergence."""
+        self.assert_agree("कोशः ल = लक्षणम्(दीर्घता)।\n"
+                          "मुद्रय ल.नाम, ल.अन्तर्निहितम्, ल.प्राचलसंख्या, "
+                          "ल.प्रतिफलप्रकारः, दीर्घता(ल.प्राचलाः)।",
+                          "दीर्घता सत्य 1 किमपि 0")
+
+    def test_reflection_and_apply_compose(self):
+        """The pair earns its place together: read the roles a function wants,
+        then build the call from them."""
+        self.assert_agree(
+            self.WRITE
+            + "कोशः अर्घाः = {}।\n"
+              "प्रत्येकम् (प्रा अन्तः लक्षणम्(लिखतु).प्राचलाः) {\n"
+              "    यदि (न प्रा.मूलमस्ति) { अर्घाः[प्रा.कारकम्] = प्रा.नाम। }\n"
+              "}\n"
+              "मुद्रय प्रयुज्(लिखतु, अर्घाः)।", "क|ग|लेखन्या")
+
+    def test_lakshanam_refuses_what_is_not_a_function(self):
+        with self.assertRaises(RuntimeVakError):
+            output("मुद्रय लक्षणम्(५)।")
+
+
+@unittest.skipIf(GCC is None, "C-संकलकः न प्राप्तः / no C compiler available")
+class TestApplyNatively(unittest.TestCase):
+    """The C runtime, where a closure's lifetime is managed by hand."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.dir = Path(tempfile.mkdtemp(prefix="vak-prayuj-"))
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.dir, ignore_errors=True)
+
+    def native_output(self, source: str, name: str = "prayuj") -> str:
+        path = self.dir / f"{name}.vak"
+        path.write_text(source, encoding="utf-8")
+        exe = build_executable(source, path, self.dir)
+        proc = subprocess.run([str(exe.resolve())], capture_output=True)
+        self.assertEqual(proc.returncode, 0,
+                         f"exit {proc.returncode}: "
+                         + proc.stderr.decode("utf-8", "replace")[:400])
+        return proc.stdout.decode("utf-8", "replace").replace("\r\n", "\n").strip()
+
+    def test_a_closure_that_lives_only_on_the_stack_survives_its_own_call(self):
+        """A use-after-free, and it predates प्रयुज्: the frame kept the
+        Avarana pointer without taking a reference, so an आवरणम् held nowhere
+        else was freed as the call began. कार्यम्(अ){...}(१) segfaulted on the
+        ordinary call path too — प्रयुज् only made it easy to hit."""
+        self.assertEqual(
+            self.native_output("मुद्रय कार्यम्(अ, ब) { प्रत्यागच्छ अ * ब। }(६, ७)।",
+                               "anamaka"),
+            "42")
+        self.assertEqual(
+            self.native_output("मुद्रय प्रयुज्(कार्यम्(अ, ब) { प्रत्यागच्छ अ * ब। }, "
+                               "[६, ७])।", "prayukta"),
+            "42")
+
+    def test_both_forms_natively(self):
+        self.assertEqual(
+            self.native_output(
+                'कार्यम् ल(कर्ता शब्दः क, करणम् शब्दः स = "लेखन्या",\n'
+                '          कर्म शब्दः ग) : शब्दः { प्रत्यागच्छ क + "|" + ग + "|" + स। }\n'
+                "कार्यम् य(अ, ब, स) { प्रत्यागच्छ अ + ब + स। }\n"
+                "मुद्रय प्रयुज्(य, [१, २, ३])।\n"
+                'मुद्रय प्रयुज्(ल, {"karta": "क", "कर्म": "ग"})।', "ubhau"),
+            "6\nक|ग|लेखन्या")
+
+    def test_reflection_natively(self):
+        self.assertEqual(
+            self.native_output(
+                "कार्यम् छानय(अपादानम् सूची स, करणम् किमपि प = शून्य) : सूची "
+                "{ प्रत्यागच्छ स। }\n"
+                "मुद्रय लक्षणम्(छानय).प्राचलाः[०].कारकम्, "
+                "लक्षणम्(छानय).प्राचलाः[१].मूलमस्ति।", "lakshana"),
+            "अपादानम् सत्य")
 
 
 class TestPackaging(unittest.TestCase):

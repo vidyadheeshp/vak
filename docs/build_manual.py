@@ -405,7 +405,48 @@ mutable-default trap familiar from Python cannot arise.</p>
 मुद्रय अभिवादय("रामः", "स्वागतम्")।   # स्वागतम्, रामः।''')}
 <p>Where the parameters are unmarked, a default may not sit before a parameter
 that has none — position is all the call has to go on. Where every parameter
-declares its <a href="#karakani">kāraka</a>, that restriction lifts.</p>"""))
+declares its <a href="#karakani">kāraka</a>, that restriction lifts.</p>
+<h3>प्रयुज् · applying a call you did not write</h3>
+<p>Sometimes the arguments are computed rather than written out.
+<code>प्रयुज्</code> — <i>prayuj</i>, “to yoke, to apply” — takes a
+<code>कार्यम्</code> and either a <code>सूची</code>, which fills the parameters
+in order, or a <code>कोशः</code> whose keys are kāraka names, which fills them
+by role:</p>
+{code('''प्रयुज्(योगः, [१, २, ३])।                        # योगः(१, २, ३)
+प्रयुज्(लिखतु, {"कर्ता": "कालिदासः", "कर्म": "मेघदूतम्"})।''',
+      "The second form is a call whose roles were decided while the program ran.")}
+<p>This is what a wrapper needs — a function standing in front of another
+without knowing how many arguments it takes:</p>
+{code('''कार्यम् गणयित्वा(कार्यम् क, सूची अर्घाः) {
+    मुद्रय "आह्वानम्:", दीर्घता(अर्घाः)।
+    प्रत्यागच्छ प्रयुज्(क, अर्घाः)।
+}''')}
+<p><code>प्रयुज्</code> becomes a single instruction, because the number of
+arguments is only known once the program is running. That has one consequence
+worth stating plainly: it must be <em>called</em>, and cannot be passed around
+as a value. All five engines refuse the indirect form rather than three
+allowing it and two not.</p>
+<h3>लक्षणम् · what a कार्यम् declares</h3>
+<p><i>Lakṣaṇa</i> is the grammarians\' word for a defining characteristic — the
+mark by which a thing is known. A function\'s mark is its parameters, and
+<code>लक्षणम्</code> hands them back as an ordinary <code>कोशः</code>:</p>
+{code('''कोशः ल = लक्षणम्(छानय)।
+मुद्रय ल.नाम, ल.प्राचलसंख्या, ल.प्रतिफलप्रकारः।
+प्रत्येकम् (प्रा अन्तः ल.प्राचलाः) {
+    मुद्रय प्रा.कारकम्, प्रा.प्रकारः, प्रा.नाम, प्रा.मूलमस्ति।
+}''', "छानय 2 सूची / अपादानम् सूची संग्रहः असत्य / करणम् किमपि परीक्षा सत्य")}
+<p>The two are meant to be used together: read the roles a function wants, then
+build the call from them.</p>
+{code('''कोशः अर्घाः = {}।
+प्रत्येकम् (प्रा अन्तः लक्षणम्(लिखतु).प्राचलाः) {
+    यदि (न प्रा.मूलमस्ति) { अर्घाः[प्रा.कारकम्] = मूल्यम्_आनय(प्रा.कारकम्)। }
+}
+प्रत्यागच्छ प्रयुज्(लिखतु, अर्घाः)।''',
+      "Every role the function requires, gathered by name and applied.")}
+<p>For a built-in, <code>प्रतिफलप्रकारः</code> comes back as
+<code>किमपि</code>. That is the analyser\'s knowledge rather than the
+runtime\'s, and two of the five engines have no way to reach it — reporting it
+from the three that can would be a divergence.</p>"""))
 
 # ---------------------------------------------------------------- ६ · संग्रहाः
 parts.append(section("sangrahah", "संग्रहाः", "Lists and dictionaries", f"""

@@ -17,6 +17,7 @@ from .builtins import build_builtins
 from .environment import Environment
 from .errors import RuntimeVakError
 from .values import (
+    NativeFunction,
     VakCallable,
     VakFunction,
     check_type,
@@ -492,8 +493,32 @@ class Interpreter:
     def _eval_Call(self, node: A.Call) -> Any:
         callee = self.evaluate(node.callee)
         args = [self.evaluate(a) for a in node.args]
-        if node.arg_karakas and any(node.arg_karakas):
-            args = self._order_by_karaka(callee, args, node.arg_karakas, node.line)
+        labels = list(node.arg_karakas)
+        # प्रयुज् is recognised by the call *syntax*, not by the value that
+        # turns up — the compilers can only do it that way, since they must
+        # emit one instruction before anything has run. Matching that here
+        # keeps the five engines on the same rule, including the refusal.
+        if (isinstance(node.callee, A.Identifier)
+                and node.callee.name in ("प्रयुज्", "prayuj")
+                and isinstance(callee, NativeFunction) and callee.name == "प्रयुज्"
+                and len(args) == 2 and not any(labels)):
+            # प्रयुज्(कार्यम्, अर्घाः) — the tree-walker has no bytecode, so it
+            # unpacks here what the compilers turn into one instruction.
+            from .values import apply_arguments
+            callee, bundle = args          # a local प्रयुज् would not be a
+                                           # NativeFunction, so it shadows this
+            args, labels = apply_arguments(bundle, node.line)
+            if not isinstance(callee, VakCallable):
+                raise RuntimeVakError(
+                    f"{type_name(callee)} आह्वातुं न शक्यते / "
+                    f"{type_name(callee)} is not callable",
+                    node.line, code="प्रकारदोषः",
+                )
+            if any(labels):
+                args = self._order_by_karaka(callee, args, labels, node.line)
+            return callee.call(self, args, node.line)
+        if labels and any(labels):
+            args = self._order_by_karaka(callee, args, labels, node.line)
         if not isinstance(callee, VakCallable):
             raise RuntimeVakError(
                 f"{type_name(callee)} आह्वातुं न शक्यते / {type_name(callee)} is not callable",

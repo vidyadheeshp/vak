@@ -301,6 +301,39 @@ footer a:hover { color:var(--gold); }
   <p>A role that is neither supplied nor defaulted is an error that names it —
   <code>न्यूनाः प्राचलाः: कर्म</code> — because with the order free, a position
   would tell you nothing about which role is missing.</p>
+  <h3>लक्षणम् &amp; प्रयुज् · reading the roles, then building the call</h3>
+  <p>The roles are not only checked before the program runs — a program can read
+  them while it runs. <b>लक्षणम्</b> is the grammarians' word for a defining
+  characteristic, and a function's is its parameters: their names, types, roles,
+  and whether each may go unstated. <b>प्रयुज्</b> — <i>to yoke, to apply</i> —
+  then makes the call, from a <code>सूची</code> in order or a <code>कोशः</code>
+  by role.</p>
+  <figure class="demo">
+  <div class="src"><pre><code><b class="k">कार्यम्</b> लिखतु(<b class="ka">कर्ता</b> <b class="t">शब्दः</b> लेखकः,
+              <b class="ka">करणम्</b> <b class="t">शब्दः</b> साधनम् = <i class="s">&quot;लेखन्या&quot;</i>,
+              <b class="ka">कर्म</b> <b class="t">शब्दः</b> ग्रन्थः) : <b class="t">शब्दः</b> {
+    <b class="k">प्रत्यागच्छ</b> लेखकः + <i class="s">&quot; &#x27;&quot;</i> + ग्रन्थः + <i class="s">&quot;&#x27; &quot;</i> + साधनम् + <i class="s">&quot; लिखति&quot;</i>।
+}
+
+<i class="c"># लक्षणम् — यत् कार्यम् आत्मनः विषये घोषयति।</i>
+<b class="k">प्रत्येकम्</b> (प्रा <b class="k">अन्तः</b> लक्षणम्(लिखतु).प्राचलाः) {
+    <b class="k">मुद्रय</b> प्रा.कारकम्, प्रा.प्रकारः, प्रा.नाम, प्रा.मूलमस्ति।
+}
+
+<i class="c"># प्रयुज् — कारकनाम्ना रचितम् आह्वानम्।</i>
+<b class="k">मुद्रय</b> प्रयुज्(लिखतु, {<i class="s">&quot;कर्ता&quot;</i>: <i class="s">&quot;कालिदासः&quot;</i>, <i class="s">&quot;कर्म&quot;</i>: <i class="s">&quot;मेघदूतम्&quot;</i>})।</code></pre></div>
+  <div class="res">
+    <p class="lbl">फलम् · what it prints</p>
+    <pre><code>कर्ता शब्दः लेखकः असत्य
+करणम् शब्दः साधनम् सत्य
+कर्म शब्दः ग्रन्थः असत्य
+कालिदासः &#x27;मेघदूतम्&#x27; लेखन्या लिखति</code></pre>
+    <a class="try" href="playground.html#code=4KSV4KS-4KSw4KWN4KSv4KSu4KWNIOCksuCkv-CkluCkpOClgSjgpJXgpLDgpY3gpKTgpL4g4KS24KSs4KWN4KSm4KSDIOCksuClh-CkluCkleCkgywKICAgICAgICAgICAgICDgpJXgpLDgpKPgpK7gpY0g4KS24KSs4KWN4KSm4KSDIOCkuOCkvuCkp-CkqOCkruCljSA9ICLgpLLgpYfgpJbgpKjgpY3gpK_gpL4iLAogICAgICAgICAgICAgIOCkleCksOCljeCkriDgpLbgpKzgpY3gpKbgpIMg4KSX4KWN4KSw4KSo4KWN4KSl4KSDKSA6IOCktuCkrOCljeCkpuCkgyB7CiAgICDgpKrgpY3gpLDgpKTgpY3gpK_gpL7gpJfgpJrgpY3gpJsg4KSy4KWH4KSW4KSV4KSDICsgIiAnIiArIOCkl-CljeCksOCkqOCljeCkpeCkgyArICInICIgKyDgpLjgpL7gpKfgpKjgpK7gpY0gKyAiIOCksuCkv-CkluCkpOCkvyLgpaQKfQoKIyDgpLLgpJXgpY3gpLfgpKPgpK7gpY0g4oCUIOCkr-CkpOCljSDgpJXgpL7gpLDgpY3gpK_gpK7gpY0g4KSG4KSk4KWN4KSu4KSo4KSDIOCkteCkv-Ckt-Ckr-ClhyDgpJjgpYvgpLfgpK_gpKTgpL_gpaQK4KSq4KWN4KSw4KSk4KWN4KSv4KWH4KSV4KSu4KWNICjgpKrgpY3gpLDgpL4g4KSF4KSo4KWN4KSk4KSDIOCksuCkleCljeCkt-Cko-CkruCljSjgpLLgpL_gpJbgpKTgpYEpLuCkquCljeCksOCkvuCkmuCksuCkvuCkgykgewogICAg4KSu4KWB4KSm4KWN4KSw4KSvIOCkquCljeCksOCkvi7gpJXgpL7gpLDgpJXgpK7gpY0sIOCkquCljeCksOCkvi7gpKrgpY3gpLDgpJXgpL7gpLDgpIMsIOCkquCljeCksOCkvi7gpKjgpL7gpK4sIOCkquCljeCksOCkvi7gpK7gpYLgpLLgpK7gpLjgpY3gpKTgpL_gpaQKfQoKIyDgpKrgpY3gpLDgpK_gpYHgpJzgpY0g4oCUIOCkleCkvuCksOCkleCkqOCkvuCkruCljeCkqOCkviDgpLDgpJrgpL_gpKTgpK7gpY0g4KSG4KS54KWN4KS14KS-4KSo4KSu4KWN4KWkCuCkruClgeCkpuCljeCksOCkryDgpKrgpY3gpLDgpK_gpYHgpJzgpY0o4KSy4KS_4KSW4KSk4KWBLCB7IuCkleCksOCljeCkpOCkviI6ICLgpJXgpL7gpLLgpL_gpKbgpL7gpLjgpIMiLCAi4KSV4KSw4KWN4KSuIjogIuCkruClh-CkmOCkpuClguCkpOCkruCljSJ9KeClpA==">चालय · run this yourself →</a>
+  </div>
+  <figcaption>The signature read at run time, and a call assembled from role names rather than written out.</figcaption>
+</figure>
+  <p>Together they are what a bridge from a Sanskrit parser would stand on: a
+  kāraka analysis is exactly the shape <code>प्रयुज्</code> accepts.</p>
 </section>
 
 <section id="भाषा">
@@ -374,8 +407,8 @@ pratyekam (n antah [1, 2, 3, 4]) { mudraya n, <i class="s">&quot;-&gt;&quot;</i>
   byte-identical output on every example, which is how any of this stays honest.</p>
   <div class="facts">
     <div><b>5</b><span>engines, one output</span></div>
-    <div><b>46</b><span>built-in functions</span></div>
-    <div><b>281</b><span>tests</span></div>
+    <div><b>48</b><span>built-in functions</span></div>
+    <div><b>300</b><span>tests</span></div>
     <div><b>6</b><span>kāraka roles</span></div>
     <div><b>147 KB</b><span>gzipped — the whole toolchain, in your browser</span></div>
   </div>

@@ -93,6 +93,11 @@ typedef struct {
     Parivesha *parivesha;
     int adhara;
     const Avarana *avarana;
+    /* आवरणस्य ग्रहणम् — the frame reads avarana->karyam long after the caller
+       has let go of its own reference, so it must hold one of its own.  Without
+       this an आवरणम् that lived only on the stack — कार्यम्(अ){...}(१) — was
+       freed the moment the call began, and the frame read freed memory. */
+    Mulyam avarana_dhrtam;
     Prabandhaka prabandhakah[32];
     int prabandhaka_ganana;
     bool pralambitam;
@@ -387,7 +392,9 @@ static void suchake_nyasaya(Mulyam lakshya, Mulyam suchaka, Mulyam mulyam) {
 }
 
 /* ------------------------------------------------------------- आह्वानम् */
-static void chaukatim_yojaya(const Khanda *k, Parivesha *p, const Avarana *a, int adhara) {
+static void chaukatim_yojaya(const Khanda *k, Parivesha *p, Mulyam ahveyam, int adhara) {
+    const Avarana *a = ahveyam.prakara == P_AVARANA
+                     ? (const Avarana *)ahveyam.as.vastu : NULL;
     if (Y.chaukati_ganana >= (int)(sizeof(Y.chaukatyah) / sizeof(Y.chaukatyah[0]))) {
         dosha_utsrja("कार्यकालदोषः", "अतिगभीरम् आवर्तनम् / recursion too deep");
         return;
@@ -399,8 +406,18 @@ static void chaukatim_yojaya(const Khanda *k, Parivesha *p, const Avarana *a, in
     c->parivesha = p;
     c->adhara = adhara;
     c->avarana = a;
+    c->avarana_dhrtam = a ? grah(ahveyam) : shunyam_mulyam();
     c->prabandhaka_ganana = 0;
     c->pralambitam = false;
+}
+
+/* चौकटीम् मुञ्च — every pop goes through here, so the reference cannot be
+   forgotten at one of them. */
+static void chaukatim_muncha(Chaukati *c) {
+    muncha(c->avarana_dhrtam);
+    c->avarana_dhrtam = shunyam_mulyam();
+    c->avarana = NULL;
+    Y.chaukati_ganana--;
 }
 
 /* मूलमूल्यम् — the literal an unstated parameter falls back to.  Defaults are
@@ -485,6 +502,27 @@ static void karakaih_kramaya(const SankalitaKaryam *k, Mulyam *prachalah, int ga
             purnani[i] = true;
         }
     nyunan_utsrja(k, purnani);
+}
+
+/* कारकनामानि — every spelling a kāraka answers to.
+   The compiler normalises the labels it writes into the bytecode, so the
+   runtime never needed this before. प्रयुज् changes that: the keys of a कोशः
+   are ordinary data, read while the program runs, and a program may perfectly
+   well write प्रयुज्(क, {"karta": अ}). Kept in the order KARAKA_ORDER uses. */
+static const char *const KARAKA_NAMANI[][2] = {
+    { "कर्ता", "कर्ता" }, { "karta", "कर्ता" },
+    { "कर्म", "कर्म" }, { "कर्मन्", "कर्म" }, { "karma", "कर्म" },
+    { "करणम्", "करणम्" }, { "करण", "करणम्" }, { "karanam", "करणम्" },
+    { "सम्प्रदानम्", "सम्प्रदानम्" }, { "सम्प्रदान", "सम्प्रदानम्" },
+    { "sampradanam", "सम्प्रदानम्" },
+    { "अपादानम्", "अपादानम्" }, { "अपादान", "अपादानम्" }, { "apadanam", "अपादानम्" },
+    { "अधिकरणम्", "अधिकरणम्" }, { "अधिकरण", "अधिकरणम्" }, { "adhikaranam", "अधिकरणम्" },
+};
+
+static const char *karakam_mulam(const char *nama) {
+    for (size_t i = 0; i < sizeof KARAKA_NAMANI / sizeof KARAKA_NAMANI[0]; i++)
+        if (strcmp(KARAKA_NAMANI[i][0], nama) == 0) return KARAKA_NAMANI[i][1];
+    return NULL;
 }
 
 static void ahvanam_kuru(Mulyam ahveyam, Mulyam *prachalah, int ganana,
@@ -580,7 +618,7 @@ static void ahvanam_kuru(Mulyam ahveyam, Mulyam *prachalah, int ganana,
                                   k->prachalah[i].prakara);
     }
     for (int i = 0; i < k->prachala_ganana; i++) muncha(kramitah[i]);
-    chaukatim_yojaya(k->khanda, p, a, Y.stupa_dirghata);
+    chaukatim_yojaya(k->khanda, p, ahveyam, Y.stupa_dirghata);
 }
 
 /* नामनिधिः — बन्धः नाम न प्रतिलिखति, अतः यत् नाम अत्र गण्यते तत् आह्वानात्
@@ -667,7 +705,7 @@ static bool prasaraya(Mulyam dosha_kosha, int virama_gabhirata) {
         if (Y.chaukati_ganana - 1 <= virama_gabhirata) return false;
         stupam_nyunikuru(c->adhara);
         parivesha_muncha(c->parivesha);
-        Y.chaukati_ganana--;
+        chaukatim_muncha(c);
     }
     return false;
 }
@@ -935,6 +973,53 @@ static Mulyam adeshan_chalaya(int virama_gabhirata) {
             sthapaya(avarana_mulyam(k, c->parivesha));
             break;
         }
+        /* प्रयुज् — the argument count is learnt now, not when this was
+           compiled, which is why it is an instruction and not a built-in. */
+        case A_PRAYUJ: {
+            Mulyam arghah = grihana_stupat();
+            Mulyam ahveyam = grihana_stupat();
+            Mulyam prachalah[32];
+            const char *karaka_buf[32];
+            const char **karakah = NULL;
+            int n = 0;
+            bool sound = true;
+
+            if (arghah.prakara == P_SUCHI) {
+                Suchi *su = as_suchi(arghah);
+                n = su->dirghata > 32 ? 32 : su->dirghata;
+                for (int i = 0; i < n; i++) prachalah[i] = grah(su->angani[i]);
+            } else if (arghah.prakara == P_KOSHA) {
+                Kosha *ko = as_kosha(arghah);
+                n = ko->dirghata > 32 ? 32 : ko->dirghata;
+                for (int i = 0; i < n && sound; i++) {
+                    Mulyam kunjika = ko->yugmani[i].kunjika;
+                    const char *key = kunjika.prakara == P_SHABDA
+                                    ? ((Shabda *)kunjika.as.vastu)->paatha : NULL;
+                    const char *mulam = key ? karakam_mulam(key) : NULL;
+                    if (!mulam) {
+                        dosha_utsrja("कारकदोषः",
+                                     "'%s' इति कारकम् न / '%s' is not a kāraka",
+                                     key ? key : "?", key ? key : "?");
+                        for (int j = 0; j < i; j++) muncha(prachalah[j]);
+                        sound = false;
+                        break;
+                    }
+                    karaka_buf[i] = mulam;
+                    prachalah[i] = grah(ko->yugmani[i].mulyam);
+                }
+                karakah = karaka_buf;
+            } else {
+                dosha_utsrja("प्रकारदोषः",
+                             "प्रयुज् सूचीम् कोशम् वा इच्छति / "
+                             "प्रयुज् expects a सूची or a कोशः");
+                sound = false;
+            }
+            muncha(arghah);
+            if (!sound) { muncha(ahveyam); break; }
+            ahvanam_kuru(ahveyam, prachalah, n, karakah);
+            muncha(ahveyam);
+            break;
+        }
         case A_AHVAYA: case A_KARAKAIH_AHVAYA: {
             int n = sanketah[c->sthanam++];
             const char **karakah = NULL;
@@ -960,7 +1045,7 @@ static Mulyam adeshan_chalaya(int virama_gabhirata) {
             }
             stupam_nyunikuru(c->adhara);
             parivesha_muncha(c->parivesha);
-            Y.chaukati_ganana--;
+            chaukatim_muncha(c);
             if (Y.chaukati_ganana <= virama_gabhirata) return m;
             sthapaya(m);
             break;
@@ -1123,7 +1208,7 @@ static Mulyam vibhagam_anaya(const char *pathah) {
 
     Parivesha *p = parivesha_rachaya(NULL);
     int gabhirata = Y.chaukati_ganana;
-    chaukatim_yojaya(khanda, p, NULL, Y.stupa_dirghata);
+    chaukatim_yojaya(khanda, p, shunyam_mulyam(), Y.stupa_dirghata);
     Mulyam ignored = chakram(gabhirata);
     muncha(ignored);
     if (Y.chaukati_ganana > gabhirata) Y.chaukati_ganana = gabhirata;
@@ -1279,7 +1364,7 @@ Mulyam vak_khandam_chalaya(Mulyam khanda_kosha, Mulyam vibhagah) {
 
     Parivesha *p = parivesha_rachaya(NULL);
     int gabhirata = Y.chaukati_ganana;
-    chaukatim_yojaya(khanda, p, NULL, Y.stupa_dirghata);
+    chaukatim_yojaya(khanda, p, shunyam_mulyam(), Y.stupa_dirghata);
     if (DOSHA_ASTI) { parivesha_muncha(p); return shunyam_mulyam(); }
     Mulyam out = chakram(gabhirata);
     if (Y.chaukati_ganana > gabhirata) Y.chaukati_ganana = gabhirata;
@@ -1296,7 +1381,7 @@ int vak_chalaya(const Khanda *mukhyam) {
     Y.chaukati_ganana = 0;
     Y.vibhagah = NULL; Y.vibhaga_ganana = Y.vibhaga_avakasha = 0;
     Y.vaishvika = parivesha_rachaya(NULL);
-    chaukatim_yojaya(mukhyam, Y.vaishvika, NULL, 0);
+    chaukatim_yojaya(mukhyam, Y.vaishvika, shunyam_mulyam(), 0);
     Mulyam out = chakram(0);
     muncha(out);
     fflush(stdout);

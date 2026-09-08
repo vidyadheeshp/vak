@@ -28,6 +28,7 @@ from .opcodes import Op
 from .values import (
     VakCallable,
     check_type,
+    apply_arguments,
     fill_defaults,
     is_truthy,
     order_by_karaka,
@@ -56,6 +57,12 @@ class VakClosure(VakCallable):
     @property
     def arity(self) -> int:                       # type: ignore[override]
         return len(self.fn.params)
+
+    @property
+    def return_type(self) -> str:
+        """Forwarded so लक्षणम् reads the same signature here as in the
+        tree-walker — the compiled function has always carried it."""
+        return self.fn.return_type
 
     def call(self, interpreter, args: list[Any], line: int = 0) -> Any:
         """Let a VakClosure be callable from the tree-walker too."""
@@ -335,6 +342,16 @@ class VM:
                 compiled = frame.chunk.constants[code[frame.ip]]
                 frame.ip += 1
                 self.stack.append(VakClosure(compiled, frame.env))
+            elif op is Op.APPLY:
+                # the count is only known now, which is the whole reason this
+                # is an instruction and not a built-in
+                bundle = self.stack.pop()
+                callee = self.stack.pop()
+                args, labels = apply_arguments(bundle, self._line())
+                value = self._call(callee, args, labels)
+                if value is not _PUSHED_FRAME:
+                    self.stack.append(value)
+
             elif op is Op.CALL or op is Op.CALL_LABELLED:
                 argc = code[frame.ip]
                 if op is Op.CALL:

@@ -348,6 +348,70 @@ def _yadrcchika(a: Any = None, b: Any = None) -> float | int:
 ADESHA_PRACHALAH: list[str] = []          # set by the CLI
 
 
+def _prayuj(*_args: Any) -> Any:
+    """प्रयुज् — apply a कार्यम् to arguments that were computed, not written.
+
+    Every engine compiles a direct call to this into one instruction, because
+    only the machine can push a frame with an argument count it learns at run
+    time. Reaching this body means प्रयुज् was used as a *value* rather than
+    called, and no engine can honour that: the instruction has nowhere to go.
+
+    The alternative was to let three engines support it and two refuse, which
+    is the divergence this project exists to prevent.
+    """
+    _fail("प्रयुज् साक्षात् एव आह्वातव्यम्, मूल्यरूपेण न / "
+          "प्रयुज् must be called directly, not used as a value")
+
+
+def _lakshanam(karyam: Any) -> dict:
+    """लक्षणम् — what a कार्यम् declares about itself.
+
+    लक्षण is the grammarians' word for a defining characteristic: the mark by
+    which a thing is known. A function's mark is its parameters — their names,
+    their types, the kāraka each plays, and whether it may go unstated.
+
+    Until now that was knowable only to the analyser, at compile time. A
+    program could not ask. Returning it as an ordinary कोशः means a program can
+    read the roles a function declares and decide what to hand it, which is
+    what any code that builds a call rather than writing one needs.
+
+        कोशः {
+            "नाम": शब्दः,
+            "अन्तर्निहितम्": सत्यता,
+            "प्राचलाः": सूची of कोशः,
+            "प्राचलसंख्या": पूर्णाङ्कः — -1 when variadic,
+            "प्रतिफलप्रकारः": शब्दः,
+        }
+    """
+    from .values import VakCallable
+
+    if not isinstance(karyam, VakCallable):
+        _fail(f"लक्षणम् कार्यम् एव इच्छति, {stringify(karyam)} न / "
+              f"लक्षणम् expects a कार्यम्")
+    params = getattr(karyam, "params", None)
+    if params is None:                                   # an अन्तर्निहितम्
+        # किमपि, deliberately. A built-in's declared return type is something
+        # the *analyser* holds in order to check calls; no runtime carries it,
+        # and two of the five engines have no way to reach it. Reporting the
+        # analyser's opinion from the three that can, and किमपि from the two
+        # that cannot, would be a divergence — and copying the table into two
+        # more places is how tables come to disagree. Ask अर्थविश्लेषकः if you
+        # want the static answer.
+        return {"नाम": karyam.name, "अन्तर्निहितम्": True, "प्राचलाः": [],
+                "प्राचलसंख्या": karyam.arity, "प्रतिफलप्रकारः": "किमपि"}
+    return {
+        "नाम": karyam.name,
+        "अन्तर्निहितम्": False,
+        "प्राचलाः": [{"नाम": p.name,
+                      "प्रकारः": p.type,
+                      "कारकम्": p.karaka,
+                      "मूलमस्ति": p.has_default,
+                      "मूलमूल्यम्": p.default} for p in params],
+        "प्राचलसंख्या": len(params),
+        "प्रतिफलप्रकारः": getattr(karyam, "return_type", "किमपि"),
+    }
+
+
 def _khandam_chalaya(khanda: Any, vibhagah: Any = None) -> Any:
     """खण्डम्_चालय — run a chunk that arrives as कोशाः, on this very machine.
 
@@ -517,6 +581,12 @@ _REGISTRY: list[tuple[str, str, Any, int, str, str]] = [
     ("काल", "kala", _kala, 0, "कालः / current time in seconds", "दशांशः"),
     ("प्राचलाः", "prachalah", _prachalah, 0,
      "आदेशपङ्क्त्याः प्राचलाः / command-line arguments", "सूची"),
+    ("प्रयुज्", "prayuj", _prayuj, 2,
+     "कार्यम् सूच्या कोशेन वा प्रयुङ्क्ते / apply a function to computed arguments",
+     "किमपि"),
+    ("लक्षणम्", "lakshanam", _lakshanam, 1,
+     "कार्यस्य प्राचलाः कारकाणि च / a function's parameters and their roles",
+     "कोशः"),
     ("खण्डम्_चालय", "khandam_chalaya", _khandam_chalaya, -1,
      "संकलितम् खण्डम् चालयति / run a compiled chunk", "किमपि"),
     ("दोष", "dosha", _dosha, -1, "दोषम् उत्पादयति / raise an error", "शून्यम्"),

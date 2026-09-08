@@ -960,10 +960,95 @@ static Mulyam a_dosha(Mulyam *pra, int n) {
     return shunyam_mulyam();
 }
 
+/* ---------------------------------------------------------- प्रयुज् */
+/* प्रयुज् compiles to one instruction, so this body is reached only when it
+   was used as a value rather than called — which no engine can honour, since
+   the instruction would have nowhere to go. */
+static Mulyam a_prayuj(Mulyam *prachalah, int ganana) {
+    (void)prachalah; (void)ganana;
+    dosha_utsrja("प्रकारदोषः",
+                 "प्रयुज् साक्षात् एव आह्वातव्यम्, मूल्यरूपेण न / "
+                 "प्रयुज् must be called directly, not used as a value");
+    return shunyam_mulyam();
+}
+
+/* ---------------------------------------------------------- लक्षणम् */
+/* लक्षणम् — what a कार्यम् declares about itself.  लक्षण is the grammarians'
+   word for a defining characteristic: the mark by which a thing is known.  A
+   function's mark is its parameters — their names, types, the kāraka each
+   plays, and whether it may go unstated.  The other four engines read the
+   same fields; this one reads them out of the emitted tables. */
+static void lakshanam_nyasa(Mulyam kosha, const char *key, Mulyam value) {
+    Mulyam k = shabda_mulyam_c(key);
+    kosha_nyasaya(kosha, k, value);
+    muncha(k);
+    muncha(value);
+}
+
+static Mulyam mula_mulyam_lakshane(const Prachala *pr) {
+    if (!pr->mulam_asti) return shunyam_mulyam();
+    switch (pr->mula_prakara) {
+    case K_PURNANKA:  return purnanka_mulyam(pr->mula_purnanka);
+    case K_DASHAMSHA: return dashamsha_mulyam(pr->mula_dashamsha);
+    case K_SATYATA:   return satyata_mulyam(pr->mula_purnanka != 0);
+    case K_SHABDA:    return shabda_mulyam(pr->mula_shabda,
+                                           (int)strlen(pr->mula_shabda));
+    default:          return shunyam_mulyam();
+    }
+}
+
+static Mulyam a_lakshanam(Mulyam *prachalah, int ganana) {
+    (void)ganana;
+    Mulyam m = prachalah[0];
+    Mulyam phalam = kosha_mulyam();
+
+    if (m.prakara == P_ANTARNIHITAM) {
+        const Antarnihitam *a = &ANTARNIHITANI[m.as.antarnihitam];
+        lakshanam_nyasa(phalam, "नाम", shabda_mulyam_c(a->nama));
+        lakshanam_nyasa(phalam, "अन्तर्निहितम्", satyata_mulyam(true));
+        lakshanam_nyasa(phalam, "प्राचलाः", suchi_mulyam());
+        lakshanam_nyasa(phalam, "प्राचलसंख्या", purnanka_mulyam(a->prachala_ganana));
+        lakshanam_nyasa(phalam, "प्रतिफलप्रकारः", shabda_mulyam_c("किमपि"));
+        return phalam;
+    }
+    if (m.prakara != P_AVARANA) {
+        muncha(phalam);
+        dosha_utsrja("प्रकारदोषः",
+                     "लक्षणम् कार्यम् एव इच्छति, %s न / लक्षणम् expects a कार्यम्",
+                     prakara_nama(m));
+        return shunyam_mulyam();
+    }
+
+    const SankalitaKaryam *k = ((Avarana *)m.as.vastu)->karyam;
+    Mulyam prachala_suchi = suchi_mulyam();
+    for (int i = 0; i < k->prachala_ganana; i++) {
+        const Prachala *pr = &k->prachalah[i];
+        Mulyam entry = kosha_mulyam();
+        lakshanam_nyasa(entry, "नाम", shabda_mulyam_c(pr->nama));
+        lakshanam_nyasa(entry, "प्रकारः", shabda_mulyam_c(pr->prakara));
+        lakshanam_nyasa(entry, "कारकम्",
+                        pr->karakam ? shabda_mulyam_c(pr->karakam) : shunyam_mulyam());
+        lakshanam_nyasa(entry, "मूलमस्ति", satyata_mulyam(pr->mulam_asti != 0));
+        lakshanam_nyasa(entry, "मूलमूल्यम्", mula_mulyam_lakshane(pr));
+        suchi_yojaya(prachala_suchi, entry);
+        muncha(entry);
+    }
+    lakshanam_nyasa(phalam, "नाम", shabda_mulyam_c(k->nama));
+    lakshanam_nyasa(phalam, "अन्तर्निहितम्", satyata_mulyam(false));
+    lakshanam_nyasa(phalam, "प्राचलाः", prachala_suchi);
+    lakshanam_nyasa(phalam, "प्राचलसंख्या", purnanka_mulyam(k->prachala_ganana));
+    lakshanam_nyasa(phalam, "प्रतिफलप्रकारः",
+                    shabda_mulyam_c(k->pratiphala_prakara ? k->pratiphala_prakara
+                                                          : "किमपि"));
+    return phalam;
+}
+
 /* ------------------------------------------------------------- सूचिका */
 const Antarnihitam ANTARNIHITANI[] = {
     { "लिख", -1, a_likh },
     { "दोषलिख", -1, a_dosha_likh },
+    { "लक्षणम्", 1, a_lakshanam },
+    { "प्रयुज्", 2, a_prayuj },
     { "प्रतिच्छेदः", 2, a_pratichchhedah },
     { "संयोगः", 2, a_samyogah },
     { "वियोगः", 2, a_viyogah },

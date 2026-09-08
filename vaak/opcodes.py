@@ -82,6 +82,7 @@ class Op(IntEnum):
     CLOSURE = 70        # आवरणम्         make a closure from constants[a]
     CALL = 71           # आह्वय          call with a arguments
     CALL_LABELLED = 72  # कारकैः_आह्वय   call with a arguments labelled by constants[b]
+    APPLY = 74          # प्रयुज्         call with an argument सूची or कोशः
     RETURN = 73         # प्रत्यागच्छ
 
     # --- आज्ञाः / commands ------------------------------------------------
@@ -120,6 +121,7 @@ SANSKRIT: dict[Op, str] = {
     Op.BUILD_LIST: "सूचीम्_रचय", Op.BUILD_DICT: "कोशम्_रचय",
     Op.INDEX_GET: "सूचकात्_गृहाण", Op.INDEX_SET: "सूचके_न्यसय",
     Op.CLOSURE: "आवरणम्", Op.CALL: "आह्वय", Op.CALL_LABELLED: "कारकैः_आह्वय",
+    Op.APPLY: "प्रयुज्",
     Op.RETURN: "प्रत्यागच्छ",
     Op.PRINT: "मुद्रय",
     Op.ITER_NEW: "पुनरावर्तकम्_रचय", Op.ITER_NEXT: "पुनरावर्तय",
@@ -140,7 +142,7 @@ OPERANDS: dict[Op, int] = {
     Op.JUMP: 1, Op.JUMP_IF_FALSE: 1, Op.JUMP_IF_TRUE: 1, Op.JUMP_BACK: 1,
     Op.SCOPE_PUSH: 0, Op.SCOPE_POP: 0,
     Op.BUILD_LIST: 1, Op.BUILD_DICT: 1, Op.INDEX_GET: 0, Op.INDEX_SET: 0,
-    Op.CLOSURE: 1, Op.CALL: 1, Op.CALL_LABELLED: 2, Op.RETURN: 0,
+    Op.CLOSURE: 1, Op.CALL: 1, Op.CALL_LABELLED: 2, Op.APPLY: 0, Op.RETURN: 0,
     Op.PRINT: 1,
     Op.ITER_NEW: 0, Op.ITER_NEXT: 1,
     Op.SETUP_TRY: 2, Op.POP_TRY: 0, Op.THROW: 0, Op.END_FINALLY: 0,

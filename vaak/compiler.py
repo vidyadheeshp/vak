@@ -19,6 +19,11 @@ from typing import Any
 
 from . import ast_nodes as A
 from .builtins import BUILTIN_CANONICAL, BUILTIN_SIGNATURES
+
+#: प्रयुज् compiles to one instruction rather than a call, because the
+#: argument count is only known while running. Recognised by name at a
+#: direct call site; shadowing it restores the ordinary meaning.
+APPLY_NAMES = {"प्रयुज्", "prayuj"}
 from .errors import VakError
 from .opcodes import OPERANDS, SANSKRIT, Op
 from .tokens import ANY_TYPE
@@ -525,7 +530,24 @@ class Compiler:
         self.expression(node.right)
         self.chunk.patch(jump)
 
+    def _is_apply(self, node: A.Call) -> bool:
+        """प्रयुज्(कार्यम्, अर्घाः) — a direct call, by that name, with two
+        arguments and no kāraka labels of its own. A local named प्रयुज्
+        shadows it back into an ordinary call."""
+        callee = node.callee
+        return (isinstance(callee, A.Identifier)
+                and callee.name in APPLY_NAMES
+                and callee.name not in self.shadowed
+                and self._resolve(callee.name) is None
+                and len(node.args) == 2
+                and not any(node.arg_karakas))
+
     def _ex_Call(self, node: A.Call) -> None:
+        if self._is_apply(node):
+            self.expression(node.args[0])          # the कार्यम्
+            self.expression(node.args[1])          # the सूची or कोशः
+            self.chunk.emit(Op.APPLY, line=node.line)
+            return
         self.expression(node.callee)
         for arg in node.args:
             self.expression(arg)

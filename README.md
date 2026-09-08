@@ -430,6 +430,38 @@ Where the parameters are unmarked, a default may not precede one without a defau
 position is all the call has to go on. Where every parameter declares its
 [kāraka](#कारकाणि--kāraka-roles), that restriction lifts.
 
+**प्रयुज् · applying a call you did not write.** When the arguments are computed rather
+than written out, `प्रयुज्` — *prayuj*, "to yoke, to apply" — takes a `कार्यम्` and either
+a `सूची`, filling the parameters in order, or a `कोशः` whose keys are kāraka names,
+filling them by role.
+
+```sanskrit
+प्रयुज्(योगः, [१, २, ३])।                        # योगः(१, २, ३)
+प्रयुज्(लिखतु, {"कर्ता": "कालिदासः", "कर्म": "मेघदूतम्"})।
+
+कार्यम् गणयित्वा(कार्यम् क, सूची अर्घाः) {        # a wrapper, at last possible
+    प्रत्यागच्छ प्रयुज्(क, अर्घाः)।
+}
+```
+
+It compiles to a single instruction, because the argument count is only known while the
+program runs — so it must be *called* and cannot be passed around as a value. All five
+engines refuse the indirect form rather than three allowing it and two not.
+
+**लक्षणम् · what a कार्यम् declares.** *Lakṣaṇa* is the grammarians' word for a defining
+characteristic. A function's is its parameters, returned as an ordinary `कोशः` — name,
+type, kāraka, and whether each may go unstated.
+
+```sanskrit
+कोशः ल = लक्षणम्(छानय)।
+मुद्रय ल.नाम, ल.प्राचलसंख्या, ल.प्रतिफलप्रकारः।   # छानय 2 सूची
+प्रत्येकम् (प्रा अन्तः ल.प्राचलाः) {
+    मुद्रय प्रा.कारकम्, प्रा.प्रकारः, प्रा.नाम, प्रा.मूलमस्ति।
+}
+```
+
+The two belong together: read the roles a function wants, then build the call from them.
+
 ### सूचयः कोशाश्च · Lists and dictionaries
 
 ```sanskrit

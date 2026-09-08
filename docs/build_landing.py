@@ -156,6 +156,20 @@ ANUKTAM = '''# अनुक्तम् कारकम् — कारकम�
 मुद्रय लिखतु(कर्ता: "कालिदासः", कर्म: "मेघदूतम्")।
 मुद्रय लिखतु(कर्म: "रघुवंशम्", करणम्: "तूलिकया", कर्ता: "कालिदासः")।'''
 
+PRAYUJ = '''कार्यम् लिखतु(कर्ता शब्दः लेखकः,
+              करणम् शब्दः साधनम् = "लेखन्या",
+              कर्म शब्दः ग्रन्थः) : शब्दः {
+    प्रत्यागच्छ लेखकः + " '" + ग्रन्थः + "' " + साधनम् + " लिखति"।
+}
+
+# लक्षणम् — यत् कार्यम् आत्मनः विषये घोषयति।
+प्रत्येकम् (प्रा अन्तः लक्षणम्(लिखतु).प्राचलाः) {
+    मुद्रय प्रा.कारकम्, प्रा.प्रकारः, प्रा.नाम, प्रा.मूलमस्ति।
+}
+
+# प्रयुज् — कारकनाम्ना रचितम् आह्वानम्।
+मुद्रय प्रयुज्(लिखतु, {"कर्ता": "कालिदासः", "कर्म": "मेघदूतम्"})।'''
+
 SWITCH = '''कार्यम् वासरनाम(कर्म पूर्णाङ्कः वारः) : शब्दः {
     विकल्पः (वारः) {
         पक्षे १: प्रत्यागच्छ "सोमवासरः"।
@@ -430,6 +444,16 @@ footer a:hover {{ color:var(--gold); }}
   <p>A role that is neither supplied nor defaulted is an error that names it —
   <code>न्यूनाः प्राचलाः: कर्म</code> — because with the order free, a position
   would tell you nothing about which role is missing.</p>
+  <h3>लक्षणम् &amp; प्रयुज् · reading the roles, then building the call</h3>
+  <p>The roles are not only checked before the program runs — a program can read
+  them while it runs. <b>लक्षणम्</b> is the grammarians\' word for a defining
+  characteristic, and a function\'s is its parameters: their names, types, roles,
+  and whether each may go unstated. <b>प्रयुज्</b> — <i>to yoke, to apply</i> —
+  then makes the call, from a <code>सूची</code> in order or a <code>कोशः</code>
+  by role.</p>
+  {demo(PRAYUJ, "The signature read at run time, and a call assembled from role names rather than written out.")}
+  <p>Together they are what a bridge from a Sanskrit parser would stand on: a
+  kāraka analysis is exactly the shape <code>प्रयुज्</code> accepts.</p>
 </section>
 
 <section id="भाषा">
