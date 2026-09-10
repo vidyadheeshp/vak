@@ -7,10 +7,98 @@ self-contained file, so it works on GitHub Pages and anywhere else.
 """
 import json
 import pathlib
+import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 # built by:  emcc -O2 -DVAK_POSIX <generated>.c native/*.c -sSINGLE_FILE=1 …
 WASM = ROOT / "_wasm" / "vak.js"
+#: What native/ looked like when vak.js was last compiled. Hashes rather than
+#: timestamps, because a fresh clone gives every file the same mtime and the
+#: question would become unanswerable exactly where it matters most — CI.
+WASM_MANIFEST = ROOT / "_wasm" / "sources.sha256"
+RUNTIME_GLOB = ("native/*.c", "native/*.h")
+
+
+def runtime_fingerprint() -> dict[str, str]:
+    """The C runtime the playground would be compiled from, right now."""
+    import hashlib
+
+    out = {}
+    for pattern in RUNTIME_GLOB:
+        for path in sorted(ROOT.glob(pattern)):
+            out[path.relative_to(ROOT).as_posix()] = hashlib.sha256(
+                path.read_bytes()).hexdigest()
+    return out
+
+
+def recorded_fingerprint() -> dict[str, str] | None:
+    """What the manifest says vak.js was built from, or None if unrecorded."""
+    if not WASM_MANIFEST.is_file():
+        return None
+    out = {}
+    for line in WASM_MANIFEST.read_text(encoding="utf-8").splitlines():
+        if line.strip() and not line.startswith("#"):
+            digest, _, name = line.partition("  ")
+            out[name.strip()] = digest.strip()
+    return out
+
+
+def wasm_drift() -> list[str]:
+    """Which runtime files have changed since vak.js was compiled.
+
+    The playground runs Vāk *in the browser* from this one artifact, so when
+    it falls behind, the page silently offers an older language. That is how
+    default arguments, the bit operations, दोषलिख, प्रयुज्, लक्षणम् and कुरु
+    all came to be documented on a page that could not run them: every other
+    generated page is checked against its sources, and this one was not,
+    because rebuilding it needs Emscripten and CI has none.
+    """
+    recorded = recorded_fingerprint()
+    if recorded is None:
+        return ["_wasm/sources.sha256 is missing — vak.js was built from "
+                "unknown sources, so it must be assumed stale"]
+    current = runtime_fingerprint()
+    drift = [f"  changed since vak.js was built: {name}"
+             for name, digest in sorted(current.items())
+             if recorded.get(name) != digest]
+    drift += [f"  no longer exists but was compiled in: {name}"
+              for name in sorted(recorded) if name not in current]
+    return drift
+
+
+def record_fingerprint() -> None:
+    """Call after an emcc rebuild, so the gate knows what vak.js contains."""
+    lines = ["# Written by docs/build_playground.py --record, immediately after",
+             "# an emcc rebuild. It says which C sources vak.js was compiled",
+             "# from, so the page can refuse to ship an engine older than the",
+             "# language it documents.",
+             *(f"{digest}  {name}"
+               for name, digest in sorted(runtime_fingerprint().items()))]
+    WASM_MANIFEST.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+if "--record" in sys.argv:
+    record_fingerprint()
+    print(f"recorded {WASM_MANIFEST}")
+    raise SystemExit(0)
+
+_drift = wasm_drift()
+if _drift:
+    import textwrap
+    banner = textwrap.dedent("""
+        ─────────────────────────────────────────────────────────────────
+        WARNING — the playground's WebAssembly engine is out of date.
+
+        The page will be written, but it will run an older Vāk than the
+        one it documents. To fix it:
+
+            emcc -O2 -DVAK_POSIX <generated>.c native/*.c -sSINGLE_FILE=1 …
+            python docs/build_playground.py --record
+
+        ─────────────────────────────────────────────────────────────────""")
+    print(banner)
+    print("\n".join(_drift))
+    print()
 
 engine = WASM.read_text(encoding="utf-8")
 

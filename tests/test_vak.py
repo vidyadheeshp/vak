@@ -7,7 +7,9 @@ No third-party dependencies; it is a plain unittest suite.
 
 from __future__ import annotations
 
+import inspect
 import io
+import json
 import os
 import re
 import shutil
@@ -36,7 +38,7 @@ from vaak.selfhost import (                      # noqa: E402
     run_with_vak,
 )
 from vaak.vm import VM                           # noqa: E402
-from vaak.errors import LexError, ParseError, RuntimeVakError  # noqa: E402
+from vaak.errors import LexError, ParseError, RuntimeVakError, VakError  # noqa: E402
 from vaak.interpreter import Interpreter, VakThrow  # noqa: E402
 from vaak.lexer import tokenize                  # noqa: E402
 from vaak.opcodes import Op                      # noqa: E402
@@ -2870,6 +2872,211 @@ class TestVersionIsStatedOnce(unittest.TestCase):
         pending = re.search(r"^PENDING[^=]*= (.+)$", text, re.M)
         self.assertIsNotNone(pending, "PENDING went missing from the story")
         self.assertNotIn(self.released(), pending.group(1))
+
+
+class TestWhatTheWheelDoesNotShip(unittest.TestCase):
+    """चक्रे यत् नास्ति — the two parts of Vāk a pip install leaves behind.
+
+    pyproject.toml packages only `vaak`, deliberately: the C runtime and the
+    Vāk-written toolchain belong to the repository. That is a fine decision
+    and it is documented — but it means two of the five engines are simply
+    absent from an installed copy, and each has to say so.
+
+    --self said so. --run-native did not: installing vak-lang 0.12.0 into a
+    clean virtualenv and running it produced
+
+        cc1.exe: fatal error: .../site-packages/native/yantram.c:
+        No such file or directory
+
+    which tells the reader nothing about what to do. Found by installing the
+    published wheel rather than by testing the clone, which is the only way
+    this class of fault shows up at all.
+    """
+
+    def test_a_clone_has_both(self):
+        """The guards must be false only when something is genuinely missing —
+        if either went true-by-accident here, the tests below would pass
+        while proving nothing."""
+        from vaak.native import runtime_available
+        from vaak.selfhost import bootstrap_available
+        self.assertTrue(runtime_available(), "native/*.c missing from the clone")
+        self.assertTrue(bootstrap_available(), "स्वयंसिद्धिः missing from the clone")
+
+    def test_the_native_back_end_explains_its_absence(self):
+        import vaak.native as native
+        original = native.NATIVE_DIR
+        native.NATIVE_DIR = pathlib.Path(tempfile.gettempdir()) / "नास्ति-native"
+        try:
+            self.assertFalse(native.runtime_available())
+            with self.assertRaises(VakError) as caught:
+                native.build_executable("मुद्रय १।", pathlib.Path("क.vak"))
+            message = str(caught.exception)
+            self.assertIn("git clone", message)
+            self.assertIn("native/*.c", message)
+            self.assertNotIn("cc1", message)
+        finally:
+            native.NATIVE_DIR = original
+
+    def test_the_self_hosted_front_end_explains_its_absence(self):
+        import vaak.selfhost as selfhost
+        source = inspect.getsource(selfhost)
+        self.assertIn("git clone", source,
+                      "the स्वयंसिद्धिः guard stopped telling the reader what to do")
+
+    def test_the_packaging_decision_that_makes_those_guards_load_bearing(self):
+        """If the wheel ever starts shipping these, the guards become dead
+        code and this test should be the thing that says so."""
+        text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+        self.assertIn('packages = ["vaak"]', text)
+        self.assertNotIn("native", text.split("[tool.setuptools.package-data]")[-1])
+
+
+class TestThePlaygroundEngineIsCurrent(unittest.TestCase):
+    """क्रीडाक्षेत्रस्य यन्त्रम् — the one generated artifact nothing checked.
+
+    The playground runs Vāk in the browser from a single WebAssembly build of
+    the C runtime. Every other generated page is regenerated in CI and the
+    build fails if the committed copy differs — but not this one, because
+    rebuilding it needs Emscripten, which CI does not have. So it was left out
+    of the gate, and drifted.
+
+    By the time anyone noticed, the embedded engine was twelve days old and
+    predated default arguments, the bit operations, दोषलिख, प्रयुज्, लक्षणम्
+    and कुरु. The page documented six features it could not run: pasting the
+    लक्षणम्/प्रयुज् sample gave `')' अपेक्षितम् — किन्तु प्राप्तम् '='`, the
+    old parser meeting a default argument it had never heard of.
+
+    The check reads the manifest rather than importing the generator, because
+    importing it would rebuild the page — and it compares hashes rather than
+    timestamps, since a fresh clone gives every file the same mtime and the
+    question would become unanswerable exactly where it matters most.
+    """
+
+    MANIFEST = ROOT / "_wasm" / "sources.sha256"
+
+    def fingerprint(self) -> dict[str, str]:
+        import hashlib
+        out = {}
+        for pattern in ("native/*.c", "native/*.h"):
+            for path in sorted(ROOT.glob(pattern)):
+                out[path.relative_to(ROOT).as_posix()] = hashlib.sha256(
+                    path.read_bytes()).hexdigest()
+        return out
+
+    def recorded(self) -> dict[str, str] | None:
+        if not self.MANIFEST.is_file():
+            return None
+        out = {}
+        for line in self.MANIFEST.read_text(encoding="utf-8").splitlines():
+            if line.strip() and not line.startswith("#"):
+                digest, _, name = line.partition("  ")
+                out[name.strip()] = digest.strip()
+        return out
+
+    def test_the_engine_matches_the_runtime_it_was_built_from(self):
+        recorded = self.recorded()
+        if recorded is None:
+            self.skipTest(
+                "_wasm/vak.js has no source manifest, so what it was built "
+                "from is unknown. Rebuild it with emcc and run "
+                "`python docs/build_playground.py --record`; after that this "
+                "test becomes a real gate rather than a skip.")
+        current = self.fingerprint()
+        self.assertTrue(current, "no C runtime found to fingerprint")
+        moved = sorted(name for name, digest in current.items()
+                       if recorded.get(name) != digest)
+        gone = sorted(name for name in recorded if name not in current)
+        self.assertEqual(
+            (moved, gone), ([], []),
+            "the playground engine is older than the runtime it embeds — "
+            "rebuild with emcc, then `python docs/build_playground.py --record`")
+
+    def test_the_generator_still_knows_how_to_check_itself(self):
+        """The gate lives in docs/build_playground.py. Read, not imported —
+        importing it writes a 500 KB page as a side effect."""
+        source = (ROOT / "docs" / "build_playground.py").read_text(encoding="utf-8")
+        for needed in ("def wasm_drift", "def record_fingerprint",
+                       "sources.sha256", "--record"):
+            with self.subTest(needs=needed):
+                self.assertIn(needed, source)
+
+    def test_the_documented_samples_only_use_what_the_page_can_run(self):
+        """Whatever engine is embedded, the samples shipped beside it must at
+        least be valid Vāk — that much is checkable here without a browser."""
+        page = (ROOT / "docs" / "playground.html").read_text(encoding="utf-8")
+        found = re.search(r"var SAMPLES = (\{.*?\});\n", page, re.S)
+        self.assertIsNotNone(found, "no SAMPLES in the playground")
+        for name, source in json.loads(found.group(1)).items():
+            with self.subTest(sample=name):
+                self.assertEqual(check_source(source).errors, [],
+                                 f"the {name} sample does not analyse cleanly")
+
+
+class TestTheStoryDatesWhatItCan(unittest.TestCase):
+    """कथायाः तिथयः — dates from the tags, and only where they exist.
+
+    Acts I to IV happened before the first commit, which is a squash of
+    everything up to 0.10.0. They carry no dates and must not be given any:
+    the page's whole argument is that its numbers are real.
+    """
+
+    def page(self) -> str:
+        return (ROOT / "docs" / "story.html").read_text(encoding="utf-8")
+
+    def tags(self) -> dict[str, str]:
+        try:
+            names = subprocess.run(["git", "-C", str(ROOT), "tag", "-l", "v*"],
+                                   capture_output=True, text=True,
+                                   check=True).stdout.split()
+        except Exception:
+            return {}
+        out = {}
+        for tag in names:
+            when = subprocess.run(
+                ["git", "-C", str(ROOT), "log", "-1", "--format=%cs",
+                 f"{tag}^{{commit}}"],
+                capture_output=True, text=True, check=True).stdout.strip()
+            out[tag.lstrip("v")] = when
+        return out
+
+    def test_a_dated_chip_carries_its_real_release_date(self):
+        tags = self.tags()
+        if not tags:
+            self.skipTest("no git history here — a tarball, not a clone")
+        shown = dict(re.findall(
+            r'<span class="ver cut"[^>]*>([\d.]+)</span>'
+            r'<time class="when" datetime="([\d-]+)"', self.page()))
+        self.assertTrue(shown, "no dated versions on the story page")
+        for version, when in shown.items():
+            if version in tags:
+                with self.subTest(version=version):
+                    self.assertEqual(when, tags[version])
+
+    def test_a_released_version_is_never_drawn_as_retrospective(self):
+        """REAL was hand-written, and bumping __version__ to 0.12.0 silently
+        dropped 0.11.1 out of it — a version that is on PyPI was being drawn
+        as a stage numbered after the fact."""
+        tags = self.tags()
+        if not tags:
+            self.skipTest("no git history here — a tarball, not a clone")
+        page = self.page()
+        for version in tags:
+            with self.subTest(version=version):
+                if f">{version}</span>" in page:
+                    self.assertIn(f'<span class="ver cut" title="a released '
+                                  f'version">{version}</span>', page)
+
+    def test_the_undated_stages_stay_undated(self):
+        """A stage numbered in retrospect must never sprout a date."""
+        page = self.page()
+        retrospective = re.findall(
+            r'<span class="ver" title="numbered in retrospect">([\d.]+)</span>'
+            r'(<time)?', page)
+        self.assertTrue(retrospective, "no retrospective stages on the page")
+        for version, dated in retrospective:
+            with self.subTest(version=version):
+                self.assertEqual(dated, "", f"{version} was given a date it "
+                                            f"cannot have — it predates the repository")
 
 
 class TestPackaging(unittest.TestCase):

@@ -112,6 +112,11 @@ li.ch h3 .eng { font-family:var(--sans); font-size:.68em; font-weight:400;
 .ver.cut { border-color:var(--gold); background:var(--gold); color:var(--paper); }
 .ver.pending { border-color:var(--indigo); color:var(--indigo);
   border-style:dashed; background:transparent; }
+/* Only the versions that were cut carry a date; the stages numbered after the
+   fact predate the repository and cannot honestly be given one. */
+.when { font-family:var(--mono); font-size:.58em; font-weight:400;
+  letter-spacing:.02em; font-variant-numeric:tabular-nums; white-space:nowrap;
+  color:var(--ink-faint); align-self:center; margin-left:-.35rem; }
 .legend { display:flex; gap:1.4rem; flex-wrap:wrap; align-items:center;
   margin:.4rem 0 2.6rem; font-family:var(--sans); font-size:.77rem;
   color:var(--ink-faint); max-width:none; }
@@ -215,7 +220,7 @@ footer p { margin:.3rem 0; max-width:none; }
   <p class="eyebrow">कथा · the making of वाक्</p>
   <h1>A language written in Python, that slowly learned to
   <em>write itself</em>.</h1>
-  <p class="stand"><b>0.0.1 to 0.12.0.</b> Vāk began as 7,139 lines
+  <p class="stand"><b>0.0.1 to 0.12.0.</b> Vāk began as 7,161 lines
   of Python that could not have compiled one line of itself. It now compiles itself completely, runs on five
   independent engines held to identical output, and needs no Python at all. This
   is how that happened — including the two optimisations that turned out to be
@@ -225,6 +230,7 @@ footer p { margin:.3rem 0; max-width:none; }
 <p class="legend">
   <span class="k"><span class="ver cut">0.10.0</span> a version that was actually cut</span>
   <span class="k"><span class="ver">0.4.0</span> a stage, numbered here in retrospect</span>
+  <span class="k"><time class="when">2026-07-29</time> the date it was cut; earlier stages predate the repository</span>
   
 </p>
 
@@ -235,7 +241,7 @@ footer p { margin:.3rem 0; max-width:none; }
     <h3><span class="ver" title="numbered in retrospect">0.0.1</span><span class="dev">आरम्भः</span><span class="eng">It begins in Python</span></h3>
     
 <p>The first version could not have compiled a single line of itself. It was a
-lexer, a parser and a tree-walking interpreter — 7,139 lines of Python —
+lexer, a parser and a tree-walking interpreter — 7,161 lines of Python —
 and everything the language could do, Python did on its behalf.</p>
 <p>That is the ordinary way to start, and it contains the ordinary trap: a
 language whose only implementation is written in another language has not really
@@ -339,7 +345,7 @@ language describes itself completely.</p>
   </li>
   <li class="ch reveal" data-share="100" data-ver="0.10.0">
     <div class="tick" aria-hidden="true"></div>
-    <h3><span class="ver cut" title="a released version">0.10.0</span><span class="dev">साधनानि</span><span class="eng">Making it usable by someone else</span></h3>
+    <h3><span class="ver cut" title="a released version">0.10.0</span><time class="when" datetime="2026-07-29">2026-07-29</time><span class="dev">साधनानि</span><span class="eng">Making it usable by someone else</span></h3>
     
 <p>A language nobody can install is a paper. So: a browser playground — the
 whole toolchain compiled to WebAssembly — the language runs in the page, not
@@ -355,7 +361,7 @@ Devanagari keyboard.</p>
   <li class="act reveal"><p class="mark">Act V</p><p class="name">Making it fast</p></li>
   <li class="ch reveal" data-share="100" data-ver="0.11.1">
     <div class="tick" aria-hidden="true"></div>
-    <h3><span class="ver" title="numbered in retrospect">0.11.1</span><span class="dev">कार्यक्षमता</span><span class="eng">Making it fast, and being wrong twice</span></h3>
+    <h3><span class="ver cut" title="a released version">0.11.1</span><time class="when" datetime="2026-09-03">2026-09-03</time><span class="dev">कार्यक्षमता</span><span class="eng">Making it fast, and being wrong twice</span></h3>
     
 <p>The last act is measurement, and it holds the most useful mistakes.</p>
 <p>The obvious suspect was name lookup: every variable was found by comparing
@@ -376,7 +382,7 @@ a string was quadratic, because each append rebuilt the whole of it.</p>
   <li class="act reveal"><p class="mark">Act VI</p><p class="name">Going back for what was missing</p></li>
   <li class="ch reveal" data-share="100" data-ver="0.12.0">
     <div class="tick" aria-hidden="true"></div>
-    <h3><span class="ver cut" title="a released version">0.12.0</span><span class="dev">अवशिष्टम्</span><span class="eng">The parts a language is expected to have</span></h3>
+    <h3><span class="ver cut" title="a released version">0.12.0</span><time class="when" datetime="2026-09-10">2026-09-10</time><span class="dev">अवशिष्टम्</span><span class="eng">The parts a language is expected to have</span></h3>
     
 <p>A language that compiles itself can still be missing ordinary things, and
 this act is the unglamorous work of finding out which. The method was to write
@@ -400,6 +406,15 @@ them.</p>
 answers to match. They found the gap within a day — and then found a
 use-after-free in the C runtime that had been crashing an immediately-invoked
 function since long before any of this.</p>
+<p>One fault, though, no test in this repository could have found. After
+publishing, installing the package from PyPI into an empty environment and
+running it there produced <code>cc1.exe: fatal error: … yantram.c: No such file
+or directory</code>. The C runtime ships with the repository and not with the
+wheel — a deliberate choice, and one the self-hosted front end had always
+explained to anyone who asked for it. The native back end had never learnt to
+say the same, so it failed in the compiler's words instead of its own.</p>
+<p class="turn">A clone always has the files. Only the thing you published can
+tell you what you failed to publish.</p>
   </li>
 
   <li class="ch reveal" data-share="100" data-ver="0.12.0">
@@ -410,7 +425,7 @@ function since long before any of this.</p>
     never disagree.</p>
     <div class="facts">
       <div><b>5</b><span>engines, byte-identical</span></div>
-      <div><b>315</b><span>tests</span></div>
+      <div><b>324</b><span>tests</span></div>
       <div><b>4,599</b><span>lines written in Vāk</span></div>
       <div><b>737 KB</b><span>self-contained binary</span></div>
       <div><b>6</b><span>kāraka roles as types</span></div>

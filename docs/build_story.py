@@ -51,19 +51,57 @@ TESTS = sum(1 for line in (ROOT / "tests" / "test_vak.py")
             .read_text(encoding="utf-8").splitlines()
             if line.strip().startswith("def test_"))
 
-# Which versions were actually cut.  Stated rather than inferred: 0.10.0 and
-# 0.11.0 are tagged releases and __version__ is the current one, so those exist
-# and the other numbers on this page do not.  Scraping them out of commit
-# subjects would mark any version-like number in any future commit as a
-# release, which is not the claim being made.
-REAL = {"0.10.0", "0.11.0", __version__}
-
 # Work that is in the tree but has not been cut into a release. It is neither
 # a version that exists nor a stage numbered after the fact, and calling it
 # either would be untrue — so it gets its own mark. Empty while every act on
 # this page corresponds to a version that exists; the mark and its legend
 # entry appear only when something is waiting.
 PENDING: set[str] = set()
+
+
+def release_dates() -> dict[str, str]:
+    """When each released version actually happened, read from the tags.
+
+    Only the versions that were cut can be dated, and only three of them are
+    tagged: 0.10.0 is the repository's first commit, which is a squash of
+    everything before it. Acts I to IV therefore have no dates and are not
+    given any — inventing them would be the one thing this page must not do,
+    since its whole argument is that the numbers on it are real.
+    """
+    import subprocess
+
+    def git(*args: str) -> str:
+        try:
+            return subprocess.run(["git", "-C", str(ROOT), *args],
+                                  capture_output=True, text=True,
+                                  check=True).stdout.strip()
+        except Exception:
+            return ""
+
+    dates = {}
+    first = git("log", "--format=%cs", "--reverse")
+    if first:
+        dates["0.10.0"] = first.splitlines()[0]
+    for tag in git("tag", "-l", "v*").splitlines():
+        when = git("log", "-1", "--format=%cs", f"{tag}^{{commit}}")
+        if when:
+            dates[tag.lstrip("v")] = when
+    return dates
+
+
+DATES = release_dates()
+#: A tarball has no git history, so the page must still build without one.
+DATED = bool(DATES)
+
+# Which versions were actually cut — read from the tags rather than listed by
+# hand. It was a hand-written set, and bumping __version__ to 0.12.0 silently
+# dropped 0.11.1 out of it: a version that is on PyPI was being drawn on this
+# page as a stage numbered after the fact. Deriving it from the same tags the
+# dates come from means the two can no longer disagree.
+#
+# __version__ is included because the current version may not be tagged yet;
+# a tarball with no git history falls back to the three that can be named.
+REAL = set(DATES) | {__version__} or {"0.10.0", "0.11.0", __version__}
 
 # len(KEYWORDS) counts the Devanagari, IAST and ASCII spellings of the same
 # word, so it reads as a far larger vocabulary than Vak actually asks anyone
@@ -210,7 +248,16 @@ them.</p>
 <p>The tests that replaced it run every built-in on every engine and require the
 answers to match. They found the gap within a day — and then found a
 use-after-free in the C runtime that had been crashing an immediately-invoked
-function since long before any of this.</p>"""),
+function since long before any of this.</p>
+<p>One fault, though, no test in this repository could have found. After
+publishing, installing the package from PyPI into an empty environment and
+running it there produced <code>cc1.exe: fatal error: … yantram.c: No such file
+or directory</code>. The C runtime ships with the repository and not with the
+wheel — a deliberate choice, and one the self-hosted front end had always
+explained to anyone who asked for it. The native back end had never learnt to
+say the same, so it failed in the compiler's words instead of its own.</p>
+<p class="turn">A clone always has the files. Only the thing you published can
+tell you what you failed to publish.</p>"""),
 ]
 
 ENGINES = [
@@ -250,6 +297,13 @@ ACT_TITLES = {"I": "Python builds a language",
               "VI": "Going back for what was missing"}
 
 
+#: The dates are read from the tags, so only released versions carry one. The
+#: stages before 0.10.0 happened before the first commit and are left undated.
+DATE_LEGEND = (
+    '<span class="k"><time class="when">2026-07-29</time> '
+    "the date it was cut; earlier stages predate the repository</span>"
+    if DATED else "")
+
 #: Shown only while something on the page is written but unreleased.
 PENDING_LEGEND = (
     f'<span class="k"><span class="ver pending">{sorted(PENDING)[0]}</span> '
@@ -273,6 +327,9 @@ def chapter_html() -> str:
                "in the tree, not yet released" if pending else
                "numbered in retrospect")
         chip = f'<span class="ver{mark}" title="{why}">{ver}</span>'
+        when = DATES.get(ver, "")
+        if when:
+            chip += f'<time class="when" datetime="{when}">{when}</time>'
         out.append(opener + f"""  <li class="ch reveal" data-share="{share}" data-ver="{ver}">
     <div class="tick" aria-hidden="true"></div>
     <h3>{chip}<span class="dev">{dev}</span><span class="eng">{eng}</span></h3>
@@ -395,6 +452,11 @@ li.ch h3 .eng {{ font-family:var(--sans); font-size:.68em; font-weight:400;
 .ver.cut {{ border-color:var(--gold); background:var(--gold); color:var(--paper); }}
 .ver.pending {{ border-color:var(--indigo); color:var(--indigo);
   border-style:dashed; background:transparent; }}
+/* Only the versions that were cut carry a date; the stages numbered after the
+   fact predate the repository and cannot honestly be given one. */
+.when {{ font-family:var(--mono); font-size:.58em; font-weight:400;
+  letter-spacing:.02em; font-variant-numeric:tabular-nums; white-space:nowrap;
+  color:var(--ink-faint); align-self:center; margin-left:-.35rem; }}
 .legend {{ display:flex; gap:1.4rem; flex-wrap:wrap; align-items:center;
   margin:.4rem 0 2.6rem; font-family:var(--sans); font-size:.77rem;
   color:var(--ink-faint); max-width:none; }}
@@ -508,6 +570,7 @@ footer p {{ margin:.3rem 0; max-width:none; }}
 <p class="legend">
   <span class="k"><span class="ver cut">0.10.0</span> a version that was actually cut</span>
   <span class="k"><span class="ver">0.4.0</span> a stage, numbered here in retrospect</span>
+  {DATE_LEGEND}
   {PENDING_LEGEND}
 </p>
 

@@ -33,6 +33,18 @@ NATIVE_DIR = Path(__file__).resolve().parent.parent / "native"
 EXE_SUFFIX = ".exe" if os.name == "nt" else ""
 RUNTIME_SOURCES = ("mulyani.c", "antarnihitani.c", "yantram.c")
 
+
+def runtime_available() -> bool:
+    """Whether the C runtime this back end compiles against is on disk.
+
+    It ships with the repository and not with the wheel — see the note in
+    pyproject.toml. Without this check a pip-installed वाक् answered
+    --run-native with a bare `cc1.exe: fatal error: ... yantram.c: No such
+    file or directory`, which tells the reader nothing about what to do.
+    स्वयंसिद्धिः has said so plainly for a while; this says the same.
+    """
+    return all((NATIVE_DIR / name).is_file() for name in RUNTIME_SOURCES)
+
 GCC_CANDIDATES = (
     "gcc",
     r"C:\w64devkit\bin\gcc.exe",
@@ -312,6 +324,16 @@ def _asciify(stem: str) -> str:
 def build_executable(source: str, path: Path, out_dir: Path | None = None,
                      keep_c: bool = False) -> Path:
     """Emit C, compile it with the runtime, and return the executable's path."""
+    if not runtime_available():
+        from .errors import VakError
+        raise VakError(
+            "देशीयः चालकः न प्राप्तः / the C runtime is not present.\n"
+            "    --native and --run-native compile against native/*.c, which ship\n"
+            "    with the repository rather than with the wheel. To use them,\n"
+            "    clone it:\n"
+            "        git clone https://github.com/vidyadheeshp/vak.git",
+            code="देशीयदोषः",
+        )
     gcc = find_gcc()
     if gcc is None:
         raise RuntimeError(
