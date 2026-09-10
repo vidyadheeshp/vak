@@ -256,7 +256,7 @@ footer .verse { font-family: var(--serif); font-size: .95rem; color: var(--ink-s
 <nav class="rail" aria-label="Contents">
   <p class="mark">वाक्</p>
   <p class="sub">Vāk · a manual</p>
-  <p class="ver">0.11.1</p>
+  <p class="ver">0.12.0</p>
   <p class="play"><a href="playground.html">क्रीडाक्षेत्रम् · try it in the browser →</a></p>
   <p class="play"><a href="story.html">कथा · how it was built →</a></p>
   <ol>
@@ -373,7 +373,7 @@ you type leaves your machine. Use it to try the language before deciding
 whether to install anything.</p>
 
 <h3 class="lib">Checking that it works</h3>
-<figure class="code sh"><pre><code>python -m vaak --version          # वाक् (Vāk) 0.11.1
+<figure class="code sh"><pre><code>python -m vaak --version          # वाक् (Vāk) 0.12.0
 python -m vaak --builtins         # the 39 built-in functions
 python -m vaak                    # संवादः — the interactive session</code></pre></figure>
 <p>Then a program of one line. Put this in <code>परीक्षा.vak</code> and run
@@ -533,10 +533,13 @@ condition are optional; the braces are not.</p>
 } <b class="k" data-r="anyatha">अन्यथा</b> {
     <b class="k" data-r="mudraya">मुद्रय</b> <i class="s">&quot;अल्पः&quot;</i>।
 }</code></pre></figure>
-<p>Three loops, because three different things are worth saying. <code>यावत्</code>
-repeats while a condition holds, <code>आवृत्तिः</code> repeats a fixed number of
-times, and <code>प्रत्येकम् … अन्तः</code> walks a collection.</p>
+<p>Four loops, because four different things are worth saying.
+<code>यावत्</code> repeats while a condition holds, <code>कुरु</code> does the
+same but asks afterwards, <code>आवृत्तिः</code> repeats a fixed number of times,
+and <code>प्रत्येकम् … अन्तः</code> walks a collection.</p>
 <figure class="code"><pre><code><b class="k" data-r="yavat">यावत्</b> (क &lt; <i class="n" data-r="10">१०</i>) { क += <i class="n" data-r="1">१</i>। }
+
+<b class="k" data-r="kuru">कुरु</b> { क += <i class="n" data-r="1">१</i>। } <b class="k" data-r="yavat">यावत्</b> (क &lt; <i class="n" data-r="10">१०</i>)।
 
 <b class="k" data-r="avrttih">आवृत्तिः</b> (<i class="n" data-r="3">३</i>) { <b class="k" data-r="mudraya">मुद्रय</b> <i class="s">&quot;ॐ&quot;</i>। }
 
@@ -545,6 +548,20 @@ times, and <code>प्रत्येकम् … अन्तः</code> walks
     <b class="k" data-r="mudraya">मुद्रय</b> <b class="t" data-r="ankah">अङ्कः</b>।
 }</code></pre></figure>
 <p><code>विरम</code> leaves a loop, <code>अनुवर्त</code> starts its next turn.</p>
+<h3>कुरु · asking after, not before</h3>
+<p><code>कुरु</code> is the imperative — <i>do!</i> — and it opens the one loop
+whose body runs before anything is asked. The test that follows is written with
+<code>यावत्</code>, so the pair reads as a single sentence: <i>do this, as long
+as that</i>.</p>
+<figure class="code"><pre><code><b class="k" data-r="kuru">कुरु</b> {
+    उत्तरम् = पठ(<i class="s">&quot;नाम? &quot;</i>)।
+} <b class="k" data-r="yavat">यावत्</b> (दीर्घता(उत्तरम्) == <i class="n" data-r="0">०</i>)।</code></pre><figcaption>Read at least once, then keep asking while nothing was typed. यावत् alone cannot express this — it would have to test a variable that does not exist yet.</figcaption></figure>
+<p><code>अनुवर्त</code> inside a <code>कुरु</code> jumps to the test rather than
+back to the top of the body, since the body has already had its turn.</p>
+<p>It needs no instruction of its own. A <code>यावत्</code> loop already
+compiles to a conditional jump out and an unconditional jump back;
+<code>कुरु</code> is those same two in the other order, which is why every
+engine — the C runtime included — understood it the day it was added.</p>
 
 <h3>विकल्पः · Choosing among alternatives</h3>
 <p>Where a chain of <code>अन्यथा यदि</code> only compares one value over and over,
@@ -1216,7 +1233,7 @@ brought in with <code>आनय</code>.</p>
 
   <footer>
     <p class="verse">वाक् इति भाषा — यत्र संस्कृतम् एव आदेशः<span class="danda">॥</span></p>
-    <p>0.11.1 · 48 built-ins · five engines, one output</p>
+    <p>0.12.0 · 48 built-ins · five engines, one output</p>
     <p class="copyright">© 2026 Vidyadheesh Pandurangi. वाक् is free software, released under the <a href="https://github.com/vidyadheeshp/vak/blob/main/LICENSE">MIT Licence</a> — use it, change it, teach with it, ship it.</p>
     <p>Visits are counted with <a href="https://vak.goatcounter.com">GoatCounter</a> — no cookies, no personal data, and Do Not Track is honoured.</p>
   </footer>

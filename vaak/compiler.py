@@ -263,16 +263,32 @@ class Compiler:
         self.chunk.patch(end_jump)
 
     def _st_While(self, node: A.While) -> None:
+        """Both loops, and the only difference is where the test is read.
+
+        कुरु needs no instruction of its own: the same JUMP_IF_FALSE and
+        JUMP_BACK, in the other order. अनुवर्त lands on the test rather than
+        the top of the body, since a post-test loop has already run once.
+        """
         start = len(self.chunk.code)
         loop = _Loop(start, self.scope_depth, 0)
         self.loops.append(loop)
-        self.expression(node.condition)
-        exit_jump = self.chunk.emit_jump(Op.JUMP_IF_FALSE, node.line)
-        self.chunk.emit(Op.POP, line=node.line)
-        self.statement(node.body)
-        for at in loop.continues:
-            self.chunk.patch_to(at, start)
-        self.chunk.emit_loop(start, node.line)
+        if node.post_test:
+            self.statement(node.body)
+            test = len(self.chunk.code)
+            self.expression(node.condition)
+            exit_jump = self.chunk.emit_jump(Op.JUMP_IF_FALSE, node.line)
+            self.chunk.emit(Op.POP, line=node.line)
+            self.chunk.emit_loop(start, node.line)
+            for at in loop.continues:
+                self.chunk.patch_to(at, test)
+        else:
+            self.expression(node.condition)
+            exit_jump = self.chunk.emit_jump(Op.JUMP_IF_FALSE, node.line)
+            self.chunk.emit(Op.POP, line=node.line)
+            self.statement(node.body)
+            for at in loop.continues:
+                self.chunk.patch_to(at, start)
+            self.chunk.emit_loop(start, node.line)
         self.chunk.patch(exit_jump)
         self.chunk.emit(Op.POP, line=node.line)
         self.loops.pop()

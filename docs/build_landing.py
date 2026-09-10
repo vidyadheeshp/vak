@@ -170,6 +170,19 @@ PRAYUJ = '''कार्यम् लिखतु(कर्ता शब्द�
 # प्रयुज् — कारकनाम्ना रचितम् आह्वानम्।
 मुद्रय प्रयुज्(लिखतु, {"कर्ता": "कालिदासः", "कर्म": "मेघदूतम्"})।'''
 
+KURU = '''# अङ्काः कति — शून्यस्य अपि एकः अङ्कः अस्ति।
+कार्यम् अङ्कगणना(कर्म पूर्णाङ्कः संख्या) : पूर्णाङ्कः {
+    मान शेषः = संख्या।
+    मान गणना = ०।
+    कुरु {                          # शरीरम् प्रथमम्
+        गणना = गणना + १।
+        शेषः = पूर्ण(शेषः / १०)।
+    } यावत् (शेषः > ०)।             # प्रश्नः पश्चात्
+    प्रत्यागच्छ गणना।
+}
+
+मुद्रय अङ्कगणना(९८७६), अङ्कगणना(०)।'''
+
 SWITCH = '''कार्यम् वासरनाम(कर्म पूर्णाङ्कः वारः) : शब्दः {
     विकल्पः (वारः) {
         पक्षे १: प्रत्यागच्छ "सोमवासरः"।
@@ -466,6 +479,16 @@ footer a:hover {{ color:var(--gold); }}
   for an optional alternative, and <code>पक्षे</code> is the locative, "in this
   case":</p>
   {demo(SWITCH)}
+  <h3>कुरु · the loop that asks afterwards</h3>
+  <p>Four loop forms, and this is the one whose body runs before anything is
+  asked. <code>कुरु</code> is the imperative — <i>do!</i> — and the test that
+  closes it is written with <code>यावत्</code>, so the pair reads as one
+  sentence: <i>do this, as long as that</i>.</p>
+  {demo(KURU, "Zero has one digit. A loop that tested first would report none — which is the whole reason the form exists.")}
+  <p>It needed no new instruction. A <code>यावत्</code> loop already compiles to
+  a conditional jump out and an unconditional jump back; <code>कुरु</code> is
+  those same two in the other order, so every engine — the C runtime
+  included — understood it the day it was added.</p>
   <p>And none of it requires a Devanagari keyboard. Every keyword has an ASCII
   spelling, and ASCII numerals work everywhere:</p>
   {demo(ASCII, "The same language, typed on a plain keyboard.")}

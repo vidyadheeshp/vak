@@ -216,7 +216,7 @@ footer a:hover { color:var(--gold); }
 </div>
 
 <header class="hero">
-  <p class="eyebrow">वाक् · Vāk — version 0.11.1</p>
+  <p class="eyebrow">वाक् · Vāk — version 0.12.0</p>
   <h1>A programming language whose type system is Pāṇini's grammar, and whose
   <em>own compiler</em> is written in Sanskrit<span class="danda">।</span></h1>
   <p class="stand">Sanskrit does not decide meaning by word order. It marks the
@@ -363,6 +363,35 @@ footer a:hover { color:var(--gold); }
   </div>
   
 </figure>
+  <h3>कुरु · the loop that asks afterwards</h3>
+  <p>Four loop forms, and this is the one whose body runs before anything is
+  asked. <code>कुरु</code> is the imperative — <i>do!</i> — and the test that
+  closes it is written with <code>यावत्</code>, so the pair reads as one
+  sentence: <i>do this, as long as that</i>.</p>
+  <figure class="demo">
+  <div class="src"><pre><code><i class="c"># अङ्काः कति — शून्यस्य अपि एकः अङ्कः अस्ति।</i>
+<b class="k">कार्यम्</b> अङ्कगणना(<b class="ka">कर्म</b> <b class="t">पूर्णाङ्कः</b> संख्या) : <b class="t">पूर्णाङ्कः</b> {
+    <b class="k">मान</b> शेषः = संख्या।
+    <b class="k">मान</b> गणना = ०।
+    <b class="k">कुरु</b> {                          <i class="c"># शरीरम् प्रथमम्</i>
+        गणना = गणना + १।
+        शेषः = पूर्ण(शेषः / १०)।
+    } <b class="k">यावत्</b> (शेषः &gt; ०)।             <i class="c"># प्रश्नः पश्चात्</i>
+    <b class="k">प्रत्यागच्छ</b> गणना।
+}
+
+<b class="k">मुद्रय</b> अङ्कगणना(९८७६), अङ्कगणना(०)।</code></pre></div>
+  <div class="res">
+    <p class="lbl">फलम् · what it prints</p>
+    <pre><code>4 1</code></pre>
+    <a class="try" href="playground.html#code=IyDgpIXgpJngpY3gpJXgpL7gpIMg4KSV4KSk4KS_IOKAlCDgpLbgpYLgpKjgpY3gpK_gpLjgpY3gpK8g4KSF4KSq4KS_IOCkj-CkleCkgyDgpIXgpJngpY3gpJXgpIMg4KSF4KS44KWN4KSk4KS_4KWkCuCkleCkvuCksOCljeCkr-CkruCljSDgpIXgpJngpY3gpJXgpJfgpKPgpKjgpL4o4KSV4KSw4KWN4KSuIOCkquClguCksOCljeCko-CkvuCkmeCljeCkleCkgyDgpLjgpILgpJbgpY3gpK_gpL4pIDog4KSq4KWC4KSw4KWN4KSj4KS-4KSZ4KWN4KSV4KSDIHsKICAgIOCkruCkvuCkqCDgpLbgpYfgpLfgpIMgPSDgpLjgpILgpJbgpY3gpK_gpL7gpaQKICAgIOCkruCkvuCkqCDgpJfgpKPgpKjgpL4gPSDgpabgpaQKICAgIOCkleClgeCksOClgSB7ICAgICAgICAgICAgICAgICAgICAgICAgICAjIOCktuCksOClgOCksOCkruCljSDgpKrgpY3gpLDgpKXgpK7gpK7gpY0KICAgICAgICDgpJfgpKPgpKjgpL4gPSDgpJfgpKPgpKjgpL4gKyDgpafgpaQKICAgICAgICDgpLbgpYfgpLfgpIMgPSDgpKrgpYLgpLDgpY3gpKMo4KS24KWH4KS34KSDIC8g4KWn4KWmKeClpAogICAgfSDgpK_gpL7gpLXgpKTgpY0gKOCktuClh-Ckt-CkgyA-IOClpingpaQgICAgICAgICAgICAgIyDgpKrgpY3gpLDgpLbgpY3gpKjgpIMg4KSq4KS24KWN4KSa4KS-4KSk4KWNCiAgICDgpKrgpY3gpLDgpKTgpY3gpK_gpL7gpJfgpJrgpY3gpJsg4KSX4KSj4KSo4KS-4KWkCn0KCuCkruClgeCkpuCljeCksOCkryDgpIXgpJngpY3gpJXgpJfgpKPgpKjgpL4o4KWv4KWu4KWt4KWsKSwg4KSF4KSZ4KWN4KSV4KSX4KSj4KSo4KS-KOClpingpaQ=">चालय · run this yourself →</a>
+  </div>
+  <figcaption>Zero has one digit. A loop that tested first would report none — which is the whole reason the form exists.</figcaption>
+</figure>
+  <p>It needed no new instruction. A <code>यावत्</code> loop already compiles to
+  a conditional jump out and an unconditional jump back; <code>कुरु</code> is
+  those same two in the other order, so every engine — the C runtime
+  included — understood it the day it was added.</p>
   <p>And none of it requires a Devanagari keyboard. Every keyword has an ASCII
   spelling, and ASCII numerals work everywhere:</p>
   <figure class="demo">
@@ -408,7 +437,7 @@ pratyekam (n antah [1, 2, 3, 4]) { mudraya n, <i class="s">&quot;-&gt;&quot;</i>
   <div class="facts">
     <div><b>5</b><span>engines, one output</span></div>
     <div><b>48</b><span>built-in functions</span></div>
-    <div><b>300</b><span>tests</span></div>
+    <div><b>315</b><span>tests</span></div>
     <div><b>6</b><span>kāraka roles</span></div>
     <div><b>147 KB</b><span>gzipped — the whole toolchain, in your browser</span></div>
   </div>
@@ -468,7 +497,7 @@ vaak प्रोग्राम.vak</code></pre>
 
 <footer>
   <p class="verse">वाक् इति भाषा — यत्र संस्कृतम् एव आदेशः<span class="danda">॥</span></p>
-  <p><b>Vāk</b> 0.11.1 · <a href="manual.html">manual</a> ·
+  <p><b>Vāk</b> 0.12.0 · <a href="manual.html">manual</a> ·
      <a href="playground.html">playground</a> ·
      <a href="story.html">the story</a> ·
      <a href="https://github.com/vidyadheeshp/vak">source</a></p>

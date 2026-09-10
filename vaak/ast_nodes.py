@@ -192,9 +192,16 @@ class If(Stmt):
 
 @dataclass
 class While(Stmt):
+    """यावत् (शर्तः) { ... } — and, when post_test, कुरु { ... } यावत् (शर्तः)।
+
+    One node for both, because they differ only in where the test is read.
+    A post-test loop runs its body once before asking anything, so अनुवर्त
+    inside it jumps to the test rather than back to the top.
+    """
     condition: Expr
     body: Stmt
     line: int = 0
+    post_test: bool = False
 
 
 @dataclass

@@ -160,6 +160,8 @@ class Parser:
             return self.if_stmt()
         if self._match(T.WHILE):
             return self.while_stmt()
+        if self._match(T.DO):
+            return self.do_stmt()
         if self._match(T.FOR):
             return self.for_each_stmt()
         if self._match(T.REPEAT):
@@ -367,6 +369,15 @@ class Parser:
         condition = self.expression()
         body = self.block()
         return While(condition, body, line)
+
+    def do_stmt(self) -> While:
+        """कुरु { ... } यावत् (शर्तः)। — the body first, the question after."""
+        line = self._previous().line
+        body = self.block()
+        self._expect(T.WHILE, "'यावत्' अपेक्षितम् / expected 'यावत्' after the कुरु block")
+        condition = self.expression()
+        self._end_of_statement()
+        return While(condition, body, line, post_test=True)
 
     def for_each_stmt(self) -> ForEach:
         line = self._previous().line

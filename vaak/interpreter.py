@@ -158,7 +158,9 @@ class Interpreter:
             self.execute(node.else_branch)
 
     def _exec_While(self, node: A.While) -> None:
-        while is_truthy(self.evaluate(node.condition)):
+        first = node.post_test          # कुरु runs once before it asks
+        while first or is_truthy(self.evaluate(node.condition)):
+            first = False
             try:
                 self.execute(node.body)
             except BreakSignal:

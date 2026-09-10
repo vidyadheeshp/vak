@@ -122,7 +122,8 @@ def to_kosha(node: Any) -> Any:
                 "पङ्क्तिः": line}
     if isinstance(node, A.While):
         return {"रूपम्": form, "परीक्षा": to_kosha(node.condition),
-                "शरीरम्": to_kosha(node.body), "पङ्क्तिः": line}
+                "शरीरम्": to_kosha(node.body), "पश्चात्परीक्षा": node.post_test,
+                "पङ्क्तिः": line}
     if isinstance(node, A.ForEach):
         return {"रूपम्": form, "चरः": node.var, "संग्रहः": to_kosha(node.iterable),
                 "शरीरम्": to_kosha(node.body), "पङ्क्तिः": line}

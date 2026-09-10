@@ -331,10 +331,13 @@ condition are optional; the braces are not.</p>
 } अन्यथा {
     मुद्रय "अल्पः"।
 }''')}
-<p>Three loops, because three different things are worth saying. <code>यावत्</code>
-repeats while a condition holds, <code>आवृत्तिः</code> repeats a fixed number of
-times, and <code>प्रत्येकम् … अन्तः</code> walks a collection.</p>
+<p>Four loops, because four different things are worth saying.
+<code>यावत्</code> repeats while a condition holds, <code>कुरु</code> does the
+same but asks afterwards, <code>आवृत्तिः</code> repeats a fixed number of times,
+and <code>प्रत्येकम् … अन्तः</code> walks a collection.</p>
 {code('''यावत् (क < १०) { क += १। }
+
+कुरु { क += १। } यावत् (क < १०)।
 
 आवृत्तिः (३) { मुद्रय "ॐ"। }
 
@@ -343,6 +346,21 @@ times, and <code>प्रत्येकम् … अन्तः</code> walks
     मुद्रय अङ्कः।
 }''')}
 <p><code>विरम</code> leaves a loop, <code>अनुवर्त</code> starts its next turn.</p>
+<h3>कुरु · asking after, not before</h3>
+<p><code>कुरु</code> is the imperative — <i>do!</i> — and it opens the one loop
+whose body runs before anything is asked. The test that follows is written with
+<code>यावत्</code>, so the pair reads as a single sentence: <i>do this, as long
+as that</i>.</p>
+{code('''कुरु {
+    उत्तरम् = पठ("नाम? ")।
+} यावत् (दीर्घता(उत्तरम्) == ०)।''',
+      "Read at least once, then keep asking while nothing was typed. यावत् alone cannot express this — it would have to test a variable that does not exist yet.")}
+<p><code>अनुवर्त</code> inside a <code>कुरु</code> jumps to the test rather than
+back to the top of the body, since the body has already had its turn.</p>
+<p>It needs no instruction of its own. A <code>यावत्</code> loop already
+compiles to a conditional jump out and an unconditional jump back;
+<code>कुरु</code> is those same two in the other order, which is why every
+engine — the C runtime included — understood it the day it was added.</p>
 
 <h3>विकल्पः · Choosing among alternatives</h3>
 <p>Where a chain of <code>अन्यथा यदि</code> only compares one value over and over,

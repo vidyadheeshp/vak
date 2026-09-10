@@ -30,6 +30,7 @@ class T(Enum):
     # keywords — control flow
     IF = auto()         # यदि      yadi      "if"                 -> if
     ELSE = auto()       # अन्यथा    anyathā   "otherwise"          -> else
+    DO = auto()         # कुरु      kuru      "do!"                -> do (post-test)
     WHILE = auto()      # यावत्     yāvat     "as long as"         -> while
     FOR = auto()        # प्रत्येकम् pratyekam "for each"           -> for
     IN = auto()         # अन्तः     antaḥ     "within"             -> in
@@ -123,6 +124,10 @@ KEYWORDS: dict[str, T] = {
     "यदि": T.IF, "yadi": T.IF,
     "अन्यथा": T.ELSE, "anyathā": T.ELSE, "anyatha": T.ELSE,
     "यावत्": T.WHILE, "यावत": T.WHILE, "yāvat": T.WHILE, "yavat": T.WHILE,
+    # कुरु — the imperative "do!". It opens a loop whose test comes after the
+    # body, and reuses यावत् for that test: कुरु { ... } यावत् (शर्तः)।
+    # Only two spellings, because the IAST and ASCII forms coincide.
+    "कुरु": T.DO, "kuru": T.DO,
     "प्रत्येकम्": T.FOR, "प्रत्येकम": T.FOR, "pratyekam": T.FOR,
     "अन्तः": T.IN, "अन्तः": T.IN, "antaḥ": T.IN, "antah": T.IN,
     "आवृत्तिः": T.REPEAT, "आवृत्ति": T.REPEAT, "āvṛttiḥ": T.REPEAT, "avrttih": T.REPEAT,

@@ -169,7 +169,7 @@ machine.
 ### Checking that it works
 
 ```powershell
-python -m vaak --version          # वाक् (Vāk) 0.11.1
+python -m vaak --version          # वाक् (Vāk) 0.12.0
 python -m vaak --builtins         # the 39 built-in functions
 python -m vaak                    # संवादः — the interactive session
 ```
@@ -263,7 +263,7 @@ run_source('मुद्रय "नमस्ते जगत्"।')
 ### The REPL
 
 ```
-वाक् (Vāk) 0.11.1 — संस्कृतभाषायाः संगणकभाषा
+वाक् (Vāk) 0.12.0 — संस्कृतभाषायाः संगणकभाषा
 सहायता: :सहायता   निर्गमः: :निर्गम  (help / exit)
 वाक्> पूर्णाङ्कः क = ७।
 वाक्> क * क
@@ -338,12 +338,16 @@ ASCII digits by default; `देवनागरी(x)` renders a value with Deva
 
 **Truthiness:** `शून्य`, `असत्य`, `०`, `""`, `[]` and `{}` are false; everything else is true.
 
-### पाशाः · Loops — three of them
+### पाशाः · Loops — four of them
 
 ```sanskrit
 यावत् (क > ०) {                     # while — "as long as"
     क = क - १।
 }
+
+कुरु {                              # do-while — the body runs first,
+    क = क - १।                      # then the question is asked
+} यावत् (क > ०)।
 
 आवृत्तिः (५) {                       # repeat exactly five times
     मुद्रय "ॐ"।
@@ -1007,6 +1011,7 @@ mean exactly the same thing.
 | `यदि` | `yadi` | if | if | |
 | `अन्यथा` | `anyatha` | otherwise | else (chain with `अन्यथा यदि`) | |
 | `यावत्` | `yavat` | as long as | while | |
+| `कुरु` | `kuru` | do! | opens a post-test loop, closed by `यावत्` | |
 | `आवृत्तिः` | `avrttih` | a turning round | repeat *n* times | |
 | `विकल्पः` · `विकल्प` | `vikalpaḥ` · `vikalpah` | choose among alternatives |
 | `पक्षे` | `pakṣe` · `pakshe` | in this case |
@@ -1127,6 +1132,7 @@ type        → "पूर्णाङ्कः" | "दशांशः" | "अ�
             | "सूची" | "कोशः" | "कार्यम्" | "शून्यम्" | "किमपि"
 ifStmt      → "यदि" expression block ("अन्यथा" (ifStmt | block))?
 whileStmt   → "यावत्" expression block
+doStmt      → "कुरु" block "यावत्" expression end
 repeatStmt  → "आवृत्तिः" expression block
 forEachStmt → "प्रत्येकम्" "("? IDENT "अन्तः" expression ")"? block
 printStmt   → "मुद्रय" (expression ("," expression)*)? end

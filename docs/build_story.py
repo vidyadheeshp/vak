@@ -58,6 +58,13 @@ TESTS = sum(1 for line in (ROOT / "tests" / "test_vak.py")
 # release, which is not the claim being made.
 REAL = {"0.10.0", "0.11.0", __version__}
 
+# Work that is in the tree but has not been cut into a release. It is neither
+# a version that exists nor a stage numbered after the fact, and calling it
+# either would be untrue — so it gets its own mark. Empty while every act on
+# this page corresponds to a version that exists; the mark and its legend
+# entry appear only when something is waiting.
+PENDING: set[str] = set()
+
 # len(KEYWORDS) counts the Devanagari, IAST and ASCII spellings of the same
 # word, so it reads as a far larger vocabulary than Vak actually asks anyone
 # to learn.  The honest count is the words themselves.
@@ -180,6 +187,30 @@ wrong twice.</p>
 have happened at all. A call formatted an error message for every argument and
 discarded it. A string was copied four times in order to join it twice. Building
 a string was quadratic, because each append rebuilt the whole of it.</p>"""),
+
+    ("VI", "0.12.0", "अवशिष्टम्", "The parts a language is expected to have", 100, """
+<p>A language that compiles itself can still be missing ordinary things, and
+this act is the unglamorous work of finding out which. The method was to write
+down what C has and Python has, and go through the list.</p>
+<p>Bit operations, as named functions rather than operators — <code>^</code> was
+already exponentiation. A second output stream, so a program's warnings stop
+arriving in the middle of its data. Default arguments, which turned out to be a
+question about Sanskrit rather than syntax: an unexpressed kāraka is ordinary in
+the language, so a default may sit <em>anywhere</em> in a parameter list when
+every parameter names its role, not only at the end.</p>
+<p>Then the two that had been missing longest: <code>प्रयुज्</code>, to call a
+function with an argument list computed at run time, and <code>लक्षणम्</code>,
+to ask a function what it declares. Without them no program could write a
+wrapper around another. And <code>कुरु</code> — the loop that asks its question
+afterwards — which cost no new instruction at all, being the two jumps a
+<code>यावत्</code> already emits, in the other order.</p>
+<p class="turn">Three of these shipped to four engines and not the fifth, and
+the test that should have caught it was reading source files instead of running
+them.</p>
+<p>The tests that replaced it run every built-in on every engine and require the
+answers to match. They found the gap within a day — and then found a
+use-after-free in the C runtime that had been crashing an immediately-invoked
+function since long before any of this.</p>"""),
 ]
 
 ENGINES = [
@@ -215,7 +246,14 @@ ACT_TITLES = {"I": "Python builds a language",
               "II": "The language learns to build itself",
               "III": "Python leaves",
               "IV": "Making it real",
-              "V": "Making it fast"}
+              "V": "Making it fast",
+              "VI": "Going back for what was missing"}
+
+
+#: Shown only while something on the page is written but unreleased.
+PENDING_LEGEND = (
+    f'<span class="k"><span class="ver pending">{sorted(PENDING)[0]}</span> '
+    "written, not yet released</span>" if PENDING else "")
 
 
 def chapter_html() -> str:
@@ -229,10 +267,12 @@ def chapter_html() -> str:
         # A version that was cut and a stage numbered after the fact are two
         # different claims, so they carry different marks and the legend says
         # which is which.  Only two of these were ever released.
-        cut = ver in REAL
-        chip = (f'<span class="ver{" cut" if cut else ""}" title="'
-                f'{"a released version" if cut else "numbered in retrospect"}">'
-                f'{ver}</span>')
+        cut, pending = ver in REAL, ver in PENDING
+        mark = " cut" if cut else (" pending" if pending else "")
+        why = ("a released version" if cut else
+               "in the tree, not yet released" if pending else
+               "numbered in retrospect")
+        chip = f'<span class="ver{mark}" title="{why}">{ver}</span>'
         out.append(opener + f"""  <li class="ch reveal" data-share="{share}" data-ver="{ver}">
     <div class="tick" aria-hidden="true"></div>
     <h3>{chip}<span class="dev">{dev}</span><span class="eng">{eng}</span></h3>
@@ -353,6 +393,8 @@ li.ch h3 .eng {{ font-family:var(--sans); font-size:.68em; font-weight:400;
   padding:.2em .55em; border-radius:2px; align-self:center;
   border:1px solid var(--rule); color:var(--ink-faint); background:transparent; }}
 .ver.cut {{ border-color:var(--gold); background:var(--gold); color:var(--paper); }}
+.ver.pending {{ border-color:var(--indigo); color:var(--indigo);
+  border-style:dashed; background:transparent; }}
 .legend {{ display:flex; gap:1.4rem; flex-wrap:wrap; align-items:center;
   margin:.4rem 0 2.6rem; font-family:var(--sans); font-size:.77rem;
   color:var(--ink-faint); max-width:none; }}
@@ -466,6 +508,7 @@ footer p {{ margin:.3rem 0; max-width:none; }}
 <p class="legend">
   <span class="k"><span class="ver cut">0.10.0</span> a version that was actually cut</span>
   <span class="k"><span class="ver">0.4.0</span> a stage, numbered here in retrospect</span>
+  {PENDING_LEGEND}
 </p>
 
 <ol class="story">

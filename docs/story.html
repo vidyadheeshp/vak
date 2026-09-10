@@ -110,6 +110,8 @@ li.ch h3 .eng { font-family:var(--sans); font-size:.68em; font-weight:400;
   padding:.2em .55em; border-radius:2px; align-self:center;
   border:1px solid var(--rule); color:var(--ink-faint); background:transparent; }
 .ver.cut { border-color:var(--gold); background:var(--gold); color:var(--paper); }
+.ver.pending { border-color:var(--indigo); color:var(--indigo);
+  border-style:dashed; background:transparent; }
 .legend { display:flex; gap:1.4rem; flex-wrap:wrap; align-items:center;
   margin:.4rem 0 2.6rem; font-family:var(--sans); font-size:.77rem;
   color:var(--ink-faint); max-width:none; }
@@ -213,7 +215,7 @@ footer p { margin:.3rem 0; max-width:none; }
   <p class="eyebrow">कथा · the making of वाक्</p>
   <h1>A language written in Python, that slowly learned to
   <em>write itself</em>.</h1>
-  <p class="stand"><b>0.0.1 to 0.11.1.</b> Vāk began as 7,097 lines
+  <p class="stand"><b>0.0.1 to 0.12.0.</b> Vāk began as 7,139 lines
   of Python that could not have compiled one line of itself. It now compiles itself completely, runs on five
   independent engines held to identical output, and needs no Python at all. This
   is how that happened — including the two optimisations that turned out to be
@@ -223,6 +225,7 @@ footer p { margin:.3rem 0; max-width:none; }
 <p class="legend">
   <span class="k"><span class="ver cut">0.10.0</span> a version that was actually cut</span>
   <span class="k"><span class="ver">0.4.0</span> a stage, numbered here in retrospect</span>
+  
 </p>
 
 <ol class="story">
@@ -232,7 +235,7 @@ footer p { margin:.3rem 0; max-width:none; }
     <h3><span class="ver" title="numbered in retrospect">0.0.1</span><span class="dev">आरम्भः</span><span class="eng">It begins in Python</span></h3>
     
 <p>The first version could not have compiled a single line of itself. It was a
-lexer, a parser and a tree-walking interpreter — 7,097 lines of Python —
+lexer, a parser and a tree-walking interpreter — 7,139 lines of Python —
 and everything the language could do, Python did on its behalf.</p>
 <p>That is the ordinary way to start, and it contains the ordinary trap: a
 language whose only implementation is written in another language has not really
@@ -282,33 +285,33 @@ re-implemented. The Python VM became a <em>specification</em>. Anything that
 could emit the same instructions and run them to the same output was a
 legitimate implementation of Vāk — including one written in Vāk.</p>
   </li>
-  <li class="ch reveal" data-share="43" data-ver="0.4.0">
+  <li class="ch reveal" data-share="44" data-ver="0.4.0">
     <div class="tick" aria-hidden="true"></div>
     <h3><span class="ver" title="numbered in retrospect">0.4.0</span><span class="dev">स्वयंसिद्धिः</span><span class="eng">The language starts writing itself</span></h3>
     
-<p>The lexer came first: 284 lines of Vāk that split Vāk source
+<p>The lexer came first: 285 lines of Vāk that split Vāk source
 into tokens, held to the Python lexer on the kind, lexeme, value and line of
 every token.</p>
-<p>Then the parser, 899 lines, held to the whole syntax tree,
-node for node. Then the compiler, 792 lines, held to every
+<p>Then the parser, 916 lines, held to the whole syntax tree,
+node for node. Then the compiler, 809 lines, held to every
 instruction, constant and line number.</p>
 <p>At each step the new stage had to process <em>its own source</em> and agree.
 The parser parsing the parser. That is the point where this stopped being a
 toy.</p>
   </li>
-  <li class="ch reveal" data-share="75" data-ver="0.5.0">
+  <li class="ch reveal" data-share="76" data-ver="0.5.0">
     <div class="tick" aria-hidden="true"></div>
     <h3><span class="ver" title="numbered in retrospect">0.5.0</span><span class="dev">यन्त्रम्</span><span class="eng">And then the machine itself</span></h3>
     
 <p>The virtual machine — dispatch loop, environments, call frames, exception
-unwinding — written in Vāk, in 1204 lines. A machine
+unwinding — written in Vāk, in 1205 lines. A machine
 describing a machine, in the language that machine runs.</p>
 <p>It is still in the repository though nothing depends on it now: it is the
 executable specification of what the instructions <em>mean</em>, and the tests
 still run every example through it.</p>
   </li>
   <li class="act reveal"><p class="mark">Act III</p><p class="name">Python leaves</p></li>
-  <li class="ch reveal" data-share="75" data-ver="0.6.0">
+  <li class="ch reveal" data-share="76" data-ver="0.6.0">
     <div class="tick" aria-hidden="true"></div>
     <h3><span class="ver" title="numbered in retrospect">0.6.0</span><span class="dev">देशीयसंकलनम्</span><span class="eng">Python leaves</span></h3>
     
@@ -331,7 +334,7 @@ match. A lexer either agrees on a token or it does not; an analyser has to
 produce the <em>same complaints</em>, in the same order, with the same wording.
 It does — across sixty-five files, forty of them deliberately broken, one per
 diagnostic kind.</p>
-<p>With that, the entire front end exists in Vāk: 4,563 lines. The
+<p>With that, the entire front end exists in Vāk: 4,599 lines. The
 language describes itself completely.</p>
   </li>
   <li class="ch reveal" data-share="100" data-ver="0.10.0">
@@ -344,7 +347,7 @@ on a server. An editor extension
 whose grammar is <em>generated</em> from the language's own keyword tables, so
 highlighting cannot drift. A typing aid, because Devanagari on a plain keyboard
 is otherwise a wall. POSIX branches, so Linux and macOS are reachable.</p>
-<p>38 keywords — each spelled three ways, so none of it needs
+<p>39 keywords — each spelled three ways, so none of it needs
 a Devanagari keyboard — 48 built-ins, 16 worked
 examples — and every keyword spelled two ways, so none of it requires a
 Devanagari keyboard.</p>
@@ -352,7 +355,7 @@ Devanagari keyboard.</p>
   <li class="act reveal"><p class="mark">Act V</p><p class="name">Making it fast</p></li>
   <li class="ch reveal" data-share="100" data-ver="0.11.1">
     <div class="tick" aria-hidden="true"></div>
-    <h3><span class="ver cut" title="a released version">0.11.1</span><span class="dev">कार्यक्षमता</span><span class="eng">Making it fast, and being wrong twice</span></h3>
+    <h3><span class="ver" title="numbered in retrospect">0.11.1</span><span class="dev">कार्यक्षमता</span><span class="eng">Making it fast, and being wrong twice</span></h3>
     
 <p>The last act is measurement, and it holds the most useful mistakes.</p>
 <p>The obvious suspect was name lookup: every variable was found by comparing
@@ -370,17 +373,45 @@ have happened at all. A call formatted an error message for every argument and
 discarded it. A string was copied four times in order to join it twice. Building
 a string was quadratic, because each append rebuilt the whole of it.</p>
   </li>
-
-  <li class="ch reveal" data-share="100" data-ver="0.11.1">
+  <li class="act reveal"><p class="mark">Act VI</p><p class="name">Going back for what was missing</p></li>
+  <li class="ch reveal" data-share="100" data-ver="0.12.0">
     <div class="tick" aria-hidden="true"></div>
-    <h3><span class="ver cut">0.11.1</span><span class="dev">फलम्</span>
+    <h3><span class="ver cut" title="a released version">0.12.0</span><span class="dev">अवशिष्टम्</span><span class="eng">The parts a language is expected to have</span></h3>
+    
+<p>A language that compiles itself can still be missing ordinary things, and
+this act is the unglamorous work of finding out which. The method was to write
+down what C has and Python has, and go through the list.</p>
+<p>Bit operations, as named functions rather than operators — <code>^</code> was
+already exponentiation. A second output stream, so a program's warnings stop
+arriving in the middle of its data. Default arguments, which turned out to be a
+question about Sanskrit rather than syntax: an unexpressed kāraka is ordinary in
+the language, so a default may sit <em>anywhere</em> in a parameter list when
+every parameter names its role, not only at the end.</p>
+<p>Then the two that had been missing longest: <code>प्रयुज्</code>, to call a
+function with an argument list computed at run time, and <code>लक्षणम्</code>,
+to ask a function what it declares. Without them no program could write a
+wrapper around another. And <code>कुरु</code> — the loop that asks its question
+afterwards — which cost no new instruction at all, being the two jumps a
+<code>यावत्</code> already emits, in the other order.</p>
+<p class="turn">Three of these shipped to four engines and not the fifth, and
+the test that should have caught it was reading source files instead of running
+them.</p>
+<p>The tests that replaced it run every built-in on every engine and require the
+answers to match. They found the gap within a day — and then found a
+use-after-free in the C runtime that had been crashing an immediately-invoked
+function since long before any of this.</p>
+  </li>
+
+  <li class="ch reveal" data-share="100" data-ver="0.12.0">
+    <div class="tick" aria-hidden="true"></div>
+    <h3><span class="ver cut">0.12.0</span><span class="dev">फलम्</span>
       <span class="eng">Where it stands today</span></h3>
     <p>Five engines, one language, and a test suite whose job is to prove they
     never disagree.</p>
     <div class="facts">
       <div><b>5</b><span>engines, byte-identical</span></div>
-      <div><b>300</b><span>tests</span></div>
-      <div><b>4,563</b><span>lines written in Vāk</span></div>
+      <div><b>315</b><span>tests</span></div>
+      <div><b>4,599</b><span>lines written in Vāk</span></div>
       <div><b>737 KB</b><span>self-contained binary</span></div>
       <div><b>6</b><span>kāraka roles as types</span></div>
     </div>
@@ -481,7 +512,7 @@ a string was quadratic, because each append rebuilt the whole of it.</p>
 </div>
 
 <footer>
-  <p>वाक् 0.11.1 · <a href="index.html">about the language</a> ·
+  <p>वाक् 0.12.0 · <a href="index.html">about the language</a> ·
      <a href="manual.html">manual</a> ·
      <a href="playground.html">playground</a></p>
   <p>Line counts, keyword and opcode totals and the test count on this page are

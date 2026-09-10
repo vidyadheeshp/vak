@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import io
 import os
+import re
 import shutil
 import pathlib
 import subprocess
@@ -2701,6 +2702,174 @@ class TestApplyNatively(unittest.TestCase):
                 "मुद्रय लक्षणम्(छानय).प्राचलाः[०].कारकम्, "
                 "लक्षणम्(छानय).प्राचलाः[१].मूलमस्ति।", "lakshana"),
             "अपादानम् सत्य")
+
+
+class TestDoWhile(unittest.TestCase):
+    """कुरु { ... } यावत् (शर्तः)। — the body first, the question after.
+
+    The one loop shape Vāk lacked. It needed no new instruction: a यावत् loop
+    already compiles to JUMP_IF_FALSE and JUMP_BACK, and a post-test loop is
+    those same two in the other order. That is why the C runtime is untouched
+    by this feature — there was no opcode for it to learn.
+    """
+
+    def engines(self, source: str) -> dict[str, str]:
+        out = {"tree": output(source), "vm": vm_output(source)}
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            run_with_vak(source)
+        out["यन्त्रम्.vak"] = buf.getvalue().strip()
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            VM("<प>").run(compile_with_vak(source, "<प>"))
+        out["compiled by Vāk"] = buf.getvalue().strip()
+        return out
+
+    def assert_agree(self, source: str, expected: str):
+        for engine, printed in self.engines(source).items():
+            with self.subTest(engine=engine):
+                self.assertEqual(printed, expected)
+
+    def test_the_body_runs_before_the_test(self):
+        self.assert_agree("मान क = ०।\n"
+                          "कुरु { क = क + १। } यावत् (क < ५)।\n"
+                          "मुद्रय क।", "5")
+
+    def test_it_runs_once_even_when_the_test_is_false(self):
+        """The whole point of the construct, and what यावत् cannot do."""
+        self.assert_agree("मान क = ०।\n"
+                          "कुरु { क = क + १०। } यावत् (असत्य)।\n"
+                          "मुद्रय क।", "10")
+        self.assert_agree("मान क = ०।\n"
+                          "यावत् (असत्य) { क = क + १०। }\n"
+                          "मुद्रय क।", "0")
+
+    def test_anuvarta_jumps_to_the_test_not_the_top(self):
+        """अनुवर्त in a post-test loop must land on the condition. Landing on
+        the top of the body instead would skip the test and spin forever, and
+        the bytecode makes that an easy mistake — the jump target is the one
+        thing the two loop shapes do not share."""
+        self.assert_agree("मान क = ०।\nमान योगः = ०।\n"
+                          "कुरु {\n"
+                          "    क = क + १।\n"
+                          "    यदि (क % २ == ०) { अनुवर्त। }\n"
+                          "    योगः = योगः + क।\n"
+                          "} यावत् (क < ६)।\n"
+                          "मुद्रय क, योगः।", "6 9")
+
+    def test_virama_leaves_the_loop(self):
+        self.assert_agree("मान क = ०।\n"
+                          "कुरु { क = क + १। यदि (क == ३) { विरम। } } यावत् (सत्य)।\n"
+                          "मुद्रय क।", "3")
+
+    def test_they_nest(self):
+        self.assert_agree("मान फलम् = \"\"।\nमान इ = ०।\n"
+                          "कुरु {\n"
+                          "    इ = इ + १।\n"
+                          "    मान ज = ०।\n"
+                          "    कुरु { ज = ज + १। } यावत् (ज < २)।\n"
+                          "    फलम् = फलम् + शब्द(इ) + \":\" + शब्द(ज) + \" \"।\n"
+                          "} यावत् (इ < ३)।\n"
+                          "मुद्रय फलम्।", "1:2 2:2 3:2")
+
+    def test_the_ascii_spelling_works(self):
+        self.assert_agree("मान क = ०।\n"
+                          "kuru { क = क + १। } yavat (क < ४)।\n"
+                          "मुद्रय क।", "4")
+
+    def test_the_block_must_be_followed_by_yavat(self):
+        with self.assertRaises(ParseError):
+            parse(tokenize("कुरु { मुद्रय १। }"))
+
+    def test_virama_outside_any_loop_is_still_caught(self):
+        self.assertEqual([d.code for d in check_source("विरम।").diagnostics if d.fatal],
+                         ["प्रवाहदोषः"])
+
+    def test_both_front_ends_agree_on_the_tree_and_the_bytecode(self):
+        """कुरु adds a field to the यावद्वाक्यम् कोशः, which both parsers must
+        write and both compilers must read. A flag one side forgets would show
+        up as a loop that tests in the wrong place — not as a crash."""
+        source = ("मान क = ०।\n"
+                  "कुरु { क = क + १। यदि (क == २) { अनुवर्त। } } यावत् (क < ४)।\n"
+                  "यावत् (क < ६) { क = क + १। }\n"
+                  "मुद्रय क।")
+        self.assertEqual(to_kosha(parse(tokenize(source, "<प>"))),
+                         parse_with_vak(source))
+        self.assertEqual(
+            chunk_to_kosha(compile_program(parse(tokenize(source, "<प>")), "<प>")),
+            chunk_to_kosha(compile_with_vak(source, "<प>")))
+
+    def test_kuru_still_lexes_inside_a_longer_name(self):
+        """आह्वानम्_कुरु is one identifier in the self-hosted VM. Making कुरु a
+        keyword must not split it."""
+        self.assert_agree("कार्यम् आह्वानम्_कुरु() { प्रत्यागच्छ ७। }\n"
+                          "मुद्रय आह्वानम्_कुरु()।", "7")
+
+
+@unittest.skipIf(GCC is None, "C-संकलकः न प्राप्तः / no C compiler available")
+class TestDoWhileNatively(unittest.TestCase):
+    """The C runtime was not changed for this feature. That is the claim, and
+    this is what checks it."""
+
+    def test_it_runs_natively_without_a_new_opcode(self):
+        directory = Path(tempfile.mkdtemp(prefix="vak-kuru-"))
+        try:
+            source = ("मान क = ०।\n"
+                      "कुरु { क = क + १। यदि (क % २ == ०) { अनुवर्त। } } यावत् (क < ५)।\n"
+                      "मान ग = ०।\n"
+                      "कुरु { ग = ग + १००। } यावत् (असत्य)।\n"
+                      "मुद्रय क, ग।")
+            path = directory / "kuru.vak"
+            path.write_text(source, encoding="utf-8")
+            exe = build_executable(source, path, directory)
+            proc = subprocess.run([str(exe.resolve())], capture_output=True)
+            self.assertEqual(proc.returncode, 0,
+                             proc.stderr.decode("utf-8", "replace")[:400])
+            printed = proc.stdout.decode("utf-8", "replace").replace("\r\n", "\n")
+            self.assertEqual(printed.strip(), "5 100")
+        finally:
+            shutil.rmtree(directory, ignore_errors=True)
+
+
+class TestVersionIsStatedOnce(unittest.TestCase):
+    """एकः एव अङ्कः — the version number lives in five files.
+
+    vaak/__init__.py is the source of truth; pyproject.toml decides what pip
+    installs, the README prints it in two sample outputs, and the editor
+    extension names it. Nothing kept them in step, and a bump is exactly when
+    that goes wrong: the wheel would say one thing and --version another.
+    """
+
+    def released(self) -> str:
+        from vaak import __version__
+        return __version__
+
+    def test_pyproject_matches_the_package(self):
+        text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+        found = re.search(r'^version = "([^"]+)"', text, re.M)
+        self.assertIsNotNone(found, "no version in pyproject.toml")
+        self.assertEqual(found.group(1), self.released())
+
+    def test_the_readme_samples_match_the_package(self):
+        text = (ROOT / "README.md").read_text(encoding="utf-8")
+        quoted = set(re.findall(r"वाक् \(Vāk\) (\d+\.\d+\.\d+)", text))
+        self.assertTrue(quoted, "the README quotes no version")
+        self.assertEqual(quoted, {self.released()})
+
+    def test_the_extension_readme_matches_the_package(self):
+        text = (ROOT / "vscode-vak" / "README.md").read_text(encoding="utf-8")
+        quoted = set(re.findall(r"Version (\d+\.\d+\.\d+)\.", text))
+        self.assertEqual(quoted, {self.released()})
+
+    def test_the_story_marks_the_current_version_as_released(self):
+        """docs/build_story.py distinguishes versions that were cut from
+        stages numbered afterwards, and keeps a third mark for work that is
+        written but unreleased. Whatever __version__ says must not be sitting
+        in that third set."""
+        text = (ROOT / "docs" / "build_story.py").read_text(encoding="utf-8")
+        pending = re.search(r"^PENDING[^=]*= (.+)$", text, re.M)
+        self.assertIsNotNone(pending, "PENDING went missing from the story")
+        self.assertNotIn(self.released(), pending.group(1))
 
 
 class TestPackaging(unittest.TestCase):
