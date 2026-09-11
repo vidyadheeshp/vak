@@ -2863,6 +2863,17 @@ class TestVersionIsStatedOnce(unittest.TestCase):
         quoted = set(re.findall(r"Version (\d+\.\d+\.\d+)\.", text))
         self.assertEqual(quoted, {self.released()})
 
+    def test_the_self_hosted_toolchain_reports_the_package_version(self):
+        """स्वयंसिद्धिः/वाक्.vak states its own version, in Devanagari numerals,
+        and that is what `--version` prints from every GitHub release binary
+        and from the playground. It said ०.११.१ through the whole of 0.12.0,
+        because this class looked for ASCII digits and never read the file."""
+        text = (ROOT / "स्वयंसिद्धिः" / "वाक्.vak").read_text(encoding="utf-8")
+        found = re.search(r'ध्रुव शब्दः रूपम् = "वाक् ([०-९.]+)', text)
+        self.assertIsNotNone(found, "वाक्.vak no longer declares रूपम्")
+        ascii_ = found.group(1).translate(str.maketrans("०१२३४५६७८९", "0123456789"))
+        self.assertEqual(ascii_, self.released())
+
     def test_the_story_marks_the_current_version_as_released(self):
         """docs/build_story.py distinguishes versions that were cut from
         stages numbered afterwards, and keeps a third mark for work that is
