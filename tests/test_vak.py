@@ -3221,11 +3221,41 @@ class TestTheStoryDatesWhatItCan(unittest.TestCase):
         if not tags:
             self.skipTest("no git history here — a tarball, not a clone")
         page = self.page()
+        chips = re.findall(r'<span class="(ver[^"]*)"( title="[^"]*")?>([\d.]+)</span>', page)
         for version in tags:
             with self.subTest(version=version):
-                if f">{version}</span>" in page:
-                    self.assertIn(f'<span class="ver cut" title="a released '
-                                  f'version">{version}</span>', page)
+                drawn = [(cls, title) for cls, title, v in chips if v == version]
+                # Every chip for a tagged version is drawn as released — and
+                # carries the title that says so, since a chip missing it is
+                # how the फलम् chapter's went unnoticed until 0.12.1 existed.
+                for cls, title in drawn:
+                    self.assertEqual(cls, "ver cut", f"{version} drawn as {cls!r}")
+                    self.assertEqual(title, ' title="a released version"',
+                                     f"{version} chip without its title")
+
+    @unittest.skipIf(shutil.which("git") is None, "git not found")
+    def test_a_shallow_clone_is_refused_rather_than_misdated(self):
+        """CI checked out shallow, so the regenerated story dated 0.10.0 as the
+        day of the push and dropped two releases — and the docs job failed on
+        every commit for three days before anyone looked. Now the builder
+        refuses a history it cannot read correctly."""
+        directory = Path(tempfile.mkdtemp(prefix="vak-shallow-"))
+        try:
+            clone = directory / "clone"
+            subprocess.run(["git", "clone", "-q", "--depth", "1",
+                            ROOT.resolve().as_uri(), str(clone)],
+                           check=True, capture_output=True)
+            shutil.copy(ROOT / "docs" / "build_story.py", clone / "docs" / "build_story.py")
+            before = (clone / "docs" / "story.html").read_bytes()
+            proc = subprocess.run([sys.executable, "docs/build_story.py"], cwd=clone,
+                                  capture_output=True, text=True, encoding="utf-8",
+                                  errors="replace")
+            self.assertNotEqual(proc.returncode, 0, "a shallow clone was accepted")
+            self.assertIn("shallow", proc.stdout + proc.stderr)
+            self.assertEqual((clone / "docs" / "story.html").read_bytes(), before,
+                             "a page with wrong dates was written anyway")
+        finally:
+            shutil.rmtree(directory, ignore_errors=True)
 
     def test_the_undated_stages_stay_undated(self):
         """A stage numbered in retrospect must never sprout a date."""
@@ -3238,6 +3268,70 @@ class TestTheStoryDatesWhatItCan(unittest.TestCase):
             with self.subTest(version=version):
                 self.assertEqual(dated, "", f"{version} was given a date it "
                                             f"cannot have — it predates the repository")
+
+
+class TestTheEditorExtensionIsCurrent(unittest.TestCase):
+    """विस्तारकः — the VS Code extension is generated; the committed copy must
+    be what the generator would write today.
+
+    Its grammar, package.json and README are all derived from vaak/tokens.py
+    and vaak/builtins.py, which is the point: highlighting that cannot drift
+    from the language. But nothing ran the generator. Through 0.12.0 and
+    0.12.1 the extension still called itself 0.11.1 and highlighted none of
+    प्रयुज्, लक्षणम्, the bit operations or दोषलिख — and even regenerated, it
+    left कुरु as plain text, because DO was a new keyword kind that no
+    hand-listed highlighting category included.
+    """
+
+    OUTPUTS = {
+        "syntaxes/vak.tmLanguage.json": lambda m: json.dumps(m.grammar, ensure_ascii=False, indent=2),
+        "package.json": lambda m: json.dumps(m.PACKAGE, ensure_ascii=False, indent=2),
+        "language-configuration.json":
+            lambda m: json.dumps(m.LANGUAGE_CONFIG, ensure_ascii=False, indent=2),
+        "extension.js": lambda m: m.EXTENSION_JS,
+        "translit.js": lambda m: m.translit_js(),
+        "README.md": lambda m: m.README,
+        ".vscodeignore": lambda m: m.VSCODEIGNORE,
+    }
+
+    @classmethod
+    def setUpClass(cls):
+        sys.path.insert(0, str(ROOT / "vscode-vak"))
+        import importlib
+        cls.module = importlib.import_module("build_extension")   # writes only in main()
+
+    def test_every_generated_file_matches_the_generator(self):
+        for name, render in self.OUTPUTS.items():
+            with self.subTest(file=name):
+                committed = (ROOT / "vscode-vak" / name).read_text(encoding="utf-8")
+                self.assertEqual(
+                    committed.replace("\r\n", "\n"), render(self.module).replace("\r\n", "\n"),
+                    f"vscode-vak/{name} is stale — run `python vscode-vak/build_extension.py`")
+
+    def test_the_grammar_checks_pass(self):
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            failures = self.module.verify()
+        self.assertEqual(failures, 0, buf.getvalue())
+
+    def test_every_keyword_kind_is_highlighted(self):
+        """The failure that left कुरु unhighlighted, stated directly."""
+        m = self.module
+        highlighted = m.CONTROL | m.DECL | m.IMPORT | m.CONSTANTS | m.OPERATOR_WORDS | {"PRINT"}
+        orphans = sorted({kind.name for kind in KEYWORDS.values()} - highlighted)
+        self.assertEqual(orphans, [], "keyword kinds with no highlighting rule")
+
+    def test_every_builtin_is_highlighted(self):
+        grammar = (ROOT / "vscode-vak" / "syntaxes" / "vak.tmLanguage.json").read_text(encoding="utf-8")
+        for devanagari, roman, _doc in BUILTIN_DOCS:
+            with self.subTest(builtin=devanagari):
+                self.assertIn(devanagari, grammar)
+                self.assertIn(roman, grammar)
+
+    def test_the_extension_states_the_package_version(self):
+        from vaak import __version__
+        package = json.loads((ROOT / "vscode-vak" / "package.json").read_text(encoding="utf-8"))
+        self.assertEqual(package["version"], __version__)
 
 
 class TestPackaging(unittest.TestCase):

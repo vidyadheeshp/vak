@@ -56,7 +56,13 @@ jobs:
     name: पुस्तिका · docs regenerate cleanly
     runs-on: ubuntu-latest
     steps:
+      # Full history and tags. The story page dates each release from its tag,
+      # and the default shallow checkout has neither — so the regenerated page
+      # dated 0.10.0 as the day of the push, forgot 0.11.1 and 0.12.0 had ever
+      # been released, and this job failed on every commit since that change.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
@@ -73,14 +79,15 @@ jobs:
           python docs/build_landing.py
           python docs/build_manual.py
           python docs/build_story.py
+          python vscode-vak/build_extension.py
       - name: Fail if the committed pages are out of date
         run: |
-          if ! git diff --quiet -- docs/index.html docs/manual.html docs/story.html; then
-            echo "::error::docs/ is stale — run the generators and commit the result"
-            git diff --stat -- docs/
+          if ! git diff --quiet -- docs/index.html docs/manual.html docs/story.html vscode-vak/; then
+            echo "::error::generated files are stale — run the generators and commit the result"
+            git diff --stat -- docs/ vscode-vak/
             exit 1
           fi
-          echo "documentation is current"
+          echo "documentation and the editor extension are current"
 
   # Proves the wheel installs and runs somewhere that has never seen the repo,
   # which is the thing a user actually does.

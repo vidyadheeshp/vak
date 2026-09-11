@@ -78,6 +78,17 @@ def release_dates() -> dict[str, str]:
         except Exception:
             return ""
 
+    # A shallow clone is worse than no clone. With no git at all this page
+    # builds undated, which is honest; a shallow one answers every question
+    # wrongly — its "first commit" is the latest, and most tags are absent —
+    # so the page would state false dates with nothing to say they were false.
+    # CI's default checkout is shallow, and did exactly that.
+    if git("rev-parse", "--is-shallow-repository") == "true":
+        raise SystemExit(
+            "this is a shallow clone, so release dates cannot be read from it "
+            "and the story page would print wrong ones. Fetch the full history "
+            "(`git fetch --unshallow --tags`, or `fetch-depth: 0` in CI).")
+
     dates = {}
     first = git("log", "--format=%cs", "--reverse")
     if first:
@@ -579,7 +590,7 @@ footer p {{ margin:.3rem 0; max-width:none; }}
 
   <li class="ch reveal" data-share="100" data-ver="{__version__}">
     <div class="tick" aria-hidden="true"></div>
-    <h3><span class="ver cut">{__version__}</span><span class="dev">फलम्</span>
+    <h3><span class="ver cut" title="a released version">{__version__}</span><span class="dev">फलम्</span>
       <span class="eng">Where it stands today</span></h3>
     <p>Five engines, one language, and a test suite whose job is to prove they
     never disagree.</p>

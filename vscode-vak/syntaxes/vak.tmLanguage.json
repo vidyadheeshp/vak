@@ -67,27 +67,27 @@
     },
     "karaka": {
       "name": "entity.name.tag.karaka.vak",
-      "match": "(?<![\\w\\u0900-\\u0963\\u0966-\\u097F])(सम्प्रदानम्|अपादानम्|अधिकरणम्|कर्ता|करणम्|कर्म)(?![\\w\\u0900-\\u0963\\u0966-\\u097F])"
+      "match": "(?<![\\w\\u0900-\\u0963\\u0966-\\u097F])(सम्प्रदानम्|अधिकरणम्|अपादानम्|करणम्|कर्ता|कर्म)(?![\\w\\u0900-\\u0963\\u0966-\\u097F])"
     },
     "declaration": {
       "name": "storage.type.vak",
-      "match": "(?<![\\w\\u0900-\\u0963\\u0966-\\u097F])(कार्यम्|dhruva|kāryam|karyam|ध्रुव|कार्य|kārya|karya|māna|mana|मान)(?![\\w\\u0900-\\u0963\\u0966-\\u097F])"
+      "match": "(?<![\\w\\u0900-\\u0963\\u0966-\\u097F])(कार्यम्|dhruva|karyam|kāryam|karya|kārya|कार्य|ध्रुव|mana|māna|मान)(?![\\w\\u0900-\\u0963\\u0966-\\u097F])"
     },
     "control": {
       "name": "keyword.control.vak",
-      "match": "(?<![\\w\\u0900-\\u0963\\u0966-\\u097F])(pratyāgaccha|pratyagaccha|प्रत्यागच्छ|प्रत्येकम्|प्रत्येकम|pratyekam|prayatnaḥ|prayatnah|anuvarta|vikalpaḥ|vikalpah|प्रयत्नः|आवृत्तिः|अनुवर्त|विकल्पः|grihana|प्रयत्न|antataḥ|antatah|आवृत्ति|āvṛttiḥ|avrttih|anyathā|anyatha|प्रतिदा|pratidā|pratida|उत्सृज|utsṛja|utsrja|kshipa|विकल्प|pakshe|gṛhāṇa|अन्ततः|virama|अन्यथा|क्षिप|kṣipa|अन्तः|antaḥ|antah|पक्षे|pakṣe|doshe|गृहाण|अन्ते|यावत्|yāvat|yavat|दोषे|doṣe|yadi|यावत|विरम|यदि)(?![\\w\\u0900-\\u0963\\u0966-\\u097F])"
+      "match": "(?<![\\w\\u0900-\\u0963\\u0966-\\u097F])(pratyagaccha|pratyāgaccha|प्रत्यागच्छ|प्रत्येकम्|pratyekam|prayatnah|prayatnaḥ|प्रत्येकम|anuvarta|vikalpah|vikalpaḥ|आवृत्तिः|प्रयत्नः|antatah|antataḥ|anyatha|anyathā|avrttih|grihana|pratida|pratidā|āvṛttiḥ|अनुवर्त|आवृत्ति|प्रतिदा|प्रयत्न|विकल्पः|gṛhāṇa|kshipa|pakshe|utsrja|utsṛja|virama|अन्ततः|अन्यथा|उत्सृज|विकल्प|antah|antaḥ|doshe|kṣipa|pakṣe|yavat|yāvat|अन्तः|अन्ते|क्षिप|गृहाण|पक्षे|यावत्|doṣe|kuru|yadi|कुरु|दोषे|यावत|विरम|यदि)(?![\\w\\u0900-\\u0963\\u0966-\\u097F])"
     },
     "import": {
       "name": "keyword.control.import.vak",
-      "match": "(?<![\\w\\u0900-\\u0963\\u0966-\\u097F])(ānaya|anaya|इति|iti|taḥ|tah|आनय|तः)(?![\\w\\u0900-\\u0963\\u0966-\\u097F])"
+      "match": "(?<![\\w\\u0900-\\u0963\\u0966-\\u097F])(anaya|ānaya|iti|tah|taḥ|आनय|इति|तः)(?![\\w\\u0900-\\u0963\\u0966-\\u097F])"
     },
     "constant": {
       "name": "constant.language.vak",
-      "match": "(?<![\\w\\u0900-\\u0963\\u0966-\\u097F])(asatya|shunya|असत्य|शून्य|śūnya|sunya|satya|सत्य)(?![\\w\\u0900-\\u0963\\u0966-\\u097F])"
+      "match": "(?<![\\w\\u0900-\\u0963\\u0966-\\u097F])(asatya|shunya|satya|sunya|śūnya|असत्य|शून्य|सत्य)(?![\\w\\u0900-\\u0963\\u0966-\\u097F])"
     },
     "operator-word": {
       "name": "keyword.operator.word.vak",
-      "match": "(?<![\\w\\u0900-\\u0963\\u0966-\\u097F])(na|ca|वा|vā|va|न|च)(?![\\w\\u0900-\\u0963\\u0966-\\u097F])"
+      "match": "(?<![\\w\\u0900-\\u0963\\u0966-\\u097F])(ca|na|va|vā|वा|च|न)(?![\\w\\u0900-\\u0963\\u0966-\\u097F])"
     },
     "print": {
       "name": "keyword.other.print.vak",
@@ -99,7 +99,7 @@
     },
     "builtin": {
       "name": "support.function.builtin.vak",
-      "match": "(?<![\\w\\u0900-\\u0963\\u0966-\\u097F])(sanchikapanktayah|khandam_chalaya|sanchikanashaya|सञ्चिकापङ्क्तयः|sanchikayojaya|sanchikapatha|sanchikalikh|sanchikasti|खण्डम्_चालय|सञ्चिकानाशय|सञ्चिकायोजय|सञ्चिकास्ति|adhikatama|devanagari|nirdeshika|yadrcchika|निर्देशिका|सञ्चिकालिख|aksharani|nyunatama|prachalah|viparyaya|कुञ्जिकाः|यादृच्छिक|सञ्चिकापठ|dirghata|nishkasa|अक्षराणि|देवनागरी|प्राचलाः|मूल्यानि|kunjika|mulyani|prakara|samyoja|sanketa|sankhya|vibhaja|दीर्घता|निष्कास|न्यूनतम|विपर्यय|parasa|shabda|yojaya|अधिकतम|प्रकार|संकेतः|संख्या|amsha|dosha|krama|patha|purna|suchi|varna|अस्ति|पूर्ण|वर्णः|संयोज|asti|kala|likh|mula|yoga|अंशः|क्रम|परास|योजय|विभज|शब्द|सूची|काल|दोष|मूल|योग|लिख|पठ)(?![\\w\\u0900-\\u0963\\u0966-\\u097F])(?=\\s*\\()"
+      "match": "(?<![\\w\\u0900-\\u0963\\u0966-\\u097F])(sanchikapanktayah|khandam_chalaya|sanchikanashaya|सञ्चिकापङ्क्तयः|pratichchhedah|sanchikayojaya|dakshinasarah|sanchikapatha|sanchikalikh|sanchikasti|खण्डम्_चालय|प्रतिच्छेदः|सञ्चिकानाशय|सञ्चिकायोजय|सञ्चिकास्ति|adhikatama|devanagari|nirdeshika|yadrcchika|दक्षिणसारः|निर्देशिका|सञ्चिकालिख|aksharani|doshalikh|lakshanam|nyunatama|prachalah|vamasarah|viparyaya|कुञ्जिकाः|यादृच्छिक|सञ्चिकापठ|dirghata|nishkasa|samyogah|अक्षराणि|देवनागरी|प्राचलाः|मूल्यानि|kunjika|mulyani|prakara|purakah|samyoja|sanketa|sankhya|vibhaja|viyogah|दीर्घता|निष्कास|न्यूनतम|प्रयुज्|लक्षणम्|वामसारः|विपर्यय|parasa|prayuj|shabda|yojaya|अधिकतम|दोषलिख|प्रकार|वियोगः|संकेतः|संख्या|संयोगः|amsha|dosha|krama|patha|purna|suchi|varna|अस्ति|पूरकः|पूर्ण|वर्णः|संयोज|asti|kala|likh|mula|yoga|अंशः|क्रम|परास|योजय|विभज|शब्द|सूची|काल|दोष|मूल|योग|लिख|पठ)(?![\\w\\u0900-\\u0963\\u0966-\\u097F])(?=\\s*\\()"
     },
     "number": {
       "name": "constant.numeric.vak",

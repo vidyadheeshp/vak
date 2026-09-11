@@ -12,6 +12,13 @@ import pathlib
 import re
 import sys
 
+# Devanagari on a Windows console: the default codepage is cp1252, which
+# cannot encode it, so the first line of output would crash the script.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+import sys
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
@@ -550,7 +557,11 @@ them.</p>
 and this call leaves it unexpressed.</p>
 {code('''कार्यम् छानय(अपादानम् सूची संग्रहः, करणम् किमपि परीक्षा = शून्य) : सूची {
     यदि (परीक्षा == शून्य) { प्रत्यागच्छ संग्रहः। }
-    ...
+    सूची फलम् = []।
+    प्रत्येकम् (अङ्गम् अन्तः संग्रहः) {
+        यदि (परीक्षा(अङ्गम्)) { योजय(फलम्, अङ्गम्)। }
+    }
+    प्रत्यागच्छ फलम्।
 }
 
 छानय(अपादानम्: अङ्काः)।              # करणम् अनुक्तम् — everything comes back
@@ -561,7 +572,9 @@ arguments must insist. A call names the roles it supplies and says nothing about
 the rest:</p>
 {code('''कार्यम् लिखतु(कर्ता शब्दः लेखकः,
               करणम् शब्दः साधनम् = "लेखन्या",
-              कर्म शब्दः ग्रन्थः) : शब्दः { ... }
+              कर्म शब्दः ग्रन्थः) : शब्दः {
+    प्रत्यागच्छ लेखकः + " '" + ग्रन्थः + "' " + साधनम् + " लिखति"।
+}
 
 लिखतु(कर्ता: "कालिदासः", कर्म: "मेघदूतम्")।   # साधनम् अनुक्तम्''',
       "The करणम् sits in the middle and is still the one left out.")}
@@ -1246,6 +1259,11 @@ for sample in SAMPLES:
         print(f"BROKEN SAMPLE: {err}")
         print("    " + sample.splitlines()[0])
 print(f"samples: {len(SAMPLES)} checked, {broken} broken")
+# This check used to print and carry on, and two samples on the page did not
+# parse for four days because nobody reads a build's output when it says
+# "wrote". A page that teaches with code that fails is not written at all.
+if broken:
+    raise SystemExit(f"{broken} manual sample(s) do not parse — manual.html not written")
 
 out = ROOT / "docs" / "manual.html"
 out.parent.mkdir(exist_ok=True)

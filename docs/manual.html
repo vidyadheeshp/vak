@@ -760,7 +760,11 @@ them.</p>
 and this call leaves it unexpressed.</p>
 <figure class="code"><pre><code><b class="k" data-r="karyam">कार्यम्</b> छानय(<b class="ka">अपादानम्</b> <b class="t" data-r="suchi">सूची</b> संग्रहः, <b class="ka">करणम्</b> <b class="t" data-r="kimapi">किमपि</b> परीक्षा = <b class="k" data-r="shunya">शून्य</b>) : <b class="t" data-r="suchi">सूची</b> {
     <b class="k" data-r="yadi">यदि</b> (परीक्षा == <b class="k" data-r="shunya">शून्य</b>) { <b class="k" data-r="pratyagaccha">प्रत्यागच्छ</b> संग्रहः। }
-    ...
+    <b class="t" data-r="suchi">सूची</b> फलम् = []।
+    <b class="k" data-r="pratyekam">प्रत्येकम्</b> (अङ्गम् <b class="k" data-r="antah">अन्तः</b> संग्रहः) {
+        <b class="k" data-r="yadi">यदि</b> (परीक्षा(अङ्गम्)) { योजय(फलम्, अङ्गम्)। }
+    }
+    <b class="k" data-r="pratyagaccha">प्रत्यागच्छ</b> फलम्।
 }
 
 छानय(<b class="ka">अपादानम्</b>: अङ्काः)।              <i class="c"># करणम् अनुक्तम् — everything comes back</i>
@@ -771,7 +775,9 @@ arguments must insist. A call names the roles it supplies and says nothing about
 the rest:</p>
 <figure class="code"><pre><code><b class="k" data-r="karyam">कार्यम्</b> लिखतु(<b class="ka">कर्ता</b> <b class="t" data-r="shabdah">शब्दः</b> लेखकः,
               <b class="ka">करणम्</b> <b class="t" data-r="shabdah">शब्दः</b> साधनम् = <i class="s">&quot;लेखन्या&quot;</i>,
-              <b class="ka">कर्म</b> <b class="t" data-r="shabdah">शब्दः</b> ग्रन्थः) : <b class="t" data-r="shabdah">शब्दः</b> { ... }
+              <b class="ka">कर्म</b> <b class="t" data-r="shabdah">शब्दः</b> ग्रन्थः) : <b class="t" data-r="shabdah">शब्दः</b> {
+    <b class="k" data-r="pratyagaccha">प्रत्यागच्छ</b> लेखकः + <i class="s">&quot; &#x27;&quot;</i> + ग्रन्थः + <i class="s">&quot;&#x27; &quot;</i> + साधनम् + <i class="s">&quot; लिखति&quot;</i>।
+}
 
 लिखतु(<b class="ka">कर्ता</b>: <i class="s">&quot;कालिदासः&quot;</i>, <b class="ka">कर्म</b>: <i class="s">&quot;मेघदूतम्&quot;</i>)।   <i class="c"># साधनम् अनुक्तम्</i></code></pre><figcaption>The करणम् sits in the middle and is still the one left out.</figcaption></figure>
 <p>A role that is neither supplied nor defaulted is an error, and the message

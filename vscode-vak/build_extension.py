@@ -23,7 +23,11 @@ from vaak.tokens import KARAKA_ORDER, KEYWORDS, TYPE_NAMES      # noqa: E402
 
 def alt(words) -> str:
     """A regex alternation, longest first so प्रत्यागच्छ wins over प्रति."""
-    return "|".join(sorted((w for w in words), key=len, reverse=True))
+    # Longest first, then by the word itself. Length alone left ties in the order
+    # a set happened to yield them, which Python's hash randomisation changes
+    # from one process to the next — so the grammar reshuffled on every
+    # regeneration and could never be checked against a committed copy.
+    return "|".join(sorted(set(words), key=lambda w: (-len(w), w)))
 
 
 # Devanagari has no case, and \b does not do what you want, so word boundaries
@@ -37,7 +41,7 @@ IDENT = r"\w\u0900-\u0963\u0966-\u097F"
 EDGE_L = f"(?<![{IDENT}])"
 EDGE_R = f"(?![{IDENT}])"
 
-CONTROL = {"IF", "ELSE", "WHILE", "FOR", "IN", "REPEAT", "BREAK", "CONTINUE",
+CONTROL = {"IF", "ELSE", "WHILE", "DO", "FOR", "IN", "REPEAT", "BREAK", "CONTINUE",
            "RETURN", "SWITCH", "CASE", "TRY", "CATCH", "FINALLY", "THROW"}
 DECL = {"LET", "CONST", "FUNC"}
 IMPORT = {"IMPORT", "AS", "FROM"}
@@ -591,12 +595,23 @@ CHECKS = [
     ("danda", "मुद्रय क।", "।"),
     ("builtin", "दीर्घता(अ)", "दीर्घता"),
     ("operator", "क += १।", "+="),
+    ("control", "कुरु { क = क + १। } यावत् (क < ५)।", "कुरु"),
+    ("control", "kuru { k = k + 1; } yavat (k < 5);", "kuru"),
+    ("builtin", "प्रयुज्(क, [१])", "प्रयुज्"),
 ]
 
 
 def verify() -> int:
     import re
     bad = 0
+    # A keyword kind that belongs to no rule is not highlighted at all, and
+    # nothing complains: कुरु shipped in 0.12.0 as plain text in the editor,
+    # because DO was a new kind and the categories above are listed by hand.
+    highlighted = CONTROL | DECL | IMPORT | CONSTANTS | OPERATOR_WORDS | {"PRINT"}
+    for kind in sorted(set(by_kind) - highlighted):
+        bad += 1
+        print(f"  GRAMMAR FAIL keyword kind {kind} ({', '.join(by_kind[kind])}) "
+              f"is in no highlighting rule")
     for rule, source, expected in CHECKS:
         m = re.search(grammar["repository"][rule]["match"], source)
         got = m.group(0) if m else None
@@ -641,4 +656,10 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    # Devanagari on a Windows console: the default codepage is cp1252, which
+    # cannot encode it, so the first line of output crashed the script. Here
+    # rather than at import, because the test suite imports this module.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
     main()
