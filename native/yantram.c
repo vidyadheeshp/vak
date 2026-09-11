@@ -1281,13 +1281,48 @@ static void dhruvam_nirmaya(Dhruva *d, Mulyam m) {
         Mulyam prachalah = kosha_mulyam_at(m, "प्राचलाः");
         Suchi *ps = (prachalah.prakara == P_SUCHI) ? as_suchi(prachalah) : NULL;
         int ganana = ps ? ps->dirghata : 0;
-        Prachala *arr = (Prachala *)malloc(sizeof(Prachala) * (size_t)(ganana ? ganana : 1));
+        /* calloc, not malloc: a field this loop forgets must read as absent,
+           never as whatever the allocator last left there.  मूलमस्ति was once
+           exactly such a field — defaults worked ahead of time and in all
+           three Python-hosted engines, and here read heap garbage, so the
+           playground and the self-hosted binary saw a default on the wrong
+           parameter or on none. */
+        Prachala *arr = (Prachala *)calloc((size_t)(ganana ? ganana : 1), sizeof(Prachala));
         for (int i = 0; i < ganana; i++) {
             Mulyam p = ps->angani[i];
             Mulyam karakam = kosha_mulyam_at(p, "कारकम्");
             arr[i].nama = shabdat_nakala(kosha_mulyam_at(p, "नाम"));
             arr[i].prakara = shabdat_nakala(kosha_mulyam_at(p, "प्रकारः"));
             arr[i].karakam = (karakam.prakara == P_SHABDA) ? shabdat_nakala(karakam) : NULL;
+
+            /* मूलमूल्यम् — the same five fields vaak/native.py writes for code
+               compiled ahead of time, read here from the कोशः instead. */
+            Mulyam asti = kosha_mulyam_at(p, "मूलमस्ति");
+            arr[i].mulam_asti = asti.prakara == P_SATYATA && asti.as.satyata;
+            arr[i].mula_prakara = K_SHUNYAM;
+            if (arr[i].mulam_asti) {
+                Mulyam mulam = kosha_mulyam_at(p, "मूलमूल्यम्");
+                switch (mulam.prakara) {
+                case P_PURNANKA:
+                    arr[i].mula_prakara = K_PURNANKA;
+                    arr[i].mula_purnanka = mulam.as.purnanka;
+                    break;
+                case P_DASHAMSHA:
+                    arr[i].mula_prakara = K_DASHAMSHA;
+                    arr[i].mula_dashamsha = mulam.as.dashamsha;
+                    break;
+                case P_SATYATA:
+                    arr[i].mula_prakara = K_SATYATA;
+                    arr[i].mula_purnanka = mulam.as.satyata ? 1 : 0;
+                    break;
+                case P_SHABDA:
+                    arr[i].mula_prakara = K_SHABDA;
+                    arr[i].mula_shabda = shabdat_nakala(mulam);
+                    break;
+                default:
+                    break;              /* शून्य, already K_SHUNYAM */
+                }
+            }
         }
         SankalitaKaryam *fn = (SankalitaKaryam *)malloc(sizeof(SankalitaKaryam));
         fn->nama = shabdat_nakala(kosha_mulyam_at(m, "नाम"));

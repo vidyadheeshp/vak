@@ -1550,8 +1550,9 @@ Sanskrit-Vak/
 │   ├── build_manual.py        #   generated from the tables in vak/
 │   ├── reference.py           #   library, diagnostics and flags, read from source
 │   ├── playground.html        # the toolchain in WebAssembly, runs in a browser
-│   ├── build_playground.py    #   emcc + the standard library, inlined
-│   │                          #   rebuild: emcc …, then --record
+│   ├── build_playground.py    #   the engine + the standard library, inlined
+│   ├── build_wasm.py          #   builds that engine with Emscripten
+│   ├── engine.py              #   what the engine was built from, and how
 │   ├── story.html             # कथा — how the language came to be
 │   └── build_story.py         #   line counts and timings read from the repo
 ├── examples/                  # 15 runnable .vak programs + 1 importable module

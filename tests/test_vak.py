@@ -2932,84 +2932,234 @@ class TestWhatTheWheelDoesNotShip(unittest.TestCase):
 
 
 class TestThePlaygroundEngineIsCurrent(unittest.TestCase):
-    """क्रीडाक्षेत्रस्य यन्त्रम् — the one generated artifact nothing checked.
+    """क्रीडाक्षेत्रस्य यन्त्रम् — the engine a visitor actually runs.
 
-    The playground runs Vāk in the browser from a single WebAssembly build of
-    the C runtime. Every other generated page is regenerated in CI and the
-    build fails if the committed copy differs — but not this one, because
-    rebuilding it needs Emscripten, which CI does not have. So it was left out
-    of the gate, and drifted.
+    The playground runs Vāk in the browser from one WebAssembly build of the
+    self-hosted toolchain. _wasm/ is gitignored, so the engine is committed
+    only inlined into docs/playground.html — and that page now carries the
+    record of what its engine was built from. These tests read the page, so
+    they work on any clone and in CI, where _wasm/ does not exist.
 
-    By the time anyone noticed, the embedded engine was twelve days old and
-    predated default arguments, the bit operations, दोषलिख, प्रयुज्, लक्षणम्
-    and कुरु. The page documented six features it could not run: pasting the
-    लक्षणम्/प्रयुज् sample gave `')' अपेक्षितम् — किन्तु प्राप्तम् '='`, the
-    old parser meeting a default argument it had never heard of.
-
-    The check reads the manifest rather than importing the generator, because
-    importing it would rebuild the page — and it compares hashes rather than
-    timestamps, since a fresh clone gives every file the same mtime and the
-    question would become unanswerable exactly where it matters most.
+    The engine once fell twelve days behind: it predated default arguments,
+    the bit operations, दोषलिख, प्रयुज्, लक्षणम् and कुरु, and the page's own
+    samples failed with `')' अपेक्षितम् — किन्तु प्राप्तम् '='`. The first
+    check written for it hashed only native/*.c, which is not even all of the
+    engine — the Vāk-written toolchain is compiled into it too — and it lived
+    in a gitignored file, so it skipped everywhere but one machine.
     """
 
-    MANIFEST = ROOT / "_wasm" / "sources.sha256"
+    PAGE = ROOT / "docs" / "playground.html"
 
-    def fingerprint(self) -> dict[str, str]:
-        import hashlib
-        out = {}
-        for pattern in ("native/*.c", "native/*.h"):
-            for path in sorted(ROOT.glob(pattern)):
-                out[path.relative_to(ROOT).as_posix()] = hashlib.sha256(
-                    path.read_bytes()).hexdigest()
-        return out
+    def engine_module(self):
+        sys.path.insert(0, str(ROOT / "docs"))
+        import importlib
+        return importlib.import_module("engine")      # side-effect free
 
-    def recorded(self) -> dict[str, str] | None:
-        if not self.MANIFEST.is_file():
-            return None
-        out = {}
-        for line in self.MANIFEST.read_text(encoding="utf-8").splitlines():
-            if line.strip() and not line.startswith("#"):
-                digest, _, name = line.partition("  ")
-                out[name.strip()] = digest.strip()
-        return out
+    def test_the_page_says_what_its_engine_was_built_from(self):
+        engine = self.engine_module()
+        prints = engine.fingerprint_in_page(self.PAGE.read_text(encoding="utf-8"))
+        self.assertIsNotNone(
+            prints, "docs/playground.html does not record what its engine was "
+                    "built from — build it with docs/build_wasm.py")
+        self.assertIn("generated", prints)
 
-    def test_the_engine_matches_the_runtime_it_was_built_from(self):
-        recorded = self.recorded()
-        if recorded is None:
-            self.skipTest(
-                "_wasm/vak.js has no source manifest, so what it was built "
-                "from is unknown. Rebuild it with emcc and run "
-                "`python docs/build_playground.py --record`; after that this "
-                "test becomes a real gate rather than a skip.")
-        current = self.fingerprint()
-        self.assertTrue(current, "no C runtime found to fingerprint")
-        moved = sorted(name for name, digest in current.items()
-                       if recorded.get(name) != digest)
-        gone = sorted(name for name in recorded if name not in current)
-        self.assertEqual(
-            (moved, gone), ([], []),
-            "the playground engine is older than the runtime it embeds — "
-            "rebuild with emcc, then `python docs/build_playground.py --record`")
+    def test_the_engine_is_not_older_than_the_language(self):
+        """The fingerprint is of the generated C, which is a deterministic
+        function of the Vāk-written toolchain, the compiler, the C emitter and
+        the runtime together — so a change to any of them shows up here, and
+        a change to none of them cannot."""
+        engine = self.engine_module()
+        recorded = engine.fingerprint_in_page(self.PAGE.read_text(encoding="utf-8"))
+        moved = engine.drift(recorded, engine.fingerprint())
+        self.assertEqual(moved, [], "\n".join(
+            ["the playground's engine is older than the language it documents — "
+             "run `python docs/build_wasm.py` then `python docs/build_playground.py`"]
+            + moved))
 
-    def test_the_generator_still_knows_how_to_check_itself(self):
-        """The gate lives in docs/build_playground.py. Read, not imported —
-        importing it writes a 500 KB page as a side effect."""
-        source = (ROOT / "docs" / "build_playground.py").read_text(encoding="utf-8")
-        for needed in ("def wasm_drift", "def record_fingerprint",
-                       "sources.sha256", "--record"):
-            with self.subTest(needs=needed):
-                self.assertIn(needed, source)
+    def test_the_fingerprint_is_deterministic(self):
+        """If generating the C twice gave different text, every build would
+        look stale and the check would teach people to ignore it."""
+        engine = self.engine_module()
+        self.assertEqual(engine.generate_engine_c(), engine.generate_engine_c())
+
+    def test_a_toolchain_change_moves_the_fingerprint(self):
+        """The failure the first version of this check had: it could not see
+        the Vāk-written toolchain at all."""
+        engine = self.engine_module()
+        before = engine.fingerprint()
+        after = engine.fingerprint(engine.generate_engine_c() + "\n/* a parser change */")
+        self.assertNotEqual(before["generated"], after["generated"])
+        self.assertTrue(engine.drift(before, after))
 
     def test_the_documented_samples_only_use_what_the_page_can_run(self):
-        """Whatever engine is embedded, the samples shipped beside it must at
-        least be valid Vāk — that much is checkable here without a browser."""
-        page = (ROOT / "docs" / "playground.html").read_text(encoding="utf-8")
+        page = self.PAGE.read_text(encoding="utf-8")
         found = re.search(r"var SAMPLES = (\{.*?\});\n", page, re.S)
         self.assertIsNotNone(found, "no SAMPLES in the playground")
         for name, source in json.loads(found.group(1)).items():
             with self.subTest(sample=name):
                 self.assertEqual(check_source(source).errors, [],
                                  f"the {name} sample does not analyse cleanly")
+
+
+@unittest.skipIf(shutil.which("node") is None, "node not found — cannot run the page's engine")
+class TestThePlaygroundRunsItsOwnSamples(unittest.TestCase):
+    """The page's engine, taken out of the page and run under Node exactly as
+    the page runs it — a fresh module per run, the standard library written
+    into its filesystem, callMain on a path — and held to the Python engine.
+
+    Hashing inputs says whether the engine is current. Only running it says
+    whether it works: the rebuild that brought it up to date also exposed a
+    runtime fault that no hash could have seen.
+    """
+
+    HARNESS = r"""
+const path = require("path"), fs = require("fs");
+const VakModule = require(path.resolve(process.argv[2]));
+const LIBRARY = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
+function feeder(text) {
+  const bytes = new TextEncoder().encode(text || ""); let i = 0;
+  return () => (i < bytes.length ? bytes[i++] : null);
+}
+(async () => {
+  const cases = JSON.parse(fs.readFileSync(0, "utf8")), results = [];
+  for (const c of cases) {
+    const out = [], err = []; let threw = null;
+    let given = c.stdin || ""; if (given && !/\n$/.test(given)) given += "\n";
+    const mod = await VakModule({ noInitialRun: true, stdin: feeder(given),
+      print: (t) => out.push(t), printErr: (t) => err.push(t) });
+    for (const p of Object.keys(LIBRARY)) {
+      try { mod.FS.mkdirTree(p.slice(0, p.lastIndexOf("/"))); } catch (e) {}
+      mod.FS.writeFile(p, LIBRARY[p]);
+    }
+    mod.FS.writeFile("/program.vak", c.source);
+    try { mod.callMain(["/program.vak"]); } catch (e) { threw = String(e && e.message || e); }
+    results.push({ out: out.join("\n"), err: err.join("\n"), threw });
+  }
+  process.stdout.write(JSON.stringify(results));
+})();
+"""
+
+    #: Samples that read the input pane get the same line in both engines.
+    STDIN = {"प्रदानम्": "राम\n२५\n"}
+
+    #: Beyond the samples: every feature added after the engine last fell
+    #: behind, and the path the runtime fault was on.
+    EXTRA = {
+        "कुरु": "मान क = ०।\nकुरु { क = क + १। यदि (क % २ == ०) { अनुवर्त। } } यावत् (क < ५)।\nमुद्रय क।",
+        "default in the middle":
+            'कार्यम् ल(कर्ता शब्दः क, करणम् शब्दः स = "ल", कर्म शब्दः ग) : शब्दः '
+            '{ प्रत्यागच्छ क + स + ग। }\nमुद्रय ल(कर्ता: "अ", कर्म: "ब")।',
+        "लक्षणम् sees the default on the right parameter":
+            "कार्यम् छ(अपादानम् सूची स, करणम् किमपि प = शून्य) : सूची { प्रत्यागच्छ स। }\n"
+            "मुद्रय लक्षणम्(छ).प्राचलाः[०].मूलमस्ति, लक्षणम्(छ).प्राचलाः[१].मूलमस्ति।",
+        "a string default": 'कार्यम् क(ब = "स्वागतम्") { प्रत्यागच्छ ब। }\nमुद्रय क()।',
+        "प्रयुज्": "कार्यम् य(अ, ब, स) { प्रत्यागच्छ अ + ब + स। }\nमुद्रय प्रयुज्(य, [१, २, ३])।",
+        "bit operations": "मुद्रय प्रतिच्छेदः(१२, १०), पूरकः(१२), वामसारः(१, ४)।",
+        "romanised built-ins": "मुद्रय dirghata([१, २, ३]), purakah(१२)।",
+    }
+
+    @classmethod
+    def setUpClass(cls):
+        cls.dir = Path(tempfile.mkdtemp(prefix="vak-page-engine-"))
+        page = (ROOT / "docs" / "playground.html").read_text(encoding="utf-8")
+        scripts = re.findall(r"<script>(.*?)</script>", page, re.S)
+        engine = next((s for s in scripts if "var VakModule=" in s), None)
+        if engine is None:
+            raise unittest.SkipTest("no engine inlined in docs/playground.html")
+        (cls.dir / "engine.js").write_text(engine, encoding="utf-8")
+        (cls.dir / "harness.js").write_text(cls.HARNESS, encoding="utf-8")
+        (cls.dir / "library.json").write_text(
+            re.search(r"var LIBRARY = (\{.*?\});\n", page, re.S).group(1), encoding="utf-8")
+        samples = json.loads(re.search(r"var SAMPLES = (\{.*?\});\n", page, re.S).group(1))
+        cls.cases = [(f"sample {k}", v, cls.STDIN.get(k, "")) for k, v in samples.items()]
+        cls.cases += [(k, v, "") for k, v in cls.EXTRA.items()]
+        proc = subprocess.run(
+            ["node", str(cls.dir / "harness.js"), str(cls.dir / "engine.js"),
+             str(cls.dir / "library.json")],
+            input=json.dumps([{"source": s, "stdin": i} for _n, s, i in cls.cases],
+                             ensure_ascii=False),
+            capture_output=True, text=True, encoding="utf-8", timeout=600)
+        if proc.returncode != 0:
+            raise AssertionError("the page's engine did not run:\n" + proc.stderr[:2000])
+        cls.results = json.loads(proc.stdout)
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.dir, ignore_errors=True)
+
+    def python(self, source: str, given: str) -> str:
+        buf = io.StringIO()
+        saved, sys.stdin = sys.stdin, io.StringIO(given)
+        try:
+            with redirect_stdout(buf):
+                run_source(source, "<प>")
+        finally:
+            sys.stdin = saved
+        return buf.getvalue().rstrip("\n")
+
+    def test_every_case_matches_the_python_engine(self):
+        for (name, source, given), result in zip(self.cases, self.results):
+            with self.subTest(case=name):
+                self.assertIsNone(result["threw"], result["threw"])
+                self.assertEqual(result["out"].rstrip("\n"), self.python(source, given),
+                                 f"stderr: {result['err'][:300]}")
+
+
+@unittest.skipIf(GCC is None, "C-संकलकः न प्राप्तः / no C compiler available")
+class TestTheSelfHostedToolchainOnTheCRuntime(unittest.TestCase):
+    """स्वयंसिद्धिः देशीयरूपेण — the combination no test used to run.
+
+    Vāk's engines were tested as the tree-walker, the Python VM, the Vāk front
+    end on the Python VM, the Vāk VM on Python, and Python-compiled code on the
+    C runtime. Not as the Vāk-written compiler running *on* the C runtime,
+    compiling a program at run time and handing it to the C VM — which is what
+    the playground is, and what the Linux, macOS and Windows downloads on a
+    GitHub release are.
+
+    That hand-over converts a compiled कार्यम् from कोशाः into C structs, and it
+    never read the five default-argument fields. They were malloc'd and left
+    as heap garbage, so in 0.12.0's release binaries and in the rebuilt
+    playground a default landed on the wrong parameter, or on none.
+    """
+
+    PROGRAMS = {
+        "default in the middle":
+            ('कार्यम् ल(कर्ता शब्दः क, करणम् शब्दः स = "ल", कर्म शब्दः ग) : शब्दः '
+             '{ प्रत्यागच्छ क + स + ग। }\nमुद्रय ल(कर्ता: "अ", कर्म: "ब")।'),
+        "every literal kind":
+            ('कार्यम् क(अ = ५, ब = २.५, स = "क", द = सत्य, य = शून्य) '
+             "{ प्रत्यागच्छ [अ, ब, स, द, य]। }\nमुद्रय क()।"),
+        "लक्षणम् reports each default where it is":
+            ("कार्यम् छ(अपादानम् सूची स, करणम् किमपि प = शून्य) : सूची { प्रत्यागच्छ स। }\n"
+             "मुद्रय लक्षणम्(छ).प्राचलाः[०].मूलमस्ति, लक्षणम्(छ).प्राचलाः[१].मूलमस्ति।"),
+        "प्रयुज् by role, default unstated":
+            ('कार्यम् ल(कर्ता शब्दः क, करणम् शब्दः स = "ल", कर्म शब्दः ग) : शब्दः '
+             '{ प्रत्यागच्छ क + स + ग। }\n'
+             'मुद्रय प्रयुज्(ल, {"कर्ता": "अ", "कर्म": "ब"})।'),
+        "कुरु": "मान क = ०।\nकुरु { क = क + १। } यावत् (असत्य)।\nमुद्रय क।",
+    }
+
+    @classmethod
+    def setUpClass(cls):
+        cls.dir = Path(tempfile.mkdtemp(prefix="vak-selfhosted-native-"))
+        toolchain = ROOT / "स्वयंसिद्धिः" / "वाक्.vak"
+        cls.exe = build_executable(toolchain.read_text(encoding="utf-8"), toolchain, cls.dir)
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.dir, ignore_errors=True)
+
+    def test_it_agrees_with_the_python_engine(self):
+        for name, source in self.PROGRAMS.items():
+            with self.subTest(program=name):
+                program = self.dir / f"p{abs(hash(name))}.vak"
+                program.write_text(source, encoding="utf-8")
+                proc = subprocess.run([str(self.exe.resolve()), str(program)],
+                                      capture_output=True, timeout=120)
+                printed = proc.stdout.decode("utf-8", "replace").replace("\r\n", "\n").strip()
+                self.assertEqual(proc.returncode, 0,
+                                 proc.stderr.decode("utf-8", "replace")[:400] + printed[:400])
+                self.assertEqual(printed, output(source))
 
 
 class TestTheStoryDatesWhatItCan(unittest.TestCase):
