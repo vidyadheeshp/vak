@@ -334,6 +334,19 @@ footer a:hover { color:var(--gold); }
 </figure>
   <p>Together they are what a bridge from a Sanskrit parser would stand on: a
   kāraka analysis is exactly the shape <code>प्रयुज्</code> accepts.</p>
+  <h3>कारकालेखः · the roles, drawn — live</h3>
+  <p>A kāraka is a relation, and a relation is easier to see than to read. The
+  <a href="playground.html#code=IyDgpIXgpKjgpYHgpJXgpY3gpKTgpK7gpY0g4KSV4KS-4KSw4KSV4KSu4KWNIOKAlCDgpJXgpL7gpLDgpJXgpK7gpY0g4KSF4KS44KWN4KSk4KS_LCDgpIXgpLjgpY3gpK7gpL_gpKjgpY0g4KSG4KS54KWN4KS14KS-4KSo4KWHIOCkqCDgpIngpJXgpY3gpKTgpK7gpY3gpaQKIyBUaGUg4KSV4KSw4KSj4KSu4KWNIHNpdHMgaW4gdGhlIG1pZGRsZSBhbmQgaXMgc3RpbGwgdGhlIG9uZSBsZWZ0IG91dC4K4KSV4KS-4KSw4KWN4KSv4KSu4KWNIOCksuCkv-CkluCkpOClgSjgpJXgpLDgpY3gpKTgpL4g4KS24KSs4KWN4KSm4KSDIOCksuClh-CkluCkleCkgywKICAgICAgICAgICAgICDgpJXgpLDgpKPgpK7gpY0g4KS24KSs4KWN4KSm4KSDIOCkuOCkvuCkp-CkqOCkruCljSA9ICLgpLLgpYfgpJbgpKjgpY3gpK_gpL4iLAogICAgICAgICAgICAgIOCkleCksOCljeCkriDgpLbgpKzgpY3gpKbgpIMg4KSX4KWN4KSw4KSo4KWN4KSl4KSDKSA6IOCktuCkrOCljeCkpuCkgyB7CiAgICDgpKrgpY3gpLDgpKTgpY3gpK_gpL7gpJfgpJrgpY3gpJsg4KSy4KWH4KSW4KSV4KSDICsgIiAnIiArIOCkl-CljeCksOCkqOCljeCkpeCkgyArICInICIgKyDgpLjgpL7gpKfgpKjgpK7gpY0gKyAiIOCksuCkv-CkluCkpOCkvyLgpaQKfQoK4KSu4KWB4KSm4KWN4KSw4KSvIOCksuCkv-CkluCkpOClgSjgpJXgpLDgpY3gpKTgpL46ICLgpJXgpL7gpLLgpL_gpKbgpL7gpLjgpIMiLCDgpJXgpLDgpY3gpK46ICLgpK7gpYfgpJjgpKbgpYLgpKTgpK7gpY0iKeClpArgpK7gpYHgpKbgpY3gpLDgpK8g4KSy4KS_4KSW4KSk4KWBKOCkleCksOCljeCkrjogIuCksOCkmOClgeCkteCkguCktuCkruCljSIsIOCkleCksOCko-CkruCljTogIuCkpOClguCksuCkv-CkleCkr-CkviIsIOCkleCksOCljeCkpOCkvjogIuCkleCkvuCksuCkv-CkpuCkvuCkuOCkgyIp4KWk&amp;graph">playground draws one as you type</a>: each
+  <code>कार्यम्</code> as an action with its role slots around it, each call as a
+  sentence binding participants into those slots, and the program as a map of
+  which action depends on which. No button, no run — the picture follows the
+  keystrokes.</p>
+  <p>It is the teaching view of the type system. A dashed slot is a role that may
+  go unstated; a solid arrow labelled <b>नाम्ना</b> is an argument that named its
+  role, <b>स्थानेन</b> one that took the next free slot, <b>अनुक्तम्</b> a role
+  left unsaid and filled from its default, <b>न्यूनम्</b> one simply missing. And
+  it is not a second opinion: the graph binds arguments to slots with the rule the
+  compiler uses, so what the picture shows is what will run.</p>
 </section>
 
 <section id="भाषा">
@@ -437,9 +450,9 @@ pratyekam (n antah [1, 2, 3, 4]) { mudraya n, <i class="s">&quot;-&gt;&quot;</i>
   <div class="facts">
     <div><b>5</b><span>engines, one output</span></div>
     <div><b>48</b><span>built-in functions</span></div>
-    <div><b>336</b><span>tests</span></div>
+    <div><b>351</b><span>tests</span></div>
     <div><b>6</b><span>kāraka roles</span></div>
-    <div><b>159 KB</b><span>gzipped — the whole toolchain, in your browser</span></div>
+    <div><b>173 KB</b><span>gzipped — the whole toolchain, in your browser</span></div>
   </div>
   <div class="note">
     <p><b>The page you are reading links to a real compiler.</b> The
@@ -461,7 +474,7 @@ pratyekam (n antah [1, 2, 3, 4]) { mudraya n, <i class="s">&quot;-&gt;&quot;</i>
       <h3>In your browser</h3>
       <p>Nothing to install at all. The
       <a href="playground.html">playground</a> is this toolchain compiled to
-      WebAssembly — 159 KB gzipped. Your program never leaves
+      WebAssembly — 173 KB gzipped. Your program never leaves
       the page.</p>
     </div>
     <div class="way">

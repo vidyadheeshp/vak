@@ -590,7 +590,36 @@ position would tell the reader nothing about which role is missing.</p>
   <p>Softer observations come back as सूचनाः rather than errors: a
   <code>करणम्</code> that is not a means, an <code>अपादानम्</code> that is not a
   collection, a function with a <code>कर्म</code> that returns nothing.</p>
-</div>"""))
+</div>
+<h3>कारकालेखः — seeing the roles</h3>
+<p>A kāraka is a relation, and relations are easier to see than to read. Vāk
+will draw them: every <code>कार्यम्</code> as an action with its role slots
+around it, every call as a sentence binding participants into those slots, and
+the whole program as a map of which action depends on which.</p>
+<p>In the <a href="playground.html#graph">playground</a> the
+<b>आलेखः</b> tab draws it as you type — no button, no run. Three views answer
+three questions:</p>
+<div class="scroll"><table>
+  <thead><tr><th>दृश्यम्</th><th>what it shows</th></tr></thead>
+  <tbody>
+    <tr><td>क्रियाः</td><td>each action and the roles it declares — a dashed
+        slot is one that may go unstated</td></tr>
+    <tr><td>वाक्यानि</td><td>each call: which argument filled which role, and
+        how — <b>नाम्ना</b> by name, <b>स्थानेन</b> by position,
+        <b>अनुक्तम्</b> left unsaid, <b>न्यूनम्</b> missing</td></tr>
+    <tr><td>सम्बन्धः</td><td>who calls whom, and which actions are handed to
+        another as one of its roles</td></tr>
+  </tbody>
+</table></div>
+<p>The same graph is available from the command line as JSON, from Python and
+from the Vāk-written toolchain alike:</p>
+{shell('''python -m vaak --graph program.vak          # the Python toolchain
+python -m vaak स्वयंसिद्धिः/वाक्.vak -- --आलेखः program.vak   # the Vāk one''')}
+<p>It is not a second analysis. The graph binds arguments to slots with the same
+rule the compiler uses, so a slot the picture marks <b>न्यूनम्</b> is a call the
+compiler refuses, and a slot it marks <b>अनुक्तम्</b> is one the compiler fills
+from the default. What you see is what will run.</p>
+"""))
 
 # ---------------------------------------------------------------- ९ · analyser
 parts.append(section("vishleshakah", "अर्थविश्लेषकः", "The semantic analyser", f"""

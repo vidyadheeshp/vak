@@ -117,6 +117,23 @@ def list_builtins() -> None:
         print(f"  {dev:<12} {iast:<12} {doc}")
 
 
+def print_graph(path: Path) -> int:
+    """कारकालेखः — the kāraka graph as JSON: the actions, their role slots, and
+    how every call fills them. Built for programs that would not run, too,
+    because the drawing of *why* a call is wrong is the point of it."""
+    import json
+    from .graph import graph_of_source
+
+    source = path.read_text(encoding="utf-8-sig")
+    try:
+        graph = graph_of_source(source, str(path))
+    except VakError as err:
+        print(err.render(source, str(path)), file=sys.stderr)
+        return 65
+    print(json.dumps(graph, ensure_ascii=False, indent=2))
+    return 0
+
+
 # --------------------------------------------------------------------------
 # running
 # --------------------------------------------------------------------------
@@ -348,6 +365,8 @@ def main(argv: list[str] | None = None) -> int:
                     help="compile natively and run the result")
     ap.add_argument("--builtins", action="store_true", help="list the built-in functions")
     ap.add_argument("--karakas", action="store_true", help="list the kāraka roles")
+    ap.add_argument("--graph", "--alekha", action="store_true", dest="graph",
+                    help="print the kāraka graph of a program as JSON, and stop")
     ap.add_argument("--version", action="version", version=f"वाक् (Vāk) {__version__}")
     args = ap.parse_args(argv)
 
@@ -360,6 +379,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.karakas:
         list_karakas()
         return 0
+    if args.graph:
+        if not args.file:
+            ap.error("--graph needs a .vak file")
+        return _with_deep_stack(lambda: print_graph(Path(args.file)))
     if args.file:
         return _with_deep_stack(
             lambda: run_file(Path(args.file), args.tokens, args.ast, args.check,

@@ -56,7 +56,7 @@ TESTS = sum(1 for line in (ROOT / "tests" / "test_vak.py")
 # either would be untrue — so it gets its own mark. Empty while every act on
 # this page corresponds to a version that exists; the mark and its legend
 # entry appear only when something is waiting.
-PENDING: set[str] = set()
+PENDING: set[str] = {"0.13.0"}
 
 
 def release_dates() -> dict[str, str]:
@@ -269,6 +269,24 @@ explained to anyone who asked for it. The native back end had never learnt to
 say the same, so it failed in the compiler's words instead of its own.</p>
 <p class="turn">A clone always has the files. Only the thing you published can
 tell you what you failed to publish.</p>"""),
+
+    ("VII", "0.13.0", "कारकालेखः", "The roles, drawn", 100, """
+<p>The kāraka roles had been checked since the first week and explained ever
+since, and both of those are prose. A relation is a thing you see. So the
+language learnt to draw its own: each <code>कार्यम्</code> as an action with its
+role slots around it, each call as a sentence binding participants into those
+slots, and the program as a map of which action depends on which.</p>
+<p>The rule the picture draws by is not a second opinion. Arguments are matched
+to slots exactly as the compiler matches them — labelled ones to their named
+slots, the rest into the free slots in order — so a slot the drawing marks
+<b>अनुक्तम्</b> is one the compiler fills from a default, and one it marks
+<b>न्यूनम्</b> is a call the compiler refuses.</p>
+<p>It was written twice, in Python and in Vāk, and the two are held to each
+other over every example that ships. That second copy is the one that matters:
+the playground has no Python in it, so the graph you watch redraw as you type is
+built by <code>आलेखः.vak</code>, compiled to WebAssembly, running on the C
+runtime — the toolchain drawing a picture of itself.</p>
+<p class="turn">A type system you can watch is a type system you can teach.</p>"""),
 ]
 
 ENGINES = [
@@ -305,7 +323,8 @@ ACT_TITLES = {"I": "Python builds a language",
               "III": "Python leaves",
               "IV": "Making it real",
               "V": "Making it fast",
-              "VI": "Going back for what was missing"}
+              "VI": "Going back for what was missing",
+              "VII": "Making the grammar visible"}
 
 
 #: The dates are read from the tags, so only released versions carry one. The

@@ -220,7 +220,7 @@ footer p { margin:.3rem 0; max-width:none; }
   <p class="eyebrow">कथा · the making of वाक्</p>
   <h1>A language written in Python, that slowly learned to
   <em>write itself</em>.</h1>
-  <p class="stand"><b>0.0.1 to 0.12.1.</b> Vāk began as 7,161 lines
+  <p class="stand"><b>0.0.1 to 0.12.1.</b> Vāk began as 7,388 lines
   of Python that could not have compiled one line of itself. It now compiles itself completely, runs on five
   independent engines held to identical output, and needs no Python at all. This
   is how that happened — including the two optimisations that turned out to be
@@ -231,7 +231,7 @@ footer p { margin:.3rem 0; max-width:none; }
   <span class="k"><span class="ver cut">0.10.0</span> a version that was actually cut</span>
   <span class="k"><span class="ver">0.4.0</span> a stage, numbered here in retrospect</span>
   <span class="k"><time class="when">2026-07-29</time> the date it was cut; earlier stages predate the repository</span>
-  
+  <span class="k"><span class="ver pending">0.13.0</span> written, not yet released</span>
 </p>
 
 <ol class="story">
@@ -241,7 +241,7 @@ footer p { margin:.3rem 0; max-width:none; }
     <h3><span class="ver" title="numbered in retrospect">0.0.1</span><span class="dev">आरम्भः</span><span class="eng">It begins in Python</span></h3>
     
 <p>The first version could not have compiled a single line of itself. It was a
-lexer, a parser and a tree-walking interpreter — 7,161 lines of Python —
+lexer, a parser and a tree-walking interpreter — 7,388 lines of Python —
 and everything the language could do, Python did on its behalf.</p>
 <p>That is the ordinary way to start, and it contains the ordinary trap: a
 language whose only implementation is written in another language has not really
@@ -340,7 +340,7 @@ match. A lexer either agrees on a token or it does not; an analyser has to
 produce the <em>same complaints</em>, in the same order, with the same wording.
 It does — across sixty-five files, forty of them deliberately broken, one per
 diagnostic kind.</p>
-<p>With that, the entire front end exists in Vāk: 4,599 lines. The
+<p>With that, the entire front end exists in Vāk: 4,613 lines. The
 language describes itself completely.</p>
   </li>
   <li class="ch reveal" data-share="100" data-ver="0.10.0">
@@ -416,6 +416,28 @@ say the same, so it failed in the compiler's words instead of its own.</p>
 <p class="turn">A clone always has the files. Only the thing you published can
 tell you what you failed to publish.</p>
   </li>
+  <li class="act reveal"><p class="mark">Act VII</p><p class="name">Making the grammar visible</p></li>
+  <li class="ch reveal" data-share="100" data-ver="0.13.0">
+    <div class="tick" aria-hidden="true"></div>
+    <h3><span class="ver pending" title="in the tree, not yet released">0.13.0</span><span class="dev">कारकालेखः</span><span class="eng">The roles, drawn</span></h3>
+    
+<p>The kāraka roles had been checked since the first week and explained ever
+since, and both of those are prose. A relation is a thing you see. So the
+language learnt to draw its own: each <code>कार्यम्</code> as an action with its
+role slots around it, each call as a sentence binding participants into those
+slots, and the program as a map of which action depends on which.</p>
+<p>The rule the picture draws by is not a second opinion. Arguments are matched
+to slots exactly as the compiler matches them — labelled ones to their named
+slots, the rest into the free slots in order — so a slot the drawing marks
+<b>अनुक्तम्</b> is one the compiler fills from a default, and one it marks
+<b>न्यूनम्</b> is a call the compiler refuses.</p>
+<p>It was written twice, in Python and in Vāk, and the two are held to each
+other over every example that ships. That second copy is the one that matters:
+the playground has no Python in it, so the graph you watch redraw as you type is
+built by <code>आलेखः.vak</code>, compiled to WebAssembly, running on the C
+runtime — the toolchain drawing a picture of itself.</p>
+<p class="turn">A type system you can watch is a type system you can teach.</p>
+  </li>
 
   <li class="ch reveal" data-share="100" data-ver="0.12.1">
     <div class="tick" aria-hidden="true"></div>
@@ -425,8 +447,8 @@ tell you what you failed to publish.</p>
     never disagree.</p>
     <div class="facts">
       <div><b>5</b><span>engines, byte-identical</span></div>
-      <div><b>336</b><span>tests</span></div>
-      <div><b>4,599</b><span>lines written in Vāk</span></div>
+      <div><b>351</b><span>tests</span></div>
+      <div><b>4,613</b><span>lines written in Vāk</span></div>
       <div><b>737 KB</b><span>self-contained binary</span></div>
       <div><b>6</b><span>kāraka roles as types</span></div>
     </div>

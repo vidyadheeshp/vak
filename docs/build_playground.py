@@ -47,6 +47,7 @@ from vaak.translit import tables_for_js                        # noqa: E402
 sys.path.insert(0, str(ROOT / "docs"))
 import analytics                                              # noqa: E402
 import sitemeta                                               # noqa: E402
+from vaak.tokens import KARAKA_ORDER, KARAKA_VIBHAKTI           # noqa: E402
 
 _t = tables_for_js()
 _combined = (
@@ -221,6 +222,18 @@ mudraya "yoga =", yoga;''',
 मुद्रय "माध्यम् (कारकेण)  =", ग.माध्यम्(अपादानम्: [१०, २०, ३०])।''',
 }
 
+# कारकालेखः — the live graph panel. Kept in files of its own rather than in
+# this template: the page's JavaScript lives inside a Python string, where every
+# backslash has to be doubled, and a raw newline inside a JS string literal once
+# killed the whole script. The role table comes from the language's own tables,
+# so the legend cannot drift from what the analyser enforces.
+GRAPH_CSS = (ROOT / "docs" / "playground_graph.css").read_text(encoding="utf-8")
+GRAPH_JS = ((ROOT / "docs" / "playground_graph.js").read_text(encoding="utf-8")
+            .replace("__KARAKA_ORDER__", json.dumps(list(KARAKA_ORDER), ensure_ascii=False))
+            .replace("__KARAKA_TABLE__",
+                     json.dumps({role: KARAKA_VIBHAKTI[role] for role in KARAKA_ORDER},
+                                ensure_ascii=False)))
+
 PAGE = """<title>वाक् · क्रीडाक्षेत्रम् — run Sanskrit in your browser</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -345,6 +358,7 @@ footer .legal a { color:inherit; text-decoration:underline;
   .pane + .pane { border-left:0; border-top:1px solid var(--rule); }
 }
 @media (prefers-reduced-motion:reduce) { * { transition:none !important; } }
+__GRAPH_CSS__
 </style>
 
 <header>
@@ -378,12 +392,17 @@ footer .legal a { color:inherit; text-decoration:underline;
   </section>
 
   <section class="pane">
-    <div class="bar">
-      <span class="label">फलम्</span>
+    <div class="bar" role="tablist" aria-label="Output or kāraka graph">
+      <button id="tab-out" class="tab" type="button" role="tab"
+              aria-selected="true">फलम् · output</button>
+      <button id="tab-graph" class="tab" type="button" role="tab"
+              aria-selected="false">आलेखः · kāraka graph</button>
       <span class="spacer"></span>
+      <span id="graph-status" class="label" aria-live="polite"></span>
       <button id="clear" type="button">रिक्तम् · clear</button>
     </div>
     <pre class="out" id="out" aria-live="polite" aria-atomic="false"></pre>
+    <div class="kg-pane" id="graph" role="tabpanel" aria-label="कारकालेखः" hidden></div>
   </section>
 </main>
 
@@ -395,6 +414,7 @@ footer .legal a { color:inherit; text-decoration:underline;
   <span class="legal">__COPYRIGHT__ · __COUNTER_NOTICE__</span>
 </footer>
 __COUNTER__
+
 
 <script>__ENGINE__</script>
 <script>
@@ -661,6 +681,22 @@ __COUNTER__
   if (handed) go(false);          /* it was sent here to be run */
 })();
 </script>
+
+<script>__GRAPH_JS__</script>
+<script>
+  KarakaGraph.attach({
+    src: document.getElementById("src"),
+    pane: document.getElementById("graph"),
+    outBox: document.getElementById("out"),
+    tabOut: document.getElementById("tab-out"),
+    tabGraph: document.getElementById("tab-graph"),
+    status: document.getElementById("graph-status"),
+    clear: document.getElementById("clear"),
+    run: document.getElementById("run"),
+    check: document.getElementById("check"),
+    picker: document.getElementById("samples")
+  });
+</script>
 """
 
 import sys
@@ -676,7 +712,9 @@ page = (PAGE
         .replace("__COPYRIGHT__", sitemeta.copyright_inline())
         .replace(" · __COUNTER_NOTICE__",
                  f" · {analytics.notice_inline()}" if analytics.SITE else "")
-        .replace("__COUNTER__", analytics.script()))
+        .replace("__COUNTER__", analytics.script())
+        .replace("__GRAPH_CSS__", GRAPH_CSS)
+        .replace("__GRAPH_JS__", GRAPH_JS))
 
 # The engine's provenance, carried by the page itself. Absent when the local
 # engine was not built by build_wasm.py — and then the test suite fails rather
@@ -694,19 +732,26 @@ if ENGINE_BUILT_FROM is not None:
 def _syntax_check(page_html: str) -> None:
     import re as _re, shutil as _shutil, subprocess as _sp, tempfile as _tf
 
-    script = _re.findall(r"<script>(.*?)</script>", page_html, _re.S)[-1]
+    scripts = _re.findall(r"<script>(.*?)</script>", page_html, _re.S)
     node = _shutil.which("node")
     if node is None:
         print("  note: node not found — the page's JS was NOT syntax-checked")
         return
-    tmp = pathlib.Path(_tf.mkdtemp()) / "page.js"
-    tmp.write_text(script, encoding="utf-8")
-    result = _sp.run([node, "--check", str(tmp)], capture_output=True,
-                     encoding="utf-8", errors="replace")
-    if result.returncode:
-        raise SystemExit("the generated JavaScript does not parse:\n"
-                         + (result.stderr or "")[:1200])
-    print(f"  javascript: parses ({len(script):,} chars)")
+    # every inline script, not just the last one: the page now carries the
+    # graph renderer and its wiring as well, and a broken one is as fatal.
+    tmp = pathlib.Path(_tf.mkdtemp())
+    total = 0
+    for n, script in enumerate(scripts):
+        piece = tmp / f"page{n}.js"
+        piece.write_text(script, encoding="utf-8")
+        result = _sp.run([node, "--check", str(piece)], capture_output=True,
+                         encoding="utf-8", errors="replace")
+        if result.returncode:
+            raise SystemExit(f"the generated JavaScript does not parse "
+                             f"(script {n + 1} of {len(scripts)}):\n"
+                             + (result.stderr or "")[:1200])
+        total += len(script)
+    print(f"  javascript: {len(scripts)} scripts parse ({total:,} chars)")
 
 
 _syntax_check(page)

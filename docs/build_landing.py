@@ -101,6 +101,12 @@ def to_playground(source: str) -> str:
     return f"playground.html#code={raw}"
 
 
+def to_graph(source: str) -> str:
+    """The same link, opened on the कारकालेखः tab. The separator is written as
+    an entity because this goes into an href, and a bare & in HTML is not."""
+    return to_playground(source) + "&amp;graph"
+
+
 def demo(source: str, note: str = "") -> str:
     """A program, what it prints, and a way to run it yourself."""
     source = source.strip()
@@ -467,6 +473,19 @@ footer a:hover {{ color:var(--gold); }}
   {demo(PRAYUJ, "The signature read at run time, and a call assembled from role names rather than written out.")}
   <p>Together they are what a bridge from a Sanskrit parser would stand on: a
   kāraka analysis is exactly the shape <code>प्रयुज्</code> accepts.</p>
+  <h3>कारकालेखः · the roles, drawn — live</h3>
+  <p>A kāraka is a relation, and a relation is easier to see than to read. The
+  <a href="{to_graph(ANUKTAM)}">playground draws one as you type</a>: each
+  <code>कार्यम्</code> as an action with its role slots around it, each call as a
+  sentence binding participants into those slots, and the program as a map of
+  which action depends on which. No button, no run — the picture follows the
+  keystrokes.</p>
+  <p>It is the teaching view of the type system. A dashed slot is a role that may
+  go unstated; a solid arrow labelled <b>नाम्ना</b> is an argument that named its
+  role, <b>स्थानेन</b> one that took the next free slot, <b>अनुक्तम्</b> a role
+  left unsaid and filled from its default, <b>न्यूनम्</b> one simply missing. And
+  it is not a second opinion: the graph binds arguments to slots with the rule the
+  compiler uses, so what the picture shows is what will run.</p>
 </section>
 
 <section id="भाषा">

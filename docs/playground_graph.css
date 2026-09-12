@@ -1,0 +1,119 @@
+/* कारकालेखः — the kāraka graph panel. Role colours are chosen to stay distinct
+   from each other and from the page's crimson, which is kept for faults. */
+:root {
+  --k-karta:#9a6a12; --k-karma:#34508f; --k-karana:#1f7a74;
+  --k-sampradana:#7b4a91; --k-apadana:#b0582a; --k-adhikarana:#56782a;
+  --k-none:#7c8499;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --k-karta:#e0b35a; --k-karma:#93abe6; --k-karana:#6cc5bd;
+    --k-sampradana:#c7a0dc; --k-apadana:#eb9d6f; --k-adhikarana:#a9c96f;
+    --k-none:#8a91a6;
+  }
+}
+:root[data-theme="light"] {
+  --k-karta:#9a6a12; --k-karma:#34508f; --k-karana:#1f7a74;
+  --k-sampradana:#7b4a91; --k-apadana:#b0582a; --k-adhikarana:#56782a;
+  --k-none:#7c8499;
+}
+:root[data-theme="dark"] {
+  --k-karta:#e0b35a; --k-karma:#93abe6; --k-karana:#6cc5bd;
+  --k-sampradana:#c7a0dc; --k-apadana:#eb9d6f; --k-adhikarana:#a9c96f;
+  --k-none:#8a91a6;
+}
+[hidden] { display:none !important; }
+
+.tab {
+  font-family:var(--sans); font-size:.72rem; letter-spacing:.06em;
+  border:1px solid transparent; border-radius:2px; padding:.3rem .62rem;
+  color:var(--ink-faint); background:transparent;
+}
+.tab[aria-selected="true"] { color:var(--ink); border-color:var(--rule); background:var(--paper); }
+.tab .live { color:var(--good); font-size:.66rem; margin-left:.35rem; }
+
+.kg-pane {
+  flex:1; overflow:auto; padding:.9rem clamp(.7rem,2vw,1.1rem) 1.4rem;
+  background:var(--paper); font-family:var(--sans);
+}
+.kg-pane.kg-stale .kg-body { opacity:.42; filter:saturate(.6); transition:opacity .2s; }
+.kg-banner {
+  margin:0 0 .8rem; padding:.5rem .7rem; border-left:3px solid var(--crimson);
+  background:var(--paper-2); color:var(--crimson); font-size:.8rem;
+}
+.kg-summary { margin:0 0 .5rem; font-size:.78rem; letter-spacing:.04em; color:var(--good); }
+.kg-summary.kg-bad { color:var(--crimson); }
+.kg-legend, .kg-ways { display:flex; flex-wrap:wrap; gap:.35rem .5rem; margin:.2rem 0 .5rem; }
+.kg-chip {
+  display:inline-flex; gap:.35rem; align-items:baseline; font-size:.72rem;
+  padding:.12rem .5rem; border-radius:999px; border:1px solid currentColor;
+}
+.kg-chip b { font-weight:600; }
+.kg-chip span { color:var(--ink-faint); }
+.kg-way { display:inline-flex; align-items:center; gap:.35rem; font-size:.7rem; color:var(--ink-soft); }
+.kg-way i { display:inline-block; width:26px; height:0; border-top:2px solid var(--ink-soft); }
+.kg-way-dotted i { border-top-style:dotted; }
+.kg-way-ghost i { border-top:2px dashed var(--ink-faint); opacity:.7; }
+.kg-way-missing i { border-top:2px dashed var(--crimson); }
+.kg-section {
+  margin:1.3rem 0 .5rem; font-family:var(--serif); font-weight:500; font-size:1.02rem;
+  border-bottom:1px solid var(--rule); padding-bottom:.25rem; color:var(--ink);
+}
+.kg-card {
+  margin:0 0 .8rem; padding:.55rem .6rem .5rem; border:1px solid var(--rule);
+  border-radius:4px; background:var(--paper);
+}
+.kg-head { display:flex; align-items:baseline; gap:.6rem; flex-wrap:wrap; font-size:.8rem; }
+.kg-title { font-family:var(--mono); font-weight:600; color:var(--ink); }
+.kg-sub { color:var(--ink-faint); flex:1; }
+.kg-line { font-size:.68rem; padding:.1rem .45rem; }
+.kg-svg { display:block; width:100%; height:auto; max-width:100%; margin-top:.3rem; }
+.kg-fault { margin:.3rem 0 0; font-size:.76rem; color:var(--crimson); }
+.kg-empty, .kg-note-html { font-size:.78rem; color:var(--ink-faint); margin:.4rem 0; }
+
+/* the drawing */
+.kg-svg text { font-family:var(--sans); fill:var(--ink); }
+.kg-svg .kg-verb { font-family:var(--mono); font-size:14px; font-weight:600; }
+.kg-svg .kg-role { font-size:13px; font-weight:600; }
+.kg-svg .kg-name { font-family:var(--mono); font-size:11.5px; fill:var(--ink-soft); }
+.kg-svg .kg-how { font-size:10.5px; fill:var(--ink-faint); }
+.kg-svg .kg-note, .kg-svg .kg-ghost { font-size:11px; fill:var(--ink-faint); font-style:italic; }
+.kg-svg .kg-colhead { font-size:10.5px; letter-spacing:.08em; fill:var(--ink-faint); }
+.kg-action rect { fill:var(--paper-2); stroke:var(--ink); stroke-width:1.6; }
+.kg-main rect { fill:var(--paper); stroke:var(--gold); stroke-width:1.6; stroke-dasharray:4 3; }
+.kg-value rect { fill:var(--paper-2); stroke:var(--rule); stroke-width:1.2; }
+.kg-slot { fill:var(--paper); stroke-width:1.8; }
+.kg-slot.kg-default { stroke-dasharray:6 4; opacity:.85; }
+.kg-slot.kg-missing, .kg-value.kg-bad rect { stroke:var(--crimson) !important; stroke-dasharray:4 3; }
+.kg-edge { fill:none; stroke-width:1.8; }
+.kg-edge.kg-thin { stroke-width:1.1; opacity:.55; }
+.kg-edge.kg-default { stroke-dasharray:6 5; opacity:.7; }
+.kg-edge.kg-positional { stroke-dasharray:2 4; }
+.kg-edge.kg-call { stroke:var(--ink-soft); }
+.kg-edge.kg-passed { stroke-dasharray:7 4; }
+.kg-arrowhead { fill:var(--ink-soft); }
+
+.k-karta { color:var(--k-karta); }             .kg-svg .k-karta .kg-slot, .kg-svg .kg-edge.k-karta { stroke:var(--k-karta); }
+.k-karma { color:var(--k-karma); }             .kg-svg .k-karma .kg-slot, .kg-svg .kg-edge.k-karma { stroke:var(--k-karma); }
+.k-karana { color:var(--k-karana); }           .kg-svg .k-karana .kg-slot, .kg-svg .kg-edge.k-karana { stroke:var(--k-karana); }
+.k-sampradana { color:var(--k-sampradana); }   .kg-svg .k-sampradana .kg-slot, .kg-svg .kg-edge.k-sampradana { stroke:var(--k-sampradana); }
+.k-apadana { color:var(--k-apadana); }         .kg-svg .k-apadana .kg-slot, .kg-svg .kg-edge.k-apadana { stroke:var(--k-apadana); }
+.k-adhikarana { color:var(--k-adhikarana); }   .kg-svg .k-adhikarana .kg-slot, .kg-svg .kg-edge.k-adhikarana { stroke:var(--k-adhikarana); }
+.k-none { color:var(--k-none); }               .kg-svg .k-none .kg-slot, .kg-svg .kg-edge.k-none { stroke:var(--k-none); }
+.kg-svg .k-karta .kg-role { fill:var(--k-karta); }
+.kg-svg .k-karma .kg-role { fill:var(--k-karma); }
+.kg-svg .k-karana .kg-role { fill:var(--k-karana); }
+.kg-svg .k-sampradana .kg-role { fill:var(--k-sampradana); }
+.kg-svg .k-apadana .kg-role { fill:var(--k-apadana); }
+.kg-svg .k-adhikarana .kg-role { fill:var(--k-adhikarana); }
+.kg-svg .k-none .kg-role { fill:var(--k-none); }
+.kg-svg text.kg-how.k-karta { fill:var(--k-karta); }
+.kg-svg text.kg-how.k-karma { fill:var(--k-karma); }
+.kg-svg text.kg-how.k-karana { fill:var(--k-karana); }
+.kg-svg text.kg-how.k-sampradana { fill:var(--k-sampradana); }
+.kg-svg text.kg-how.k-apadana { fill:var(--k-apadana); }
+.kg-svg text.kg-how.k-adhikarana { fill:var(--k-adhikarana); }
+.kg-svg .kg-bad .kg-slot, .kg-svg .kg-edge.kg-bad { stroke:var(--crimson) !important; }
+.kg-svg .kg-bad .kg-role, .kg-svg text.kg-how.kg-bad { fill:var(--crimson) !important; }
+
+@media (prefers-reduced-motion:reduce) { .kg-pane.kg-stale .kg-body { transition:none; } }

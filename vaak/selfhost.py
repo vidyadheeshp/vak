@@ -52,7 +52,8 @@ _LOADER = (
     'आनय "शब्दविभाजकः"। '
     'आनय "व्याकरणम्"। '
     'आनय "संकलकः"। '
-    'आनय "यन्त्रम्"।'
+    'आनय "यन्त्रम्"। '
+    'आनय "आलेखः"।'
 )
 
 
@@ -69,13 +70,16 @@ def toolchain() -> dict[str, Any]:
                for name in ("शब्दविभाजकः",
                             "व्याकरणम्",
                             "संकलकः",
-                            "यन्त्रम्")}
+                            "यन्त्रम्",
+                            "आलेखः")}
     return {
         "interpreter": interpreter,
         "lex": modules["शब्दविभाजकः"]["विभज_मूलम्"],
         "parse": modules["व्याकरणम्"]["रचय_वाक्यरचनाम्"],
         "compile": modules["संकलकः"]["संकलय"],
         "run": modules["यन्त्रम्"]["चालय"],
+        "graph": modules["आलेखः"]["रचय"],
+        "json": modules["आलेखः"]["जेसन्"],
     }
 
 
@@ -89,6 +93,18 @@ def parse_with_vak(source: str) -> dict:
     """Run the Vāk-written lexer and parser; returns the AST as कोशाः."""
     tools = toolchain()
     return tools["parse"].call(tools["interpreter"], [tokenize_with_vak(source)])
+
+
+def graph_with_vak(source: str) -> dict:
+    """The kāraka graph, built by the Vāk-written आलेखः.vak."""
+    tools = toolchain()
+    return tools["graph"].call(tools["interpreter"], [parse_with_vak(source)])
+
+
+def graph_json_with_vak(source: str) -> str:
+    """The same graph as the JSON text the playground reads."""
+    tools = toolchain()
+    return tools["json"].call(tools["interpreter"], [graph_with_vak(source)])
 
 
 def compile_kosha_with_vak(source: str) -> dict:

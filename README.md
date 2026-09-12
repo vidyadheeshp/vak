@@ -247,6 +247,7 @@ python -m vaak
 python -m vaak --tokens examples/01_namaste.vak    # token stream
 python -m vaak --ast    examples/03_yadi.vak       # syntax tree
 python -m vaak --builtins                          # standard library listing
+python -m vaak --graph  examples/13_karaka.vak     # the kāraka graph, as JSON
 ```
 
 Embedding it in Python:
@@ -609,6 +610,44 @@ Kāraka names are contextual, not reserved: `कर्म` alone is still an ord
 
 See [13_karaka.vak](examples/13_karaka.vak).
 
+### कारकालेखः · The kāraka graph
+
+A kāraka is a relation, and a relation is easier to see than to read. Vāk will draw
+one: every `कार्यम्` as an action with its role slots around it, every call as a
+sentence binding participants into those slots, and the whole program as a map of
+which action depends on which.
+
+```bash
+python -m vaak --graph examples/13_karaka.vak            # the Python toolchain
+python -m vaak स्वयंसिद्धिः/वाक्.vak -- --आलेखः examples/13_karaka.vak   # the Vāk one
+```
+
+Both print the same JSON — two walkers written separately from one rule, and the
+test suite holds them to each other over every example that ships:
+
+```json
+{"कार्याणि":  [{"नाम": "छानय", "पङ्क्तिः": 26, "प्रतिफलम्": "सूची",
+                "प्राचलाः": [{"नाम": "संग्रहः", "प्रकारः": "सूची",
+                              "कारकम्": "अपादानम्", "मूलम्": false}, ...],
+                "दोषाः": []}],
+ "आह्वानानि": [{"कार्यम्": "छानय", "पङ्क्तिः": 40, "अन्तः": null,
+                "बन्धाः": [{"प्राचलः": "संग्रहः", "कारकम्": "अपादानम्",
+                            "रीतिः": "स्थानेन", "मूल्यम्": "अङ्काः"}, ...],
+                "दोषाः": []}]}
+```
+
+`रीतिः` is how the slot was filled: **नाम्ना** by name, **स्थानेन** by position,
+**अनुक्तम्** left unsaid and filled from its default, **न्यूनम्** simply missing —
+the last being a call the compiler refuses. The graph is not a second analysis; it
+binds arguments to slots with the same rule the compiler uses, so what it shows is
+what will run.
+
+In the [playground](https://vidyadheeshp.github.io/vak/playground.html#graph) the
+**आलेखः** tab draws it live, on every keystroke, with no run in between — the
+teaching view of the type system. The renderer is
+[docs/playground_graph.js](docs/playground_graph.js); the graph itself is built by
+the engine in the page, which is this toolchain compiled to WebAssembly.
+
 ---
 
 ## अर्थविश्लेषकः · The semantic analyser
@@ -839,12 +878,13 @@ virtual machine itself — and each is held to the Python implementation exactly
 
 | Stage | Written in Vāk | Lines | Verified against |
 |---|---|---|---|
-| Lexer | [शब्दविभाजकः.vak](स्वयंसिद्धिः/शब्दविभाजकः.vak) | 277 | the Python lexer — kind, lexeme, value and line of every token |
-| Parser | [व्याकरणम्.vak](स्वयंसिद्धिः/व्याकरणम्.vak) | 791 | the Python parser — the whole syntax tree, node for node |
-| **Analyser** | [अर्थविश्लेषकः.vak](स्वयंसिद्धिः/अर्थविश्लेषकः.vak) | 786 | the Python analyser — every diagnostic's code, line and message, in order |
-| Compiler | [संकलकः.vak](स्वयंसिद्धिः/संकलकः.vak) | 618 | the Python compiler — every instruction, constant and line |
-| VM | [यन्त्रम्.vak](स्वयंसिद्धिः/यन्त्रम्.vak) | 1047 | the Python VM — byte-identical output on every example |
-| Driver | [वाक्.vak](स्वयंसिद्धिः/वाक्.vak) | 260 | compiled natively it becomes `वाक्.exe`, which runs every example identically |
+| Lexer | [शब्दविभाजकः.vak](स्वयंसिद्धिः/शब्दविभाजकः.vak) | 285 | the Python lexer — kind, lexeme, value and line of every token |
+| Parser | [व्याकरणम्.vak](स्वयंसिद्धिः/व्याकरणम्.vak) | 916 | the Python parser — the whole syntax tree, node for node |
+| **Analyser** | [अर्थविश्लेषकः.vak](स्वयंसिद्धिः/अर्थविश्लेषकः.vak) | 1018 | the Python analyser — every diagnostic's code, line and message, in order |
+| Compiler | [संकलकः.vak](स्वयंसिद्धिः/संकलकः.vak) | 809 | the Python compiler — every instruction, constant and line |
+| VM | [यन्त्रम्.vak](स्वयंसिद्धिः/यन्त्रम्.vak) | 1205 | the Python VM — byte-identical output on every example |
+| Graph | [आलेखः.vak](स्वयंसिद्धिः/आलेखः.vak) | 261 | [vaak/graph.py](vaak/graph.py) — the same graph, structure for structure, over every example |
+| Driver | [वाक्.vak](स्वयंसिद्धिः/वाक्.vak) | 274 | compiled natively it becomes `वाक्.exe`, which runs every example identically |
 
 Only the [native back end](#देशीयसंकलनम्--the-native-back-end) is written in C, on
 purpose: it is the substrate the language stands on, not part of the language.
@@ -1208,7 +1248,8 @@ source .vak
 | [vaak/kosha.py](vaak/kosha.py) | कोशरूपम् | The contract between the two toolchains — the AST and a compiled Chunk written as plain कोशाः, in both directions. |
 | [vaak/selfhost.py](vaak/selfhost.py) | स्वयंसिद्धिः | Loads the Vāk-written toolchain and exposes it to Python: `compile_with_vak(source)` returns a Chunk the VM can run. |
 | [स्वयंसिद्धिः/](स्वयंसिद्धिः/) | स्वयंसिद्धिः | **Vāk written in Vāk** — the lexer, the parser, the compiler and the VM, plus a driver that runs all four over their own source. |
-| [vaak/cli.py](vaak/cli.py) | आदेशपङ्क्तिः | File runner, REPL, `--tokens`, `--ast`, `--bytecode`, `--vm`, `--check`, `--builtins`, `--karakas`. |
+| [vaak/cli.py](vaak/cli.py) | आदेशपङ्क्तिः | File runner, REPL, `--tokens`, `--ast`, `--bytecode`, `--vm`, `--check`, `--builtins`, `--karakas`, `--graph`. |
+| [vaak/graph.py](vaak/graph.py) | कारकालेखः | The kāraka graph: actions and their role slots, calls and how each slot was filled. |
 
 Design choices worth knowing:
 
@@ -1515,6 +1556,7 @@ Sanskrit-Vak/
 │   ├── compiler.py            # AST   → bytecode + disassembler
 │   ├── vm.py                  # bytecode → execution (the SanskritVM)
 │   ├── kosha.py               # AST and Chunk as कोशाः — the bootstrap contract
+│   ├── graph.py               # the kāraka graph — actions, role slots, bindings
 │   ├── selfhost.py            # drives the Vāk-written toolchain from Python
 │   ├── native.py              # bytecode → C → a standalone executable
 │   ├── environment.py         # lexical scopes + declared types
@@ -1535,6 +1577,7 @@ Sanskrit-Vak/
 │   ├── अर्थविश्लेषकः.vak       #   the semantic analyser, in Vāk
 │   ├── संकलकः.vak             #   the compiler, in Vāk
 │   ├── यन्त्रम्.vak            #   the virtual machine, in Vāk
+│   ├── आलेखः.vak              #   the kāraka graph, in Vāk
 │   ├── वाक्.vak                #   the driver — compiled natively, this is वाक्.exe
 │   └── मुख्यम्.vak             #   the whole toolchain, over its own source
 ├── brand/                     # the mark — वा, from real font outlines
@@ -1551,6 +1594,8 @@ Sanskrit-Vak/
 │   ├── reference.py           #   library, diagnostics and flags, read from source
 │   ├── playground.html        # the toolchain in WebAssembly, runs in a browser
 │   ├── build_playground.py    #   the engine + the standard library, inlined
+│   ├── playground_graph.js    #   the live कारकालेखः panel — three views
+│   ├── playground_graph.css   #   its role colours, in all four themes
 │   ├── build_wasm.py          #   builds that engine with Emscripten
 │   ├── engine.py              #   what the engine was built from, and how
 │   ├── story.html             # कथा — how the language came to be

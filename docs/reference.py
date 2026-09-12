@@ -155,7 +155,7 @@ def error_kinds() -> list[tuple[str, str]]:
 FLAG_ORDER = [
     "--tokens", "--ast", "--check", "--no-check", "--vm", "--bytecode",
     "--self", "--self-vm", "--native", "--run-native", "--builtins",
-    "--karakas", "--version",
+    "--karakas", "--graph", "--version",
 ]
 
 
