@@ -623,9 +623,7 @@ python -m vaak स्वयंसिद्धिः/वाक्.vak -- --आल
 ```
 
 Both print the same JSON — two walkers written separately from one rule, and the
-test suite holds them to each other over every example that ships. (`--graph`
-postdates the last release: it is here and in the playground, but not in the
-published package until the next version is cut.)
+test suite holds them to each other over every example that ships.
 
 ```json
 {"कार्याणि":  [{"नाम": "छानय", "पङ्क्तिः": 26, "प्रतिफलम्": "सूची",
