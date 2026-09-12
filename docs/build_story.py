@@ -56,7 +56,7 @@ TESTS = sum(1 for line in (ROOT / "tests" / "test_vak.py")
 # either would be untrue — so it gets its own mark. Empty while every act on
 # this page corresponds to a version that exists; the mark and its legend
 # entry appear only when something is waiting.
-PENDING: set[str] = {"0.13.0"}
+PENDING: set[str] = set()
 
 
 def release_dates() -> dict[str, str]:

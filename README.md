@@ -169,7 +169,7 @@ machine.
 ### Checking that it works
 
 ```powershell
-python -m vaak --version          # वाक् (Vāk) 0.12.1
+python -m vaak --version          # वाक् (Vāk) 0.13.0
 python -m vaak --builtins         # the 39 built-in functions
 python -m vaak                    # संवादः — the interactive session
 ```
@@ -264,7 +264,7 @@ run_source('मुद्रय "नमस्ते जगत्"।')
 ### The REPL
 
 ```
-वाक् (Vāk) 0.12.1 — संस्कृतभाषायाः संगणकभाषा
+वाक् (Vāk) 0.13.0 — संस्कृतभाषायाः संगणकभाषा
 सहायता: :सहायता   निर्गमः: :निर्गम  (help / exit)
 वाक्> पूर्णाङ्कः क = ७।
 वाक्> क * क

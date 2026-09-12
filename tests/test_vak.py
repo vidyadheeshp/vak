@@ -2980,12 +2980,14 @@ class TestDoWhileNatively(unittest.TestCase):
 
 
 class TestVersionIsStatedOnce(unittest.TestCase):
-    """एकः एव अङ्कः — the version number lives in five files.
+    """एकः एव अङ्कः — the version number lives in seven files.
 
     vaak/__init__.py is the source of truth; pyproject.toml decides what pip
-    installs, the README prints it in two sample outputs, and the editor
-    extension names it. Nothing kept them in step, and a bump is exactly when
-    that goes wrong: the wheel would say one thing and --version another.
+    installs, the README prints it in two sample outputs, the editor extension
+    names it, वाक्.vak prints it from every release binary, and CITATION.cff is
+    what anyone citing this work will copy. Nothing kept them in step, and a
+    bump is exactly when that goes wrong: the wheel would say one thing and
+    --version another.
     """
 
     def released(self) -> str:
@@ -3019,6 +3021,16 @@ class TestVersionIsStatedOnce(unittest.TestCase):
         self.assertIsNotNone(found, "वाक्.vak no longer declares रूपम्")
         ascii_ = found.group(1).translate(str.maketrans("०१२३४५६७८९", "0123456789"))
         self.assertEqual(ascii_, self.released())
+
+    def test_the_citation_matches_the_package(self):
+        """CITATION.cff is the file a paper copies from, and it is the one
+        nobody opens during a release: it sat at 0.11.1 through two of them.
+        A citation that names a version which never existed is worse than no
+        citation file at all."""
+        text = (ROOT / "CITATION.cff").read_text(encoding="utf-8")
+        found = re.search(r"^version: (\S+)", text, re.M)
+        self.assertIsNotNone(found, "CITATION.cff states no version")
+        self.assertEqual(found.group(1), self.released())
 
     def test_the_story_marks_the_current_version_as_released(self):
         """docs/build_story.py distinguishes versions that were cut from
