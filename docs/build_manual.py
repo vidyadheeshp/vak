@@ -619,6 +619,14 @@ python -m vaak स्वयंसिद्धिः/वाक्.vak -- --आल
 rule the compiler uses, so a slot the picture marks <b>न्यूनम्</b> is a call the
 compiler refuses, and a slot it marks <b>अनुक्तम्</b> is one the compiler fills
 from the default. What you see is what will run.</p>
+<div class="note">
+  <p><b>Newer than the last release.</b> The graph is in the repository and in
+  the <a href="playground.html#graph">playground</a>, which runs the toolchain as
+  it stands. It is not in the published {__version__} package, so
+  <code>--graph</code> on a <code>pip install</code>ed Vāk will report an
+  unrecognised argument until the next release is cut. Clone the repository to
+  use it from the command line today.</p>
+</div>
 """))
 
 # ---------------------------------------------------------------- ९ · analyser
