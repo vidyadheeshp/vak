@@ -133,6 +133,7 @@ class _Loop:
     start: int
     scope_depth: int
     stack_extra: int                       # an iterator left on the stack
+    try_depth: int = 0                     # प्रयत्नाः open when the loop began
     breaks: list[int] = field(default_factory=list)
     continues: list[int] = field(default_factory=list)
 
@@ -154,6 +155,9 @@ class Compiler:
         self.chunk = Chunk(name)
         self.filename = filename
         self.loops: list[_Loop] = []
+        #: the अन्ततः of every प्रयत्नः whose body is being compiled, innermost
+        #: last — शून्य where a प्रयत्नः has only a दोषे
+        self.tries: list[A.Block | None] = []
         self.scope_depth = 0
         self.scopes: list[list[str] | None] = scopes if scopes is not None else [None]
         # नामानि यानि क्वचिदपि घोष्यन्ते — तेभ्यः अन्तर्निहितम् न निर्णीयते।
@@ -270,7 +274,7 @@ class Compiler:
         the top of the body, since a post-test loop has already run once.
         """
         start = len(self.chunk.code)
-        loop = _Loop(start, self.scope_depth, 0)
+        loop = _Loop(start, self.scope_depth, 0, len(self.tries))
         self.loops.append(loop)
         if node.post_test:
             self.statement(node.body)
@@ -306,7 +310,7 @@ class Compiler:
         self.expression(iterable)
         self.chunk.emit(Op.ITER_NEW, line=line)
         start = len(self.chunk.code)
-        loop = _Loop(start, self.scope_depth, stack_extra=1)
+        loop = _Loop(start, self.scope_depth, stack_extra=1, try_depth=len(self.tries))
         self.loops.append(loop)
         exit_jump = self.chunk.emit_jump(Op.ITER_NEXT, line)
         self.chunk.emit(Op.SCOPE_PUSH, line=line)
@@ -329,10 +333,24 @@ class Compiler:
         for at in loop.breaks:
             self.chunk.patch(at)
 
+    def _leave_tries(self, keep: int, line: int) -> None:
+        """End every प्रयत्नः opened since `keep`, innermost first.
+
+        A jump out of a try body skips the block's own end, so what that end
+        does has to happen here: the handler is popped, and the अन्ततः runs.
+        Without it the handler stayed registered — and in the Vāk VM went on
+        to catch a throw from outside the loop, while the C runtime segfaulted.
+        """
+        for finally_body in reversed(self.tries[keep:]):
+            self.chunk.emit(Op.POP_TRY, line=line)
+            if finally_body is not None:
+                self.statement(finally_body)
+
     def _st_Break(self, node: A.Break) -> None:
         if not self.loops:
             raise CompileError("'विरम' पाशस्य बहिः / 'विरम' outside a loop", node.line)
         loop = self.loops[-1]
+        self._leave_tries(loop.try_depth, node.line)
         for _ in range(self.scope_depth - loop.scope_depth):
             self.chunk.emit(Op.SCOPE_POP, line=node.line)
         for _ in range(loop.stack_extra):
@@ -343,6 +361,7 @@ class Compiler:
         if not self.loops:
             raise CompileError("'अनुवर्त' पाशस्य बहिः / 'अनुवर्त' outside a loop", node.line)
         loop = self.loops[-1]
+        self._leave_tries(loop.try_depth, node.line)
         for _ in range(self.scope_depth - loop.scope_depth):
             self.chunk.emit(Op.SCOPE_POP, line=node.line)
         loop.continues.append(self.chunk.emit_jump(Op.JUMP, node.line))
@@ -352,6 +371,8 @@ class Compiler:
             self.expression(node.value)
         else:
             self.chunk.emit(Op.NIL, line=node.line)
+        # the value is on the stack; every open प्रयत्नः still has to end
+        self._leave_tries(0, node.line)
         self.chunk.emit(Op.RETURN, line=node.line)
 
     def _st_Throw(self, node: A.Throw) -> None:
@@ -426,7 +447,9 @@ class Compiler:
 
     def _st_Try(self, node: A.Try) -> None:
         setup = self.chunk.emit(Op.SETUP_TRY, 0, 0, line=node.line)
+        self.tries.append(node.finally_body)
         self.statement(node.body)
+        self.tries.pop()
         self.chunk.emit(Op.POP_TRY, line=node.line)
         to_finally = self.chunk.emit_jump(Op.JUMP, node.line)
 

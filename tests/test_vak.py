@@ -3080,6 +3080,127 @@ class TestNirgamaSetsTheExitCode(unittest.TestCase):
                 self.assertEqual(self.driver(source), expected)
 
 
+class TestLeavingATryBlockEarly(unittest.TestCase):
+    """प्रयत्नात् निर्गमः — विरम, अनुवर्त and प्रत्यागच्छ end the block they leave.
+
+    Each of the three jumps past the end of the प्रयत्नः it stands in, and the
+    compilers used to emit the jump alone. Two things that belong to the end of
+    a try therefore never happened: the handler was not popped, and the अन्ततः
+    did not run. The tree-walker unwinds through real frames and was always
+    right, so this was a divergence between the reference engine and every
+    engine that runs bytecode:
+
+        tree        बहिः पकडितम्: बाह्यः     the throw reached its own catch
+        --vm        अन्तः पकडितम्             the loop's दोषे caught it instead
+        --self-vm   बहिः पकडितम्: सूचकदोषः    an index error — the stack was corrupt
+        native      segmentation fault
+
+    Found because the Vāk lexer's recovery used अनुवर्त inside a प्रयत्नः and
+    reported one error twice on four engines out of five. Both compilers now
+    end each open प्रयत्नः at the jump — POP_TRY, then its अन्ततः — and they
+    still emit byte-identical instructions, which is what holds them together.
+    """
+
+    LEAK = (
+        "कार्यम् क() {\n"
+        "    प्रत्येकम् (इ अन्तः [१, २]) {\n"
+        "        प्रयत्नः {\n"
+        "            अनुवर्त।\n"
+        "        } दोषे (द) {\n"
+        '            मुद्रय "अन्तः पकडितम्"।\n'
+        "        }\n"
+        "    }\n"
+        '    उत्सृज { "प्रकारः": "बाह्यः", "सन्देशः": "अहम्" }।\n'
+        "}\n"
+        "प्रयत्नः {\n"
+        "    क()।\n"
+        "} दोषे (द) {\n"
+        '    मुद्रय "बहिः पकडितम्:", द.प्रकारः।\n'
+        "}\n"
+    )
+
+    FINALLY_IN_LOOP = (
+        "प्रत्येकम् (इ अन्तः [१, २]) {\n"
+        "    प्रयत्नः {\n"
+        '        मुद्रय "शरीरम्", इ।\n'
+        "        यदि (इ == १) { अनुवर्त। }\n"
+        "        विरम।\n"
+        "    } अन्ततः {\n"
+        '        मुद्रय "अन्ततः", इ।\n'
+        "    }\n"
+        "}\n"
+        'मुद्रय "समाप्तम्"।\n'
+    )
+
+    FINALLY_ON_RETURN = (
+        "कार्यम् क() {\n"
+        "    प्रयत्नः {\n"
+        "        प्रत्यागच्छ ५।\n"
+        "    } अन्ततः {\n"
+        '        मुद्रय "अन्ततः"।\n'
+        "    }\n"
+        "}\n"
+        "मुद्रय क()।\n"
+    )
+
+    def ran(self, source: str, *flags: str) -> str:
+        directory = Path(tempfile.mkdtemp(prefix="vak-try-exit-"))
+        path = directory / "प्रोग्राम.vak"
+        path.write_text(source, encoding="utf-8")
+        try:
+            proc = subprocess.run(
+                [sys.executable, "-m", "vaak", *flags, str(path)],
+                capture_output=True, cwd=str(ROOT), timeout=600,
+                env={**os.environ, "PYTHONIOENCODING": "utf-8"})
+        finally:
+            shutil.rmtree(directory, ignore_errors=True)
+        self.assertEqual(proc.returncode, 0,
+                         proc.stderr.decode("utf-8", "replace")[:400])
+        return proc.stdout.decode("utf-8", "replace").replace("\r\n", "\n").strip()
+
+    def assert_every_engine_agrees_with_the_tree(self, source: str) -> str:
+        """The tree-walker is the reference; the others must match it."""
+        expected = self.ran(source)
+        for flags in (["--vm"], ["--self-vm"]):
+            with self.subTest(engine=" ".join(flags)):
+                self.assertEqual(self.ran(source, *flags), expected)
+        return expected
+
+    def test_the_handler_goes_when_the_loop_is_left(self):
+        """The jump used to leave the दोषे registered, and it then caught a
+        throw raised after the loop — or corrupted the stack trying."""
+        self.assertEqual(self.assert_every_engine_agrees_with_the_tree(self.LEAK),
+                         "बहिः पकडितम्: बाह्यः")
+
+    @unittest.skipIf(GCC is None, "C-संकलकः न प्राप्तः / no C compiler available")
+    def test_the_native_runtime_no_longer_crashes(self):
+        """This program segfaulted the C runtime."""
+        self.assertEqual(self.ran(self.LEAK, "--run-native"), "बहिः पकडितम्: बाह्यः")
+
+    def test_antatah_runs_on_continue_and_on_break(self):
+        printed = self.assert_every_engine_agrees_with_the_tree(self.FINALLY_IN_LOOP)
+        self.assertEqual(
+            printed.split("\n"),
+            ["शरीरम् 1", "अन्ततः 1", "शरीरम् 2", "अन्ततः 2", "समाप्तम्"])
+
+    def test_antatah_runs_on_return(self):
+        printed = self.assert_every_engine_agrees_with_the_tree(self.FINALLY_ON_RETURN)
+        self.assertEqual(printed.split("\n"), ["अन्ततः", "5"])
+
+    def test_returning_out_of_a_try_still_returns_its_value(self):
+        source = (
+            "कार्यम् भित्तिः() : पूर्णाङ्कः {\n"
+            "    प्रयत्नः {\n"
+            "        प्रत्यागच्छ ५।\n"
+            "    } दोषे (द) {\n"
+            "        प्रत्यागच्छ ०।\n"
+            "    }\n"
+            "}\n"
+            "मुद्रय भित्तिः()।\n"
+        )
+        self.assertEqual(self.assert_every_engine_agrees_with_the_tree(source), "5")
+
+
 class TestVersionIsStatedOnce(unittest.TestCase):
     """एकः एव अङ्कः — the version number lives in seven files.
 
