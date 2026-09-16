@@ -26,3 +26,6 @@ dist/
 
 # benchmark output — machine-specific, regenerate with bench/benchmark.py
 bench/results.json
+
+# the packaged editor extension — built by the release workflow
+vscode-vak/*.vsix

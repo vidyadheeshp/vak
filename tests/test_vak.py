@@ -4154,6 +4154,20 @@ class TestTheEditorExtensionIsCurrent(unittest.TestCase):
                 self.assertIn(devanagari, grammar)
                 self.assertIn(roman, grammar)
 
+    def test_a_toolchain_that_cannot_run_is_reported(self):
+        """The extension shows diagnostics by running the toolchain. When that
+        command fails and prints nothing the extension understands — `No module
+        named vaak`, say — the file's diagnostics were cleared and nothing was
+        said, so a toolchain that could not start looked exactly like a clean
+        file. What decides it has to be whether a diagnostic was found, not
+        whether anything was printed."""
+        js = self.module.EXTENSION_JS
+        self.assertIn("const found = parse(text, document);", js)
+        self.assertIn("if (err && found.length === 0) {", js)
+        self.assertIn("vscode.window.showWarningMessage(", js)
+        self.assertIn("reported.add(why);", js)
+        self.assertNotIn("if (err && !text.trim()) {", js)
+
     def test_the_extension_states_the_package_version(self):
         from vaak import __version__
         package = json.loads((ROOT / "vscode-vak" / "package.json").read_text(encoding="utf-8"))

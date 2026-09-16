@@ -171,6 +171,12 @@ PACKAGE = {
     "publisher": "vidyadheeshp",
     "license": "MIT",
     "icon": "images/icon-128.png",
+    # A listing with no way back to the source is a dead end, and vsce warns
+    # about a manifest without a repository. The Marketplace renders these as
+    # the Repository, Homepage and Issues links beside the README.
+    "repository": {"type": "git", "url": "https://github.com/vidyadheeshp/vak.git"},
+    "homepage": "https://vidyadheeshp.github.io/vak/",
+    "bugs": {"url": "https://github.com/vidyadheeshp/vak/issues"},
     "engines": {"vscode": "^1.75.0"},
     "categories": ["Programming Languages", "Linters"],
     "keywords": ["vak", "sanskrit", "devanagari", "panini", "संस्कृतम्"],
@@ -260,6 +266,9 @@ const path = require("path");
 const { devanagari } = require("./translit");
 
 let diagnostics;
+//  Failures already reported. The check runs on every save, and a toolchain
+//  that cannot start fails on every one of them; saying so once is enough.
+const reported = new Set();
 let statusBar;
 let typing = false;      // देवनागरी-लेखनम् — convert romanised words as they finish
 
@@ -308,12 +317,24 @@ function check(document) {
                            env: { ...process.env, PYTHONIOENCODING: "utf-8" } },
     (err, stdout, stderr) => {
       const text = `${stdout || ""}\n${stderr || ""}`;
-      if (err && !text.trim()) {
-        // the toolchain itself could not be started — say so once, quietly
+      const found = parse(text, document);
+      //  A failed run that said nothing we understand is a toolchain that could
+      //  not do its job — not a file with nothing wrong. Clearing the squiggles
+      //  and staying silent made those two look identical.
+      if (err && found.length === 0) {
+        const why = text.split(/\r?\n/).map((l) => l.trim()).find(Boolean)
+                 || (err && err.message) || String(err);
+        if (!reported.has(why)) {
+          reported.add(why);
+          vscode.window.showWarningMessage(
+            `वाक् — the toolchain did not run: ${why}. ` +
+            "Set vak.executable to your वाक् binary, or vak.pythonPath to a " +
+            "Python that can import vaak (pip install vak-lang).");
+        }
         diagnostics.set(document.uri, []);
         return;
       }
-      diagnostics.set(document.uri, parse(text, document));
+      diagnostics.set(document.uri, found);
     });
 }
 
@@ -502,8 +523,11 @@ language's own keyword tables by `build_extension.py`, so it cannot drift.
 """
 
 VSCODEIGNORE = """build_extension.py
+check_vsix.py
+__pycache__/**
 .vscode/**
 **/*.map
+*.vsix
 """
 
 

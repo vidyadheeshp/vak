@@ -1,3 +1,6 @@
 build_extension.py
+check_vsix.py
+__pycache__/**
 .vscode/**
 **/*.map
+*.vsix

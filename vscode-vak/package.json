@@ -6,6 +6,14 @@
   "publisher": "vidyadheeshp",
   "license": "MIT",
   "icon": "images/icon-128.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vidyadheeshp/vak.git"
+  },
+  "homepage": "https://vidyadheeshp.github.io/vak/",
+  "bugs": {
+    "url": "https://github.com/vidyadheeshp/vak/issues"
+  },
   "engines": {
     "vscode": "^1.75.0"
   },

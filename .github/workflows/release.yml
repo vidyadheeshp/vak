@@ -84,6 +84,72 @@ jobs:
           name: python-dist
           path: dist/*
 
+  extension:
+    name: सम्पादकः · the editor extension
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: python -m pip install -e .
+
+      # The grammar is generated from vaak/tokens.py, so it is rebuilt here
+      # rather than trusted. A .vsix cut from a stale tree would highlight a
+      # language slightly different from the one in the same release.
+      - name: Rebuild it from the language's own tables
+        run: python vscode-vak/build_extension.py
+      - name: Refuse to package a stale tree
+        run: |
+          if ! git diff --quiet -- vscode-vak/; then
+            echo "::error::vscode-vak/ is stale — run python vscode-vak/build_extension.py and commit the result"
+            git diff --stat -- vscode-vak/
+            exit 1
+          fi
+
+      - name: Package
+        working-directory: vscode-vak
+        run: npx --yes @vscode/vsce@3.2.1 package --no-dependencies
+
+      # vsce reports a file count and a size; what is in the archive is
+      # whatever .vscodeignore happened to catch. This says what is in it.
+      - name: What is inside must be what we meant to ship
+        run: python vscode-vak/check_vsix.py "$(ls vscode-vak/*.vsix)"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vscode-extension
+          path: vscode-vak/*.vsix
+
+  # Publishing to the Marketplace needs a Personal Access Token from an Azure
+  # DevOps organisation, stored as the VSCE_PAT secret, and a publisher named
+  # in package.json that the token can publish for. Until both exist this job
+  # would fail and redden an otherwise good release, so it stays switched off
+  # behind a repository variable: set PUBLISH_TO_MARKETPLACE to "true" when
+  # the token is in place. The .vsix is attached to the release either way,
+  # so the extension is installable without ever turning this on.
+  marketplace:
+    name: Marketplace · publish the extension
+    needs: [extension]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') && vars.PUBLISH_TO_MARKETPLACE == 'true'
+    environment: marketplace
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: actions/download-artifact@v4
+        with:
+          name: vscode-extension
+          path: vsix
+      - name: Publish
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: npx --yes @vscode/vsce@3.2.1 publish --packagePath "$(ls vsix/*.vsix)"
+
   # Publishing to PyPI needs a trusted publisher configured on PyPI's side
   # first (Manage project -> Publishing -> add a GitHub publisher for this
   # repo and workflow). Until then this job would fail and put a red mark on
@@ -108,7 +174,7 @@ jobs:
 
   publish:
     name: विमोचनम् · attach everything to the release
-    needs: [binaries, wheel]
+    needs: [binaries, wheel, extension]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     steps:
