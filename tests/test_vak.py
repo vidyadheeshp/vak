@@ -1039,6 +1039,338 @@ class TestBootstrapParser(unittest.TestCase):
         self.assert_trees_agree(path.read_text(encoding="utf-8"), path.name)
 
 
+class TestSyntaxErrorsAreAllReported(unittest.TestCase):
+    """व्याकरणदोषाः सर्वे — every syntax error, from both parsers, identically.
+
+    Both parsers used to stop at the first syntax error, and they did not agree
+    on what to say about it: the Python parser wrote each message in Sanskrit
+    and English, the Vāk parser in Sanskrit alone, and at three sites without
+    naming the token it found. Nothing compared them. And a syntax error
+    rendered as `व्याकरणदोषः (Syntax Error) — file:line:col` matched nothing
+    the editor extension reads, so no syntax error had ever appeared in VS Code.
+
+    Each parser now records an error, abandons the broken statement, and goes
+    on — in the three statement lists only: the program, a block, and a विकल्पः
+    case body. These tests hold the two parsers to the same ordered list of
+    (line, message), hold Python to the lines a reader would point at, and
+    check that recovery invents nothing: a program with one error reports one.
+    """
+
+    # One program per error site. "ML" cases put the offending token on a later
+    # line than its statement, which is the only way a parser reporting the
+    # statement's line instead of the token's can be caught.
+    ONE = [
+        ("type name",               "कार्यम् क() : ५ { }"),
+        ("variable name",           "मान = ५।"),
+        ("constant needs a value",  "ध्रुव क।"),
+        ("minus default",           'कार्यम् क(अ = -"x") { }'),
+        ("literal default",         "कार्यम् क(अ = ब) { }"),
+        ("parameter name",          "कार्यम् क(५) { }"),
+        (") after parameters",      "कार्यम् क(अ ब) { }"),
+        ("default order",           "कार्यम् क(अ = १, ब) { }"),
+        ("कुरु needs यावत्",         "कुरु { मुद्रय १। }"),
+        ("loop variable",           "प्रत्येकम् (५ अन्तः [१]) { }"),
+        ("अन्तः",                    "प्रत्येकम् (क [१]) { }"),
+        (") in प्रत्येकम्",           "प्रत्येकम् (क अन्तः [१] { }"),
+        ("module name",             "आनय क।"),
+        ("alias",                   'आनय "गणितम्" इति ५।'),
+        ("name after तः",           'आनय "क" तः ५।'),
+        (") after the subject",     "विकल्पः (क { पक्षे १: मुद्रय १। }"),
+        ("{ to open a विकल्पः",      "विकल्पः (क) पक्षे"),
+        ("two अन्यथा",               "विकल्पः (क) { अन्यथा: मुद्रय १। अन्यथा: मुद्रय २। }"),
+        ("पक्षे or अन्यथा",           "विकल्पः (क) { मुद्रय १। }"),
+        (": after a पक्षः",          "विकल्पः (क) { पक्षे १ मुद्रय १। }"),
+        ("} to close a विकल्पः",     "विकल्पः (क) { पक्षे १: मुद्रय १।"),
+        (") after the दोषे variable", "प्रयत्नः { } दोषे (द { }"),
+        ("प्रयत्नः needs दोषे",        "प्रयत्नः { मुद्रय १। }"),
+        ("{ to open a block",       "यदि (क) मुद्रय १।"),
+        ("} to close a block",      "यदि (क) { मुद्रय १।"),
+        ("assignment target",       "५ = क।"),
+        ("] after an index",        "मुद्रय क[१।"),
+        ("key name after .",        "मुद्रय क.५।"),
+        (") after arguments",       "मुद्रय क(१, २।"),
+        (") after an expression",   "मुद्रय (१ + २।"),
+        ("] to close a सूची",        "मुद्रय [१, २।"),
+        (": between key and value", 'मुद्रय {"क" १}।'),
+        ("} to close a कोश",         'मुद्रय {"क": १।'),
+        ("unexpected token",        "मान क = ।"),
+        ("end of file",             "मान क = "),
+        ("an apostrophe",           "मुद्रय \"it's\" ५ ]"),
+        ("ML कुरु",                  "कुरु {\n    मुद्रय १।\n}\nमुद्रय २।"),
+        ("ML पक्षे or अन्यथा",        "विकल्पः (क) {\n    मुद्रय २।\n}"),
+        ("ML assignment target",    "५\n= क।"),
+        ("ML default order",        "कार्यम् क(अ = १,\n         ब) {\n}"),
+        ("ML constant",             "ध्रुव\n    क।"),
+        ("ML प्रयत्नः",               "प्रयत्नः {\n    मुद्रय १।\n}"),
+        ("ML two अन्यथा",            "विकल्पः (क) {\n    अन्यथा: मुद्रय १।\n    अन्यथा: मुद्रय २।\n}"),
+        ("ML unclosed block",       "यदि (क) {\n    मुद्रय १।\n"),
+        ("ML end of file",          "मान क =\n\n\n"),
+        ("ML ) after parameters",   "कार्यम् क(अ,\n    ब\n    स) { }"),
+        ("ML ) after arguments",    "मुद्रय क(१,\n  २\n  ३)।"),
+    ]
+
+    # (program, the lines Python must report)
+    MANY = [
+        ("an error inside an if header, then another",
+         'मान क = ५\nमुद्रय क।\nयदि (क > ३ { मुद्रय "बृहत्"। }\nमान ख = ।\nमुद्रय ख।\n', [3, 4]),
+        ("inside a function, and after it",
+         "कार्यम् क() {\n    मान = ५।\n    मुद्रय १।\n}\nमुद्रय क(।\n", [2, 5]),
+        ("two on one line are one report",
+         "मान = ५। मान = ६।\n", [1]),
+        ("an unclosed block at the end",
+         "यदि (क) {\n    मुद्रय १।\n", [3]),
+        ("a broken header's } is not a second error",
+         "यदि (क > ३ {\n    मुद्रय १।\n}\nमुद्रय २।\n", [1]),
+        ("a case body, then more cases, then after",
+         "विकल्पः (क) {\n    पक्षे १: मान = ५।\n    पक्षे २: मुद्रय २।\n"
+         "    अन्यथा: मुद्रय ३।\n}\nमान = ६।\n", [2, 6]),
+        ("recovery stops at the danda",
+         "मान = ५। मुद्रय १।\n", [1]),
+        ("four broken lines, four reports",
+         "मान = १।\nमुद्रय (२ + ३।\nमान क = ।\nप्रत्येकम् (५ अन्तः [१]) { }\n"
+         "मुद्रय \"ठीकम्\"।\n", [1, 2, 3, 4]),
+        ("कुरु without यावत्, then more",
+         "कुरु {\n    मुद्रय १।\n}\nमुद्रय २।\nमान = ३।\n", [4, 5]),
+        ("nested: inside an if inside a function",
+         "कार्यम् क(अ) {\n    यदि (अ) {\n        मान = १।\n    }\n    प्रत्यागच्छ अ।\n}\n"
+         "मुद्रय क(१)।\n", [3]),
+        ("a stray } with nothing before it is real",
+         "मुद्रय १।\n}\nमुद्रय २।\n", [2]),
+        ("a विकल्पः broken after its { takes its } along",
+         "विकल्पः (क) {\n    अन्यथा: मुद्रय १।\n    अन्यथा: मुद्रय २।\n}\nमान = ९।\n", [3, 5]),
+        ("a कोश broken inside a block does not close the block",
+         'यदि (क) {\n    मान को = {"अ" १}।\n    मुद्रय को।\n}\nमुद्रय २।\n', [2]),
+        ("a clean program reports nothing",
+         "मान क = १।\nयदि (क > ०) { मुद्रय क। }\n", []),
+    ]
+
+    #: messages in parser.py that no program can provoke, and why
+    UNREACHABLE = {
+        "expected a function name":
+            "a function declaration is only entered when कार्यम् is followed by a name and '('",
+        "expected '(' after the function name":
+            "the same condition has already seen the '('",
+        "retry as a command":
+            "internal: the मुद्रय call-form attempt raises it to rewind, and catches it itself",
+    }
+
+    @staticmethod
+    def python(source: str) -> list:
+        try:
+            parse(tokenize(source, "<p>"), "<p>")
+        except ParseError as err:
+            return [(e.line, e.message) for e in err.errors]
+        return []
+
+    @staticmethod
+    def vak(source: str) -> list:
+        try:
+            parse_with_vak(source)
+        except VakThrow as thrown:
+            return [(int(d["पङ्क्तिः"]), str(d["सन्देशः"]))
+                    for d in thrown.payload["दोषाः"]]
+        return []
+
+    @staticmethod
+    def editor_regex():
+        """The pattern vscode-vak/extension.js reads diagnostics with, taken
+        from the generated file itself rather than copied here."""
+        js = (ROOT / "vscode-vak" / "extension.js").read_text(encoding="utf-8")
+        declared = next(l for l in js.splitlines() if l.startswith("const LINE = /"))
+        return re.compile(declared[len("const LINE = /"):declared.rindex("/;")], re.ASCII)
+
+    def test_one_error_is_reported_once_and_identically(self):
+        for site, source in self.ONE:
+            with self.subTest(site=site):
+                mine = self.python(source)
+                self.assertEqual(len(mine), 1, mine)
+                self.assertEqual(self.vak(source), mine)
+
+    def test_many_errors_are_all_reported_identically(self):
+        for name, source, lines in self.MANY:
+            with self.subTest(program=name):
+                mine = self.python(source)
+                self.assertEqual([line for line, _ in mine], lines)
+                self.assertEqual(self.vak(source), mine)
+
+    def test_every_error_site_is_provoked(self):
+        """The English half of every message literal in parser.py, read from the
+        source, must turn up in some program's output — so an error site added
+        later without a program to provoke it fails here."""
+        corpus = "\n".join(message for _, source in self.ONE
+                           for _, message in self.python(source))
+        src = (ROOT / "vaak" / "parser.py").read_text(encoding="utf-8")
+        fragments = {m.group(1).strip() for m in re.finditer(
+            r'/ ([a-z\'(][^"{\n]*?)(?=\s*"|\s+—|\{)', src)}
+        self.assertGreater(len(fragments), 30, "the message scan found too little to trust")
+        missing = sorted(f for f in fragments if f not in corpus and f not in self.UNREACHABLE)
+        self.assertEqual(missing, [], "no program provokes these errors")
+        stale = sorted(f for f in self.UNREACHABLE if f not in fragments)
+        self.assertEqual(stale, [], "UNREACHABLE names messages parser.py no longer has")
+
+    def test_the_editor_reads_every_syntax_error(self):
+        name, source, lines = self.MANY[0]
+        with self.assertRaises(ParseError) as caught:
+            parse(tokenize(source, "C:/work/prog.vak"), "C:/work/prog.vak")
+        rendered = caught.exception.render(source, "C:/work/prog.vak")
+        read = [(m.group(2), int(m.group(3)))
+                for m in map(self.editor_regex().match, rendered.splitlines()) if m]
+        self.assertEqual(read, [("व्याकरणदोषः", line) for line in lines])
+
+    def test_both_toolchains_print_the_same_diagnostic_lines(self):
+        """`python -m vaak --check` and `वाक्.vak --परीक्षा` on one broken file.
+        Only the lines the editor reads are compared: the Python toolchain also
+        draws a caret, which the Vāk one cannot, having no columns."""
+        LINE = self.editor_regex()
+        name, source, lines = self.MANY[0]
+        directory = Path(tempfile.mkdtemp(prefix="vak-syntax-"))
+        path = directory / "prog.vak"
+        path.write_text(source, encoding="utf-8")
+        env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
+        try:
+            python_run = subprocess.run(
+                [sys.executable, "-m", "vaak", "--check", str(path)],
+                capture_output=True, cwd=str(ROOT), env=env)
+            vak_run = subprocess.run(
+                [sys.executable, "-m", "vaak", str(ROOT / "स्वयंसिद्धिः" / "वाक्.vak"),
+                 "--", "--परीक्षा", str(path)],
+                capture_output=True, cwd=str(ROOT), env=env)
+        finally:
+            shutil.rmtree(directory, ignore_errors=True)
+
+        def diagnostics(proc):
+            # syntax errors only: this compares what the two parsers say, and a
+            # line from some other pass is not part of that
+            text = (proc.stdout + proc.stderr).decode("utf-8", "replace")
+            return [raw.strip() for raw in text.splitlines()
+                    if LINE.match(raw) and "[व्याकरणदोषः]" in raw]
+
+        printed = diagnostics(python_run)
+        self.assertEqual(len(printed), len(lines), printed)
+        self.assertEqual(diagnostics(vak_run), printed)
+
+
+class TestLexicalErrorsAreAllReported(unittest.TestCase):
+    """अक्षरदोषाः सर्वे — every character the lexer cannot read, from both
+    lexers, identically.
+
+    The layer below the parser had the same two faults the parser had. It
+    stopped at the first bad character, so a file with three of them took three
+    runs to clean up. And its errors were rendered as `अक्षरदोषः (Lexical
+    Error) — file:line:col`, which matched nothing the editor extension reads,
+    so a stray `@` showed nothing in VS Code at all.
+
+    The two lexers also disagreed about what to say: Python wrote each message
+    in Sanskrit and English, the Vāk lexer in Sanskrit alone — `अज्ञातम्
+    अक्षरम् @` against `अज्ञातम् अक्षरम् '@' — unknown character '@'`. Nothing
+    compared them, because nothing had ever compared a lexer error.
+    """
+
+    ONE = [
+        ("unknown character",      'मुद्रय "क" @ ५।'),
+        ("a lone &",               "मुद्रय क & ख।"),
+        ("a lone |",               "मुद्रय क | ख।"),
+        ("unterminated string",    'मुद्रय "क'),
+        ("unterminated comment",   "मुद्रय १। /* क"),
+        ("a backslash",            "मुद्रय \\ ।"),
+        ("ML unknown character",   'मुद्रय "क"।\nमुद्रय $ ५।\n'),
+        ("ML unterminated string", 'मुद्रय १।\nमुद्रय "क\n'),
+    ]
+
+    MANY = [
+        ("two bad characters on two lines", 'मुद्रय "क" @ ५।\nमुद्रय "ख" $ ६।\n', [1, 2]),
+        ("two on one line are one report", "मुद्रय @ $ ५।\n", [1]),
+        ("a bad character, then a good line", 'मुद्रय @ १।\nमुद्रय "ठीकम्"।\n', [1]),
+        ("three bad lines", "मुद्रय @ १।\nमुद्रय २।\nमुद्रय $ ३।\nमुद्रय ` ४।\n", [1, 3, 4]),
+        ("a clean program reports nothing", 'मुद्रय "नमः"।\n', []),
+    ]
+
+    @staticmethod
+    def python(source: str) -> list:
+        try:
+            tokenize(source, "<p>")
+        except LexError as err:
+            return [(e.line, e.message) for e in err.errors]
+        return []
+
+    @staticmethod
+    def vak(source: str) -> list:
+        from vaak.selfhost import tokenize_with_vak
+        try:
+            tokenize_with_vak(source)
+        except VakThrow as thrown:
+            return [(int(d["पङ्क्तिः"]), str(d["सन्देशः"]))
+                    for d in thrown.payload["दोषाः"]]
+        return []
+
+    def test_one_error_is_reported_once_and_identically(self):
+        for name, source in self.ONE:
+            with self.subTest(case=name):
+                mine = self.python(source)
+                self.assertEqual(len(mine), 1, mine)
+                self.assertEqual(self.vak(source), mine)
+
+    def test_many_errors_are_all_reported_identically(self):
+        for name, source, lines in self.MANY:
+            with self.subTest(program=name):
+                mine = self.python(source)
+                self.assertEqual([line for line, _ in mine], lines)
+                self.assertEqual(self.vak(source), mine)
+
+    def test_every_message_the_lexer_can_raise_is_provoked(self):
+        """Each literal message in vaak/lexer.py must come out of some program
+        here, so a message added later without a program to provoke it fails."""
+        corpus = "\n".join(message for _n, source in self.ONE
+                           for _line, message in self.python(source))
+        src = (ROOT / "vaak" / "lexer.py").read_text(encoding="utf-8")
+        literals = set(re.findall(r'raise LexError\("([^"]+)"', src))
+        self.assertGreaterEqual(len(literals), 3, "the message scan found too little")
+        missing = sorted(m for m in literals if m not in corpus)
+        self.assertEqual(missing, [], "no program provokes these")
+        self.assertIn("unknown character '@'", corpus, "the interpolated message too")
+
+    def test_the_editor_reads_every_lexical_error(self):
+        """Rendered any other way, these never reached VS Code at all."""
+        name, source, lines = self.MANY[0]
+        with self.assertRaises(LexError) as caught:
+            tokenize(source, "C:/work/prog.vak")
+        rendered = caught.exception.render(source, "C:/work/prog.vak")
+        regex = TestSyntaxErrorsAreAllReported.editor_regex()
+        read = [(m.group(2), int(m.group(3)))
+                for m in map(regex.match, rendered.splitlines()) if m]
+        self.assertEqual(read, [("अक्षरदोषः", line) for line in lines])
+
+    def test_both_toolchains_print_the_same_diagnostic_lines(self):
+        """`python -m vaak --check` and `वाक्.vak --परीक्षा`, on one bad file."""
+        regex = TestSyntaxErrorsAreAllReported.editor_regex()
+        name, source, lines = self.MANY[0]
+        directory = Path(tempfile.mkdtemp(prefix="vak-lexical-"))
+        path = directory / "prog.vak"
+        path.write_text(source, encoding="utf-8")
+        env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
+        try:
+            python_run = subprocess.run(
+                [sys.executable, "-m", "vaak", "--check", str(path)],
+                capture_output=True, cwd=str(ROOT), env=env, timeout=600)
+            vak_run = subprocess.run(
+                [sys.executable, "-m", "vaak", str(ROOT / "स्वयंसिद्धिः" / "वाक्.vak"),
+                 "--", "--परीक्षा", str(path)],
+                capture_output=True, cwd=str(ROOT), env=env, timeout=900)
+        finally:
+            shutil.rmtree(directory, ignore_errors=True)
+
+        def diagnostics(proc):
+            text = (proc.stdout + proc.stderr).decode("utf-8", "replace")
+            return [raw.strip() for raw in text.splitlines()
+                    if regex.match(raw) and "[अक्षरदोषः]" in raw]
+
+        printed = diagnostics(python_run)
+        self.assertEqual(len(printed), len(lines), printed)
+        self.assertEqual(diagnostics(vak_run), printed)
+        self.assertEqual(python_run.returncode, 70)
+        self.assertEqual(vak_run.returncode, 70)
+
+
 class TestBootstrapCompiler(unittest.TestCase):
     """स्वयंसिद्धेः तृतीयम् सोपानम् — the compiler written in Vāk."""
 
@@ -1244,14 +1576,14 @@ class TestVakAnalyzer(unittest.TestCase):
     HARNESS = ROOT / "tests" / "विश्लेषकपरीक्षा.vak"
     BROKEN = ROOT / "tests" / "दुष्टनमूनाः"
 
-    def run_vak(self, *args: str) -> str:
+    def run_vak(self, *args: str, expect: int = 0) -> str:
         result = subprocess.run(
             [sys.executable, "-m", "vaak", *args], capture_output=True, cwd=str(ROOT),
             env={**os.environ, "PYTHONIOENCODING": "utf-8"},
         )
         text = result.stdout.decode("utf-8", "replace")
         self.assertEqual(
-            result.returncode, 0,
+            result.returncode, expect,
             "the Vāk toolchain failed:\n" + text
             + result.stderr.decode("utf-8", "replace"),
         )
@@ -1302,12 +1634,23 @@ class TestVakAnalyzer(unittest.TestCase):
                 self.assert_agrees(ROOT / "स्वयंसिद्धिः" / name)
 
     def test_driver_check_matches_python_check(self):
-        """वाक् --परीक्षा — the Vāk driver renders the report the Python CLI does."""
+        """वाक् --परीक्षा — the Vāk driver renders the report the Python CLI does,
+        and now reports the same status for it.
+
+        This used to require the driver to exit 0 for a file it had just called
+        broken, because that is what it did: it caught everything and said
+        nothing about it. निर्गम gave it a way to say so, and the two toolchains
+        are held to the same answer here rather than to a fixed number."""
         target = self.BROKEN / "मिश्रम्_२.vak"
         rel = target.resolve().relative_to(ROOT).as_posix()
         source = target.read_text(encoding="utf-8")
+        python = subprocess.run(
+            [sys.executable, "-m", "vaak", "--check", rel], capture_output=True,
+            cwd=str(ROOT), env={**os.environ, "PYTHONIOENCODING": "utf-8"})
+        self.assertEqual(python.returncode, 65,
+                         "this sample is meant to be one the analyser refuses")
         mine = self.run_vak(str(ROOT / "स्वयंसिद्धिः" / "वाक्.vak"),
-                            "--", "--परीक्षा", rel).strip()
+                            "--", "--परीक्षा", rel, expect=python.returncode).strip()
         theirs = check_source(source, rel).render(source, rel).strip()
         self.assertEqual(mine, theirs)
 

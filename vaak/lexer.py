@@ -84,9 +84,21 @@ class Lexer:
 
     # -- main loop ---------------------------------------------------------
     def tokenize(self) -> list[Token]:
+        self.errors: list[LexError] = []
         while not self._at_end():
-            self._scan_token()
+            try:
+                self._scan_token()
+            except LexError as err:
+                # the failed scan consumed the character it could not read, so
+                # the loop moves on by itself; an unterminated string or comment
+                # ran to the end and the loop is over anyway
+                if not (self.errors and self.errors[-1].line == err.line):
+                    self.errors.append(err)
         self.tokens.append(Token(T.EOF, "", None, self.line, self.col))
+        if self.errors:
+            first = self.errors[0]
+            raise LexError(first.message, first.line, first.col,
+                           errors=list(self.errors))
         return self.tokens
 
     def _scan_token(self) -> None:
@@ -185,7 +197,7 @@ class Lexer:
             self._identifier(ch, line, col)
             return
 
-        raise LexError(f"अज्ञातम् अक्षरम् {ch!r} — unknown character {ch!r}", line, col)
+        raise LexError(f"अज्ञातम् अक्षरम् '{ch}' — unknown character '{ch}'", line, col)
 
     # -- token builders ----------------------------------------------------
     def _string(self, quote: str, line: int, col: int) -> None:

@@ -32,14 +32,43 @@ class VakError(Exception):
         return f"{self.title}: {self.message} (पङ्क्ति/line {self.line})"
 
 
-class LexError(VakError):
+class ManyError(VakError):
+    """A pass that does not stop at its first error, and so carries them all.
+
+    The lexer and the parser both recover and keep going, so one exception is
+    raised at the end: it is the first error, and `errors` lists every one in
+    source order.  Rendering is the analyser's diagnostic-line format, which is
+    also what the editor extension reads — an error rendered any other way
+    never reached the editor at all.
+    """
+
+    def __init__(self, message: str, line: int = 0, col: int = 0,
+                 code: str | None = None, errors: "list[ManyError] | None" = None):
+        super().__init__(message, line, col, code)
+        self.errors: list[ManyError] = errors if errors is not None else [self]
+
+    def render(self, source: str | None = None, filename: str = "<वाक्>") -> str:
+        lines = source.splitlines() if source else []
+        out = [f"{self.title} — {len(self.errors)} दोषाः"]
+        for err in self.errors:
+            # file:line only.  The editor reads `...:(\d+) —`, so a column
+            # written there would be taken for the line.
+            out.append(f"  दोषः [{err.code}] {filename}:{err.line} — {err.message}")
+            if 0 < err.line <= len(lines):
+                out.append(f"      {err.line:>4} | {lines[err.line - 1]}")
+                if err.col > 0:
+                    out.append(f"      {'':>4} | {' ' * (err.col - 1)}^")
+        return "\n".join(out)
+
+
+class LexError(ManyError):
     """Raised by the lexer for characters it cannot read."""
 
     title = "अक्षरदोषः (Lexical Error)"
     default_code = "अक्षरदोषः"
 
 
-class ParseError(VakError):
+class ParseError(ManyError):
     """Raised by the parser for malformed grammar."""
 
     title = "व्याकरणदोषः (Syntax Error)"

@@ -89,12 +89,26 @@ _CONTINUES_EXPR = frozenset({
     T.DOT, T.LBRACKET, T.LPAREN, T.ASSIGN, T.OP_ASSIGN, T.COMMA,
 })
 
+# प्रत्यवस्थानम् — where a broken statement is abandoned.  A statement keyword
+# begins something new, so recovery stops in front of it.  The three lists a
+# statement can sit in each close on their own tokens, which are left for the
+# list to take: nothing at the top level, `}` in a block, and in a विकल्पः case
+# body the next पक्षे or अन्यथा as well.
+_STATEMENT_STARTS = frozenset({
+    T.LET, T.CONST, T.FUNC, T.IF, T.WHILE, T.DO, T.FOR, T.REPEAT, T.PRINT,
+    T.IMPORT, T.SWITCH, T.TRY, T.THROW, T.RETURN, T.BREAK, T.CONTINUE,
+})
+_IN_PROGRAM: frozenset = frozenset()
+_IN_BLOCK = frozenset({T.RBRACE})
+_IN_CASE = frozenset({T.RBRACE, T.CASE, T.ELSE})
+
 
 class Parser:
     def __init__(self, tokens: list[Token], filename: str = "<वाक्>"):
         self.tokens = tokens
         self.filename = filename
         self.pos = 0
+        self.errors: list[ParseError] = []
 
     # -- cursor helpers ----------------------------------------------------
     @property
@@ -123,7 +137,7 @@ class Parser:
         if self._check(type_):
             return self._advance()
         raise ParseError(
-            f"{message} — किन्तु प्राप्तम् / but found {self.current.lexeme!r}",
+            f"{message} — किन्तु प्राप्तम् / but found '{self.current.lexeme}'",
             self.current.line,
             self.current.col,
         )
@@ -132,6 +146,78 @@ class Parser:
         """Refuse at the current token. `_expect` reports what it wanted and
         what it found; this reports a rule the source broke."""
         raise ParseError(message, self.current.line, self.current.col)
+
+    # -- recovery ----------------------------------------------------------
+    def _record(self, err: ParseError) -> None:
+        """Keep an error to report — unless it is on the same line as the one
+        before it.  A statement that breaks usually breaks again on its own
+        line as recovery walks through it, and only the first break is news."""
+        if self.errors and self.errors[-1].line == err.line:
+            return
+        self.errors.append(err)
+
+    def _recover(self, start: int, closers: frozenset) -> None:
+        """Skip the rest of a broken statement.
+
+        Move past at least one token first, or a statement that fails before
+        consuming anything would fail on the same token forever.
+
+        Then close what the statement opened.  A विकल्पः that breaks after its
+        `{`, or a कोश literal that breaks after its own, still has that brace's
+        closer ahead.  Left there, it is reported at the top level as a second,
+        invented error — or, inside a block, taken for the block's own `}` and
+        the block ends early.
+
+        Then stop after a danda, or in front of a statement keyword, EOF, or a
+        token in `closers` — the one that ends the list this statement sits in
+        — stepping over any `{ ... }` group on the way as one piece."""
+        if self.pos == start:
+            self._advance()
+        depth = 0
+        for tok in self.tokens[start:self.pos]:
+            if tok.type is T.LBRACE:
+                depth += 1
+            elif tok.type is T.RBRACE and depth > 0:
+                depth -= 1
+        while depth > 0 and not self._check(T.EOF):
+            if self._match(T.LBRACE):
+                depth += 1
+            elif self._match(T.RBRACE):
+                depth -= 1
+            else:
+                self._advance()
+        while not self._check(T.EOF):
+            if self._match(T.SEMI):
+                return
+            if self.current.type in _STATEMENT_STARTS or self.current.type in closers:
+                return
+            if self._check(T.LBRACE):
+                self._skip_braced()
+            else:
+                self._advance()
+
+    def _skip_braced(self) -> None:
+        """Step over one whole `{ ... }` group, nested groups included."""
+        depth = 0
+        while not self._check(T.EOF):
+            if self._match(T.LBRACE):
+                depth += 1
+            elif self._match(T.RBRACE):
+                depth -= 1
+                if depth == 0:
+                    return
+            else:
+                self._advance()
+
+    def _statement_into(self, stmts: list, closers: frozenset) -> None:
+        """One statement onto `stmts`, or, if it is broken, a recorded error and
+        the parser moved to where the next statement can begin."""
+        start = self.pos
+        try:
+            stmts.append(self.statement())
+        except ParseError as err:
+            self._record(err)
+            self._recover(start, closers)
 
     def _end_of_statement(self) -> None:
         """Statement terminators (; । ॥) are welcome but optional."""
@@ -142,7 +228,10 @@ class Parser:
     def parse(self) -> Program:
         prog = Program(line=1)
         while not self._check(T.EOF):
-            prog.statements.append(self.statement())
+            self._statement_into(prog.statements, _IN_PROGRAM)
+        if self.errors:
+            first = self.errors[0]
+            raise ParseError(first.message, first.line, first.col, errors=list(self.errors))
         return prog
 
     # ======================================================================
@@ -220,7 +309,7 @@ class Parser:
             self._advance()
             return TYPE_NAMES[tok.lexeme]
         raise ParseError(
-            f"प्रकारनाम अपेक्षितम् / expected a type name, found {tok.lexeme!r}",
+            f"प्रकारनाम अपेक्षितम् / expected a type name — किन्तु प्राप्तम् / but found '{tok.lexeme}'",
             tok.line, tok.col,
         )
 
@@ -406,6 +495,7 @@ class Parser:
 
         if self._check(T.LPAREN):                 # try the call form first
             saved = self.pos
+            recorded = len(self.errors)
             try:
                 self._advance()
                 if not self._check(T.RPAREN):
@@ -420,6 +510,10 @@ class Parser:
                 return Print(args, line)
             except ParseError:
                 self.pos = saved                  # it was `मुद्रय (अ+ब) * २।`
+                # a block inside the attempt may have recorded errors while it
+                # recovered; the attempt is undone, so they are too, and the
+                # command form will find whatever is really wrong
+                del self.errors[recorded:]
                 args = []
 
         while True:                                # the plain command form
@@ -481,14 +575,14 @@ class Parser:
                 tok = self.current
                 raise ParseError(
                     "'पक्षे' अथवा 'अन्यथा' अपेक्षितम् / expected 'पक्षे' or 'अन्यथा' "
-                    f"inside a विकल्पः — किन्तु प्राप्तम् / but found {tok.lexeme!r}",
+                    f"inside a विकल्पः — किन्तु प्राप्तम् / but found '{tok.lexeme}'",
                     tok.line, tok.col,
                 )
             self._expect(T.COLON, "':' अपेक्षितम् / expected ':' after the पक्षः")
 
             body: list[Stmt] = []
             while not self._check(T.CASE, T.ELSE, T.RBRACE, T.EOF):
-                body.append(self.statement())
+                self._statement_into(body, _IN_CASE)
             cases.append(SwitchCase(values, body, case_line))
 
         self._expect(T.RBRACE, "'}' अपेक्षितम् / expected '}' to close the विकल्पः")
@@ -537,7 +631,7 @@ class Parser:
         brace = self._expect(T.LBRACE, "'{' अपेक्षितम् / expected '{' to open a block")
         stmts: list[Stmt] = []
         while not self._check(T.RBRACE, T.EOF):
-            stmts.append(self.statement())
+            self._statement_into(stmts, _IN_BLOCK)
         self._expect(T.RBRACE, "'}' अपेक्षितम् / expected '}' to close the block")
         return Block(stmts, brace.line)
 
@@ -739,7 +833,7 @@ class Parser:
             return FunctionExpr(params, body, "अनाम", return_type, tok.line)
 
         raise ParseError(
-            f"अप्रत्याशितम् चिह्नम् / unexpected token {tok.lexeme!r}", tok.line, tok.col
+            f"अप्रत्याशितम् चिह्नम् / unexpected token '{tok.lexeme}'", tok.line, tok.col
         )
 
 
