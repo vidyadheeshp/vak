@@ -28,7 +28,7 @@ from . import __version__
 from .ast_nodes import ExpressionStmt, Program
 from .builtins import BUILTIN_DOCS
 from .tokens import KARAKA_ORDER, KARAKA_VIBHAKTI
-from .errors import VakError
+from .errors import VakExit, VakError
 from .analyzer import Analyzer
 from .compiler import compile_program
 from .interpreter import Interpreter, VakThrow
@@ -203,6 +203,8 @@ def run_file(path: Path, show_tokens: bool = False, show_ast: bool = False,
         else:
             Interpreter(str(path)).run(program)
         return 0
+    except VakExit as done:
+        return done.code
     except VakError as err:
         print(err.render(source, str(path)), file=sys.stderr)
         return 70
@@ -301,6 +303,8 @@ def repl() -> int:
                 value = interpreter.execute(stmt)
                 if isinstance(stmt, ExpressionStmt) and value is not None:
                     print(stringify(value, quote_strings=True))
+        except VakExit as done:
+            return done.code
         except VakThrow as thrown:
             print(Interpreter._to_error(thrown).render(source, "<संवादः>"), file=sys.stderr)
         except VakError as err:

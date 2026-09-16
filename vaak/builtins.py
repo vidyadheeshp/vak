@@ -15,7 +15,7 @@ from pathlib import Path
 import time as _time
 from typing import Any
 
-from .errors import RuntimeVakError
+from .errors import VakExit, RuntimeVakError
 from .tokens import DEV_TO_ASCII, aksharas
 from .values import NativeFunction, VakCallable, stringify, to_devanagari, type_name
 
@@ -530,6 +530,13 @@ def _dosha(message: Any = "दोषः", code: Any = "उपयोक्तृ�
     raise VakThrow(error_kosha(stringify(code), stringify(message)))
 
 
+def _nirgama(code: Any = 0) -> None:
+    """निर्गम — end the program with a status."""
+    if isinstance(code, bool) or not isinstance(code, int):
+        _fail("निर्गमः पूर्णाङ्कम् इच्छति / निर्गम expects an integer")
+    raise VakExit(int(code))
+
+
 # --------------------------------------------------------------------------
 # registry :  (devanagari, iast, python fn, arity, one-line doc)
 # --------------------------------------------------------------------------
@@ -604,6 +611,8 @@ _REGISTRY: list[tuple[str, str, Any, int, str, str]] = [
      "सञ्चिकाम् नाशयति / delete a file", "सत्यता"),
     ("निर्देशिका", "nirdeshika", _nirdeshika, -1,
      "निर्देशिकायाः सूची / list a directory", "सूची"),
+    ("निर्गम", "nirgama", _nirgama, -1,
+     "कार्यक्रमम् समापयति / end the program with a status", "शून्यम्"),
 ]
 
 

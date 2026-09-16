@@ -60,3 +60,22 @@ class RuntimeVakError(VakError):
 
     title = "कार्यकालदोषः (Runtime Error)"
     default_code = "कार्यकालदोषः"
+
+
+class VakExit(BaseException):
+    """निर्गम — the program asked to end, with a status.
+
+    Deliberately not a VakError. `प्रयत्नः` catches VakThrow, and the VM turns a
+    RuntimeVakError into a catchable Vāk error, so an exit built on either would
+    be swallowed by a दोषे block that meant to catch ordinary faults. A
+    BaseException passes through both, as an exit should, and a plain `except
+    Exception` around an embedded interpreter will not eat it either.
+
+    It is also not SystemExit: the CLI runs a program on a thread with a bigger
+    stack, and SystemExit raised there would end that thread and leave the
+    status behind. run_file catches this on the same thread and returns it.
+    """
+
+    def __init__(self, code: int = 0):
+        super().__init__(code)
+        self.code = int(code)

@@ -12,7 +12,7 @@ from __future__ import annotations
 from typing import Any
 
 from .analyzer import Analyzer, Report, SemanticError, analyze
-from .errors import LexError, ParseError, RuntimeVakError, VakError
+from .errors import VakExit, LexError, ParseError, RuntimeVakError, VakError
 from .interpreter import Interpreter
 from .lexer import Lexer, tokenize
 from .parser import Parser, parse
@@ -20,7 +20,7 @@ from .parser import Parser, parse
 __version__ = "0.13.0"
 __all__ = [
     "Lexer", "tokenize", "Parser", "parse", "Analyzer", "analyze", "Report", "Interpreter",
-    "VakError", "LexError", "ParseError", "RuntimeVakError", "SemanticError",
+    "VakError", "VakExit", "LexError", "ParseError", "RuntimeVakError", "SemanticError",
     "run_source", "check_source", "__version__",
 ]
 

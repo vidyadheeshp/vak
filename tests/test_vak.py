@@ -2420,6 +2420,7 @@ class TestEveryEngineKnowsEveryBuiltin(unittest.TestCase):
         "पठ", "काल", "यादृच्छिक", "दोष", "प्राचलाः", "खण्डम्_चालय",
         "सञ्चिकापठ", "सञ्चिकापङ्क्तयः", "सञ्चिकालिख", "सञ्चिकायोजय",
         "सञ्चिकास्ति", "सञ्चिकानाशय", "निर्देशिका", "लिख", "दोषलिख",
+        "निर्गम",
     }
 
     #: One call per built-in, chosen to give a printable answer.
@@ -2998,6 +2999,86 @@ class TestMoreParametersThanTheRuntimeHadRoomFor(unittest.TestCase):
                     self.assertEqual(printed, self.EXPECTED)
         finally:
             shutil.rmtree(directory, ignore_errors=True)
+
+class TestNirgamaSetsTheExitCode(unittest.TestCase):
+    """निर्गम — the built-in that ends a program with a status.
+
+    Vāk had no way to set one. Every runtime exits 70 on an uncaught error, but
+    a program that finishes normally exited 0 whatever it had found — which is
+    why `वाक्.exe --परीक्षा` reported a file it had just called broken with a
+    success status, where `python -m vaak --check` reported 70 for the same
+    file. Scripts and CI read that status; nothing else tells them.
+
+    It cannot be an ordinary error. प्रयत्नः catches VakThrow, and the VM turns a
+    RuntimeVakError into a catchable Vāk error, so an exit built on either would
+    be swallowed by a दोषे block meant for ordinary faults — hence a
+    BaseException in Python and plain exit() in C.
+    """
+
+    PROGRAM = 'मुद्रय "आरम्भः"।\nनिर्गम(३)।\nमुद्रय "न एतत्"।\n'
+
+    def ran(self, source: str, *flags: str, expect: str | None = None) -> int:
+        directory = Path(tempfile.mkdtemp(prefix="vak-nirgama-"))
+        path = directory / "प्रोग्राम.vak"
+        path.write_text(source, encoding="utf-8")
+        try:
+            proc = subprocess.run(
+                [sys.executable, "-m", "vaak", *flags, str(path)],
+                capture_output=True, cwd=str(ROOT), timeout=600,
+                env={**os.environ, "PYTHONIOENCODING": "utf-8"})
+        finally:
+            shutil.rmtree(directory, ignore_errors=True)
+        if expect is not None:
+            printed = proc.stdout.decode("utf-8", "replace").replace("\r\n", "\n").strip()
+            self.assertEqual(printed, expect,
+                             proc.stderr.decode("utf-8", "replace")[:300])
+        return proc.returncode
+
+    def test_the_status_reaches_the_process_on_every_python_engine(self):
+        """And the statement after निर्गम does not run."""
+        for flags in ([], ["--vm"], ["--self-vm"]):
+            with self.subTest(engine=" ".join(flags) or "tree"):
+                self.assertEqual(self.ran(self.PROGRAM, *flags, expect="आरम्भः"), 3)
+
+    @unittest.skipIf(GCC is None, "C-संकलकः न प्राप्तः / no C compiler available")
+    def test_the_status_reaches_the_process_natively(self):
+        self.assertEqual(self.ran(self.PROGRAM, "--run-native", expect="आरम्भः"), 3)
+
+    def test_no_argument_means_success(self):
+        self.assertEqual(self.ran('मुद्रय "क"।\nनिर्गम()।\n', expect="क"), 0)
+
+    def test_a_catch_block_cannot_swallow_it(self):
+        """A दोषे block catches faults, not a program that asked to stop."""
+        source = 'प्रयत्नः {\n    निर्गम(४)।\n} दोषे (द) {\n    मुद्रय "पकडितम्"।\n}\n'
+        self.assertEqual(self.ran(source, expect=""), 4)
+
+    def test_it_refuses_anything_but_an_integer(self):
+        self.assertEqual(self.ran('निर्गम("क")।\n'), 70)
+
+    def driver(self, source: str) -> int:
+        directory = Path(tempfile.mkdtemp(prefix="vak-nirgama-driver-"))
+        path = directory / "प्रोग्राम.vak"
+        path.write_text(source, encoding="utf-8")
+        try:
+            proc = subprocess.run(
+                [sys.executable, "-m", "vaak",
+                 str(ROOT / "स्वयंसिद्धिः" / "वाक्.vak"), "--", "--परीक्षा", str(path)],
+                capture_output=True, cwd=str(ROOT), timeout=900,
+                env={**os.environ, "PYTHONIOENCODING": "utf-8"})
+        finally:
+            shutil.rmtree(directory, ignore_errors=True)
+        return proc.returncode
+
+    def test_the_driver_now_reports_failure_like_the_python_toolchain(self):
+        """वाक्.vak --परीक्षा and python -m vaak --check on the same files."""
+        for name, source, expected in [
+            ("a syntax error", "मान = ५।\n", 70),
+            ("a semantic error", "मुद्रय अज्ञातम्।\n", 65),
+            ("a clean program", 'मुद्रय "नमः"।\n', 0),
+        ]:
+            with self.subTest(program=name):
+                self.assertEqual(self.driver(source), expected)
+
 
 class TestVersionIsStatedOnce(unittest.TestCase):
     """एकः एव अङ्कः — the version number lives in seven files.

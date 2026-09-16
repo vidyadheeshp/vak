@@ -1043,6 +1043,22 @@ static Mulyam a_lakshanam(Mulyam *prachalah, int ganana) {
     return phalam;
 }
 
+/* निर्गम — कार्यक्रमम् समापयति। exit() stdio निष्कासयति, अतः मुद्रितम् न नश्यति।
+   निर्गम — end the program with a status. No unwinding: a प्रयत्नः block does
+   not catch an exit here any more than it does on the Python engines. */
+static Mulyam a_nirgama(Mulyam *pra, int n) {
+    int sanketah = 0;
+    if (n > 0) {
+        if (pra[0].prakara != P_PURNANKA) {
+            dosha_utsrja("कार्यकालदोषः",
+                         "निर्गमः पूर्णाङ्कम् इच्छति / निर्गम expects an integer");
+            return shunyam_mulyam();
+        }
+        sanketah = (int)pra[0].as.purnanka;
+    }
+    exit(sanketah);
+}
+
 /* ------------------------------------------------------------- सूचिका */
 const Antarnihitam ANTARNIHITANI[] = {
     { "लिख", -1, a_likh },
@@ -1094,6 +1110,7 @@ const Antarnihitam ANTARNIHITANI[] = {
     { "सञ्चिकानाशय", 1, a_sanchikanashaya },
     { "निर्देशिका", -1, a_nirdeshika },
     { "खण्डम्_चालय", -1, a_khandam_chalaya },
+    { "निर्गम", -1, a_nirgama },
 };
 
 const int ANTARNIHITA_GANANA = (int)(sizeof(ANTARNIHITANI) / sizeof(ANTARNIHITANI[0]));
