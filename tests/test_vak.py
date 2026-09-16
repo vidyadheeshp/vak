@@ -64,149 +64,6 @@ def value(expression: str):
     return interp.run(program)
 
 
-class TestKarakaGraph(unittest.TestCase):
-    """कारकालेखः — the graph of who plays what role in which action.
-
-    The graph is not a new analysis; it is the analyser's own binding rule
-    written down as a picture. A call's arguments are matched to a कार्यम्'s
-    parameters exactly as कारकैः_क्रमय matches them — labelled ones to their
-    named slots, the rest into the free slots in order — so anything the graph
-    draws as अनुक्तम् or न्यूनम् is what the compiler would do or refuse.
-    """
-
-    def graph(self, source: str) -> dict:
-        return graph_of_source(source, "<परीक्षा>")
-
-    def test_an_action_lists_its_slots_in_declared_order(self):
-        g = self.graph("कार्यम् लिखतु(कर्ता शब्दः क, करणम् शब्दः ख = \"लेखन्या\",\n"
-                       "              कर्म शब्दः ग) : शब्दः { प्रत्यागच्छ क + ख + ग। }\n")
-        self.assertEqual(len(g["कार्याणि"]), 1)
-        act = g["कार्याणि"][0]
-        self.assertEqual(act["नाम"], "लिखतु")
-        self.assertEqual([p["कारकम्"] for p in act["प्राचलाः"]],
-                         ["कर्ता", "करणम्", "कर्म"])
-        self.assertEqual([p["मूलम्"] for p in act["प्राचलाः"]],
-                         [False, True, False])
-        self.assertEqual(act["दोषाः"], [])
-
-    def test_a_labelled_call_binds_by_name_whatever_the_order(self):
-        g = self.graph("कार्यम् लिखतु(कर्ता शब्दः क, कर्म शब्दः ग) : शब्दः {\n"
-                       "    प्रत्यागच्छ क + ग।\n}\n"
-                       "मुद्रय लिखतु(कर्म: \"ख\", कर्ता: \"अ\")।\n")
-        bonds = g["आह्वानानि"][0]["बन्धाः"]
-        self.assertEqual([(b["कारकम्"], b["रीतिः"], b["मूल्यम्"]) for b in bonds],
-                         [("कर्ता", "नाम्ना", '"अ"'), ("कर्म", "नाम्ना", '"ख"')])
-
-    def test_an_unstated_role_with_a_default_is_anuktam_not_a_fault(self):
-        """अनुक्तम् कारकम् — 'देवदत्तः पचति' names no कर्म and is still a
-        sentence. The graph draws the slot, marks it unspoken, and reports
-        no fault; the same call with no default would be न्यूनम्."""
-        g = self.graph("कार्यम् लिखतु(कर्ता शब्दः क, करणम् शब्दः ख = \"लेखन्या\",\n"
-                       "              कर्म शब्दः ग) : शब्दः { प्रत्यागच्छ क + ख + ग। }\n"
-                       "मुद्रय लिखतु(कर्ता: \"क\", कर्म: \"ग\")।\n")
-        call = g["आह्वानानि"][0]
-        ways = {b["कारकम्"]: b["रीतिः"] for b in call["बन्धाः"]}
-        self.assertEqual(ways["करणम्"], "अनुक्तम्")
-        self.assertEqual(call["दोषाः"], [])
-
-    def test_an_unstated_role_without_a_default_is_nyunam(self):
-        g = self.graph("कार्यम् लिखतु(कर्ता शब्दः क, कर्म शब्दः ग) : शब्दः {\n"
-                       "    प्रत्यागच्छ क + ग।\n}\n"
-                       "मुद्रय लिखतु(कर्ता: \"क\")।\n")
-        call = g["आह्वानानि"][0]
-        ways = {b["कारकम्"]: b["रीतिः"] for b in call["बन्धाः"]}
-        self.assertEqual(ways["कर्म"], "न्यूनम्")
-        self.assertEqual(call["दोषाः"], ["न्यूनम्: कर्म"])
-
-    def test_two_karta_slots_are_a_fault_on_the_action(self):
-        """एककर्तृत्वम् — one agent to an action. The analyser refuses it, and
-        the graph must show the same refusal without being told."""
-        g = self.graph("कार्यम् क(कर्ता शब्दः अ, कर्ता शब्दः ब) { मुद्रय अ, ब। }\n")
-        self.assertTrue(g["कार्याणि"][0]["दोषाः"])
-
-    def test_a_call_records_the_action_it_sits_inside(self):
-        g = self.graph("कार्यम् अ(कर्म पूर्णाङ्कः सङ्ख्या) { प्रत्यागच्छ सङ्ख्या। }\n"
-                       "कार्यम् ब() { प्रत्यागच्छ अ(१)। }\n"
-                       "मुद्रय ब()।\n")
-        inside = {c["कार्यम्"]: c["अन्तः"] for c in g["आह्वानानि"]}
-        self.assertEqual(inside["अ"], "ब")
-        self.assertIsNone(inside["ब"])
-
-    def test_the_graph_of_every_example_is_built_by_python_and_by_vak_alike(self):
-        """The differential that matters: वाक्-in-वाक् builds the same graph as
-        the Python module, over every example that ships. The two walkers were
-        written separately from the same rule; if they ever disagree, one of
-        them has stopped describing the language."""
-        if not bootstrap_available():
-            self.skipTest("no bootstrap")
-        for path in sorted((ROOT / "examples").glob("*.vak")):
-            with self.subTest(example=path.name):
-                source = path.read_text(encoding="utf-8")
-                self.assertEqual(graph_with_vak(source),
-                                 graph_of_source(source, path.name))
-
-    def test_the_cli_prints_the_same_graph_as_json(self):
-        path = ROOT / "examples" / "13_karaka.vak"
-        result = subprocess.run([sys.executable, "-m", "vaak", "--graph", str(path)],
-                                capture_output=True, encoding="utf-8", cwd=str(ROOT))
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(json.loads(result.stdout),
-                         graph_of_source(path.read_text(encoding="utf-8"), path.name))
-
-
-class TestThePlaygroundCarriesTheKarakaGraph(unittest.TestCase):
-    """आलेखः क्रीडाक्षेत्रे — the live graph panel, as committed.
-
-    docs/playground.html is a generated file that is also a shipped one: what
-    is in the repository is what GitHub Pages serves. The renderer lives in
-    docs/playground_graph.{js,css} and is inlined at build time, so an edit to
-    either without a rebuild would serve a page that quietly lags its source.
-    """
-
-    def page(self) -> str:
-        return (ROOT / "docs" / "playground.html").read_text(encoding="utf-8")
-
-    def test_the_panel_and_its_tab_are_in_the_markup(self):
-        page = self.page()
-        for needle in ('id="tab-graph"', 'id="graph-status"',
-                       'class="kg-pane" id="graph"', "आलेखः · kāraka graph"):
-            self.assertIn(needle, page)
-
-    def test_the_renderer_is_inlined_from_its_own_files(self):
-        page = self.page()
-        css = (ROOT / "docs" / "playground_graph.css").read_text(encoding="utf-8")
-        self.assertTrue(css.strip() in page,
-                        "playground_graph.css is stale in the page "
-                        "— run python docs/build_playground.py")
-        from vaak.tokens import KARAKA_ORDER, KARAKA_VIBHAKTI
-        js = ((ROOT / "docs" / "playground_graph.js").read_text(encoding="utf-8")
-              .replace("__KARAKA_ORDER__",
-                       json.dumps(list(KARAKA_ORDER), ensure_ascii=False))
-              .replace("__KARAKA_TABLE__",
-                       json.dumps({r: KARAKA_VIBHAKTI[r] for r in KARAKA_ORDER},
-                                  ensure_ascii=False)))
-        self.assertTrue(js.strip() in page,
-                        "playground_graph.js is stale in the page "
-                        "— run python docs/build_playground.py")
-
-    def test_the_legend_comes_from_the_language_not_a_copy(self):
-        """The six roles and their vibhakti are stated in vaak/tokens.py. The
-        page is handed that table rather than repeating it, because a legend
-        that drifts from the analyser teaches the wrong grammar."""
-        from vaak.tokens import KARAKA_ORDER, KARAKA_VIBHAKTI
-        page = self.page()
-        self.assertNotIn("__KARAKA_ORDER__", page)
-        self.assertNotIn("__KARAKA_TABLE__", page)
-        self.assertIn(json.dumps(list(KARAKA_ORDER), ensure_ascii=False), page)
-        self.assertIn(json.dumps({r: KARAKA_VIBHAKTI[r] for r in KARAKA_ORDER},
-                                 ensure_ascii=False), page)
-
-    def test_the_engine_in_the_page_answers_alekhah(self):
-        """The panel asks the engine for `--आलेखः`; an engine built before the
-        flag existed would leave the tab permanently blank."""
-        self.assertIn("--आलेखः", self.page())
-
-
 # ==========================================================================
 class TestLexer(unittest.TestCase):
     def test_devanagari_numerals(self):
@@ -740,6 +597,95 @@ class TestKarakas(unittest.TestCase):
         with self.assertRaises(RuntimeVakError):
             run_source("कार्यम् क(अ, ब) { प्रत्यागच्छ अ। } क(कर्म: १, करणम्: २)।")
 
+
+class TestKarakaGraph(unittest.TestCase):
+    """कारकालेखः — the graph of who plays what role in which action.
+
+    The graph is not a new analysis; it is the analyser's own binding rule
+    written down as a picture. A call's arguments are matched to a कार्यम्'s
+    parameters exactly as कारकैः_क्रमय matches them — labelled ones to their
+    named slots, the rest into the free slots in order — so anything the graph
+    draws as अनुक्तम् or न्यूनम् is what the compiler would do or refuse.
+    """
+
+    def graph(self, source: str) -> dict:
+        return graph_of_source(source, "<परीक्षा>")
+
+    def test_an_action_lists_its_slots_in_declared_order(self):
+        g = self.graph("कार्यम् लिखतु(कर्ता शब्दः क, करणम् शब्दः ख = \"लेखन्या\",\n"
+                       "              कर्म शब्दः ग) : शब्दः { प्रत्यागच्छ क + ख + ग। }\n")
+        self.assertEqual(len(g["कार्याणि"]), 1)
+        act = g["कार्याणि"][0]
+        self.assertEqual(act["नाम"], "लिखतु")
+        self.assertEqual([p["कारकम्"] for p in act["प्राचलाः"]],
+                         ["कर्ता", "करणम्", "कर्म"])
+        self.assertEqual([p["मूलम्"] for p in act["प्राचलाः"]],
+                         [False, True, False])
+        self.assertEqual(act["दोषाः"], [])
+
+    def test_a_labelled_call_binds_by_name_whatever_the_order(self):
+        g = self.graph("कार्यम् लिखतु(कर्ता शब्दः क, कर्म शब्दः ग) : शब्दः {\n"
+                       "    प्रत्यागच्छ क + ग।\n}\n"
+                       "मुद्रय लिखतु(कर्म: \"ख\", कर्ता: \"अ\")।\n")
+        bonds = g["आह्वानानि"][0]["बन्धाः"]
+        self.assertEqual([(b["कारकम्"], b["रीतिः"], b["मूल्यम्"]) for b in bonds],
+                         [("कर्ता", "नाम्ना", '"अ"'), ("कर्म", "नाम्ना", '"ख"')])
+
+    def test_an_unstated_role_with_a_default_is_anuktam_not_a_fault(self):
+        """अनुक्तम् कारकम् — 'देवदत्तः पचति' names no कर्म and is still a
+        sentence. The graph draws the slot, marks it unspoken, and reports
+        no fault; the same call with no default would be न्यूनम्."""
+        g = self.graph("कार्यम् लिखतु(कर्ता शब्दः क, करणम् शब्दः ख = \"लेखन्या\",\n"
+                       "              कर्म शब्दः ग) : शब्दः { प्रत्यागच्छ क + ख + ग। }\n"
+                       "मुद्रय लिखतु(कर्ता: \"क\", कर्म: \"ग\")।\n")
+        call = g["आह्वानानि"][0]
+        ways = {b["कारकम्"]: b["रीतिः"] for b in call["बन्धाः"]}
+        self.assertEqual(ways["करणम्"], "अनुक्तम्")
+        self.assertEqual(call["दोषाः"], [])
+
+    def test_an_unstated_role_without_a_default_is_nyunam(self):
+        g = self.graph("कार्यम् लिखतु(कर्ता शब्दः क, कर्म शब्दः ग) : शब्दः {\n"
+                       "    प्रत्यागच्छ क + ग।\n}\n"
+                       "मुद्रय लिखतु(कर्ता: \"क\")।\n")
+        call = g["आह्वानानि"][0]
+        ways = {b["कारकम्"]: b["रीतिः"] for b in call["बन्धाः"]}
+        self.assertEqual(ways["कर्म"], "न्यूनम्")
+        self.assertEqual(call["दोषाः"], ["न्यूनम्: कर्म"])
+
+    def test_two_karta_slots_are_a_fault_on_the_action(self):
+        """एककर्तृत्वम् — one agent to an action. The analyser refuses it, and
+        the graph must show the same refusal without being told."""
+        g = self.graph("कार्यम् क(कर्ता शब्दः अ, कर्ता शब्दः ब) { मुद्रय अ, ब। }\n")
+        self.assertTrue(g["कार्याणि"][0]["दोषाः"])
+
+    def test_a_call_records_the_action_it_sits_inside(self):
+        g = self.graph("कार्यम् अ(कर्म पूर्णाङ्कः सङ्ख्या) { प्रत्यागच्छ सङ्ख्या। }\n"
+                       "कार्यम् ब() { प्रत्यागच्छ अ(१)। }\n"
+                       "मुद्रय ब()।\n")
+        inside = {c["कार्यम्"]: c["अन्तः"] for c in g["आह्वानानि"]}
+        self.assertEqual(inside["अ"], "ब")
+        self.assertIsNone(inside["ब"])
+
+    def test_the_graph_of_every_example_is_built_by_python_and_by_vak_alike(self):
+        """The differential that matters: वाक्-in-वाक् builds the same graph as
+        the Python module, over every example that ships. The two walkers were
+        written separately from the same rule; if they ever disagree, one of
+        them has stopped describing the language."""
+        if not bootstrap_available():
+            self.skipTest("no bootstrap")
+        for path in sorted((ROOT / "examples").glob("*.vak")):
+            with self.subTest(example=path.name):
+                source = path.read_text(encoding="utf-8")
+                self.assertEqual(graph_with_vak(source),
+                                 graph_of_source(source, path.name))
+
+    def test_the_cli_prints_the_same_graph_as_json(self):
+        path = ROOT / "examples" / "13_karaka.vak"
+        result = subprocess.run([sys.executable, "-m", "vaak", "--graph", str(path)],
+                                capture_output=True, encoding="utf-8", cwd=str(ROOT))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout),
+                         graph_of_source(path.read_text(encoding="utf-8"), path.name))
 
 class TestModules(unittest.TestCase):
     """आनय — modules, and the सञ्चिका built-ins."""
@@ -2979,6 +2925,80 @@ class TestDoWhileNatively(unittest.TestCase):
             shutil.rmtree(directory, ignore_errors=True)
 
 
+class TestMoreParametersThanTheRuntimeHadRoomFor(unittest.TestCase):
+    """बहवः प्राचलाः — a कार्यम् with more parameters than the C runtime's
+    fixed buffers.
+
+    The native runtime ordered a call's arguments in three stack arrays of 32,
+    indexed by the *declared* parameter count, and collected the call's
+    arguments into a fourth. None was bounded. A कार्यम् of forty parameters,
+    called with a single kāraka label, wrote past all of them: both Python
+    engines printed 780 and the native one died with a segmentation fault.
+    प्रयुज् did not crash — it clamped its argument count to 32 and dropped the
+    rest without a word, which is worse, because the program keeps running and
+    the answer is merely wrong.
+
+    Nothing in the language limits how many parameters a कार्यम् may declare,
+    so nothing in one engine may either.
+    """
+
+    COUNT = 40
+    EXPECTED = str(sum(range(40)))
+
+    @classmethod
+    def labelled(cls) -> str:
+        """One कर्ता among forty — enough to take the kāraka ordering path."""
+        params = ["कर्ता पूर्णाङ्कः प0"] + [f"पूर्णाङ्कः प{i}" for i in range(1, cls.COUNT)]
+        args = ["कर्ता: 0"] + [str(i) for i in range(1, cls.COUNT)]
+        return (f"कार्यम् बहु({', '.join(params)}) : पूर्णाङ्कः {{\n"
+                f"    प्रत्यागच्छ {' + '.join(f'प{i}' for i in range(cls.COUNT))}।\n}}\n"
+                f"मुद्रय बहु({', '.join(args)})।\n")
+
+    @classmethod
+    def applied(cls) -> str:
+        """प्रयुज् with a सूची longer than the buffer it used to be copied into."""
+        params = ", ".join(f"पूर्णाङ्कः प{i}" for i in range(cls.COUNT))
+        return (f"कार्यम् बहु({params}) : पूर्णाङ्कः {{\n"
+                f"    प्रत्यागच्छ {' + '.join(f'प{i}' for i in range(cls.COUNT))}।\n}}\n"
+                f"मुद्रय प्रयुज्(बहु, [{', '.join(str(i) for i in range(cls.COUNT))}])।\n")
+
+    def engines(self, source: str) -> dict[str, str]:
+        out = {"tree": output(source), "vm": vm_output(source)}
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            run_with_vak(source)
+        out["यन्त्रम्.vak"] = buf.getvalue().strip()
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            VM("<प>").run(compile_with_vak(source, "<प>"))
+        out["compiled by Vāk"] = buf.getvalue().strip()
+        return out
+
+    def test_every_python_engine_agrees(self):
+        for name, source in (("labelled", self.labelled()), ("प्रयुज्", self.applied())):
+            for engine, printed in self.engines(source).items():
+                with self.subTest(program=name, engine=engine):
+                    self.assertEqual(printed, self.EXPECTED)
+
+    @unittest.skipIf(GCC is None, "C-संकलकः न प्राप्तः / no C compiler available")
+    def test_the_native_runtime_agrees_instead_of_crashing(self):
+        """The engine that segfaulted. A non-zero exit here is the bug back."""
+        directory = Path(tempfile.mkdtemp(prefix="vak-many-params-"))
+        try:
+            for name, source in (("labelled", self.labelled()), ("प्रयुज्", self.applied())):
+                with self.subTest(program=name):
+                    path = directory / f"{name}.vak"
+                    path.write_text(source, encoding="utf-8")
+                    exe = build_executable(source, path, directory)
+                    proc = subprocess.run([str(exe.resolve())], capture_output=True, timeout=300)
+                    printed = proc.stdout.decode("utf-8", "replace").strip()
+                    self.assertEqual(proc.returncode, 0,
+                                     f"exit {proc.returncode} — "
+                                     + proc.stderr.decode("utf-8", "replace")[:300])
+                    self.assertEqual(printed, self.EXPECTED)
+        finally:
+            shutil.rmtree(directory, ignore_errors=True)
+
 class TestVersionIsStatedOnce(unittest.TestCase):
     """एकः एव अङ्कः — the version number lives in seven files.
 
@@ -3225,6 +3245,11 @@ function feeder(text) {
         "प्रयुज्": "कार्यम् य(अ, ब, स) { प्रत्यागच्छ अ + ब + स। }\nमुद्रय प्रयुज्(य, [१, २, ३])।",
         "bit operations": "मुद्रय प्रतिच्छेदः(१२, १०), पूरकः(१२), वामसारः(१, ४)।",
         "romanised built-ins": "मुद्रय dirghata([१, २, ३]), purakah(१२)।",
+        # the page runs the same C runtime, and it overflowed its
+        # argument buffers on any call of more than 32 — a visitor
+        # could have killed the tab with a long enough प्रयुज्.
+        "more arguments than the buffers held":
+            "कार्यम् बहु(पूर्णाङ्कः प0, पूर्णाङ्कः प1, पूर्णाङ्कः प2, पूर्णाङ्कः प3, पूर्णाङ्कः प4, पूर्णाङ्कः प5, पूर्णाङ्कः प6, पूर्णाङ्कः प7, पूर्णाङ्कः प8, पूर्णाङ्कः प9, पूर्णाङ्कः प10, पूर्णाङ्कः प11, पूर्णाङ्कः प12, पूर्णाङ्कः प13, पूर्णाङ्कः प14, पूर्णाङ्कः प15, पूर्णाङ्कः प16, पूर्णाङ्कः प17, पूर्णाङ्कः प18, पूर्णाङ्कः प19, पूर्णाङ्कः प20, पूर्णाङ्कः प21, पूर्णाङ्कः प22, पूर्णाङ्कः प23, पूर्णाङ्कः प24, पूर्णाङ्कः प25, पूर्णाङ्कः प26, पूर्णाङ्कः प27, पूर्णाङ्कः प28, पूर्णाङ्कः प29, पूर्णाङ्कः प30, पूर्णाङ्कः प31, पूर्णाङ्कः प32, पूर्णाङ्कः प33, पूर्णाङ्कः प34, पूर्णाङ्कः प35, पूर्णाङ्कः प36, पूर्णाङ्कः प37, पूर्णाङ्कः प38, पूर्णाङ्कः प39) : पूर्णाङ्कः { प्रत्यागच्छ प0 + प1 + प2 + प3 + प4 + प5 + प6 + प7 + प8 + प9 + प10 + प11 + प12 + प13 + प14 + प15 + प16 + प17 + प18 + प19 + प20 + प21 + प22 + प23 + प24 + प25 + प26 + प27 + प28 + प29 + प30 + प31 + प32 + प33 + प34 + प35 + प36 + प37 + प38 + प39। }\nमुद्रय प्रयुज्(बहु, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39])।",
     }
 
     #: Programs whose kāraka graph the page draws. The आलेखः panel renders
@@ -3306,6 +3331,58 @@ function feeder(text) {
 
 
 @unittest.skipIf(GCC is None, "C-संकलकः न प्राप्तः / no C compiler available")
+class TestThePlaygroundCarriesTheKarakaGraph(unittest.TestCase):
+    """आलेखः क्रीडाक्षेत्रे — the live graph panel, as committed.
+
+    docs/playground.html is a generated file that is also a shipped one: what
+    is in the repository is what GitHub Pages serves. The renderer lives in
+    docs/playground_graph.{js,css} and is inlined at build time, so an edit to
+    either without a rebuild would serve a page that quietly lags its source.
+    """
+
+    def page(self) -> str:
+        return (ROOT / "docs" / "playground.html").read_text(encoding="utf-8")
+
+    def test_the_panel_and_its_tab_are_in_the_markup(self):
+        page = self.page()
+        for needle in ('id="tab-graph"', 'id="graph-status"',
+                       'class="kg-pane" id="graph"', "आलेखः · kāraka graph"):
+            self.assertIn(needle, page)
+
+    def test_the_renderer_is_inlined_from_its_own_files(self):
+        page = self.page()
+        css = (ROOT / "docs" / "playground_graph.css").read_text(encoding="utf-8")
+        self.assertTrue(css.strip() in page,
+                        "playground_graph.css is stale in the page "
+                        "— run python docs/build_playground.py")
+        from vaak.tokens import KARAKA_ORDER, KARAKA_VIBHAKTI
+        js = ((ROOT / "docs" / "playground_graph.js").read_text(encoding="utf-8")
+              .replace("__KARAKA_ORDER__",
+                       json.dumps(list(KARAKA_ORDER), ensure_ascii=False))
+              .replace("__KARAKA_TABLE__",
+                       json.dumps({r: KARAKA_VIBHAKTI[r] for r in KARAKA_ORDER},
+                                  ensure_ascii=False)))
+        self.assertTrue(js.strip() in page,
+                        "playground_graph.js is stale in the page "
+                        "— run python docs/build_playground.py")
+
+    def test_the_legend_comes_from_the_language_not_a_copy(self):
+        """The six roles and their vibhakti are stated in vaak/tokens.py. The
+        page is handed that table rather than repeating it, because a legend
+        that drifts from the analyser teaches the wrong grammar."""
+        from vaak.tokens import KARAKA_ORDER, KARAKA_VIBHAKTI
+        page = self.page()
+        self.assertNotIn("__KARAKA_ORDER__", page)
+        self.assertNotIn("__KARAKA_TABLE__", page)
+        self.assertIn(json.dumps(list(KARAKA_ORDER), ensure_ascii=False), page)
+        self.assertIn(json.dumps({r: KARAKA_VIBHAKTI[r] for r in KARAKA_ORDER},
+                                 ensure_ascii=False), page)
+
+    def test_the_engine_in_the_page_answers_alekhah(self):
+        """The panel asks the engine for `--आलेखः`; an engine built before the
+        flag existed would leave the tab permanently blank."""
+        self.assertIn("--आलेखः", self.page())
+
 class TestTheSelfHostedToolchainOnTheCRuntime(unittest.TestCase):
     """स्वयंसिद्धिः देशीयरूपेण — the combination no test used to run.
 
@@ -3537,6 +3614,61 @@ class TestTheEditorExtensionIsCurrent(unittest.TestCase):
         package = json.loads((ROOT / "vscode-vak" / "package.json").read_text(encoding="utf-8"))
         self.assertEqual(package["version"], __version__)
 
+    def test_the_manifest_can_be_published(self):
+        """A .vsix is now cut from this manifest and attached to every release,
+        so the fields the Marketplace builds its listing from have to be there.
+        Without `repository` the listing has no way back to the source, and
+        vsce warns about it while publishing anyway."""
+        manifest = self.module.PACKAGE
+        for field in ("name", "displayName", "description", "version", "publisher",
+                      "license", "icon", "repository", "homepage", "bugs",
+                      "engines", "categories"):
+            with self.subTest(field=field):
+                self.assertTrue(manifest.get(field), f"package.json has no {field}")
+        self.assertEqual(manifest["repository"]["url"],
+                         "https://github.com/vidyadheeshp/vak.git")
+
+    def test_every_file_the_manifest_points_at_exists(self):
+        """A path in package.json that names nothing installs as a broken
+        extension: no icon, no highlighting, no language configuration. The
+        package would still build and still publish."""
+        here = ROOT / "vscode-vak"
+        manifest = self.module.PACKAGE
+        pointed = [manifest["icon"], manifest["main"]]
+        for language in manifest["contributes"]["languages"]:
+            pointed.append(language["configuration"])
+            pointed += list(language.get("icon", {}).values())
+        for grammar in manifest["contributes"]["grammars"]:
+            pointed.append(grammar["path"])
+        for path in pointed:
+            with self.subTest(path=path):
+                self.assertTrue((here / path.lstrip("./")).is_file(),
+                                f"package.json points at {path}, which does not exist")
+
+    def test_the_package_leaves_out_what_should_not_ship(self):
+        """`.vscodeignore` decides what lands in the .vsix. It did not exclude
+        __pycache__, which exists in vscode-vak/ on any machine that has run
+        the generator — so the bytecode of the very script the package
+        deliberately omits would have been published with it."""
+        ignored = self.module.VSCODEIGNORE.split("\n")
+        for pattern in ("build_extension.py", "check_vsix.py", "__pycache__/**", "*.vsix"):
+            self.assertIn(pattern, ignored)
+
+    def test_the_vsix_checker_rejects_what_it_should(self):
+        """The checker that guards the package in CI, checked itself: it once
+        called extension.vsixmanifest — a required part of every archive —
+        something that should not ship, because it matched ".vsix" anywhere in
+        the name instead of at the end."""
+        sys.path.insert(0, str(ROOT / "vscode-vak"))
+        import importlib
+        checker = importlib.import_module("check_vsix")
+        for name in ("extension/package.json", "extension.vsixmanifest",
+                     "[Content_Types].xml", "extension/syntaxes/vak.tmLanguage.json"):
+            self.assertFalse(checker.unwanted(name), f"{name} must be allowed")
+        for name in ("extension/__pycache__/build_extension.cpython-313.pyc",
+                     "extension/build_extension.py", "extension/check_vsix.py",
+                     "extension/vak-0.13.0.vsix"):
+            self.assertTrue(checker.unwanted(name), f"{name} must be rejected")
 
 class TestPackaging(unittest.TestCase):
     """`twine check` validates the description and nothing else, so an invalid

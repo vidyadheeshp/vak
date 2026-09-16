@@ -457,9 +457,16 @@ static void nyunan_utsrja(const SankalitaKaryam *k, const bool *purnani) {
                      nyunani, nyunani);
 }
 
+/* अन्तरिकाणि स्थानानि — how many arguments a call orders without asking the
+   heap.  Ordinary calls are far below this; the number only decides where the
+   room comes from, never how many parameters a कार्यम् may declare. */
+#define ANTARIKANI_STHANANI 32
+
+static void avarane_ahvanam(Mulyam ahveyam, Avarana *a, Mulyam *prachalah, int ganana,
+                            const char **karakah, Mulyam *kramitah, bool *purnani);
+
 static void karakaih_kramaya(const SankalitaKaryam *k, Mulyam *prachalah, int ganana,
-                             const char **karakah, Mulyam *out) {
-    bool purnani[32];
+                             const char **karakah, Mulyam *out, bool *purnani) {
     for (int i = 0; i < k->prachala_ganana; i++) { purnani[i] = false; out[i] = shunyam_mulyam(); }
     for (int i = 0; i < ganana; i++) {
         if (!karakah[i]) continue;
@@ -556,15 +563,51 @@ static void ahvanam_kuru(Mulyam ahveyam, Mulyam *prachalah, int ganana,
         return;
     }
 
+    /* स्थानानि — enough room for the arguments given and for the parameters
+       declared, whichever is more.  The inline buffers cover every ordinary
+       call; anything larger borrows from the heap rather than the stack. */
     Avarana *a = (Avarana *)ahveyam.as.vastu;
+    int sthanani = a->karyam->prachala_ganana > ganana ? a->karyam->prachala_ganana : ganana;
+    Mulyam antarike[ANTARIKANI_STHANANI];
+    bool purne[ANTARIKANI_STHANANI];
+    Mulyam *kramitah = antarike;
+    bool *purnani = purne;
+    Mulyam *mukta_kramitah = NULL;
+    bool *mukta_purnani = NULL;
+    if (sthanani > ANTARIKANI_STHANANI) {
+        mukta_kramitah = (Mulyam *)malloc(sizeof *mukta_kramitah * (size_t)sthanani);
+        mukta_purnani = (bool *)malloc(sizeof *mukta_purnani * (size_t)sthanani);
+        if (!mukta_kramitah || !mukta_purnani) {
+            free(mukta_kramitah);
+            free(mukta_purnani);
+            dosha_utsrja("स्मृतिदोषः", "स्मृतिः न पर्याप्ता / out of memory");
+            for (int i = 0; i < ganana; i++) muncha(prachalah[i]);
+            return;
+        }
+        kramitah = mukta_kramitah;
+        purnani = mukta_purnani;
+    }
+    avarane_ahvanam(ahveyam, a, prachalah, ganana, karakah, kramitah, purnani);
+    free(mukta_kramitah);
+    free(mukta_purnani);
+}
+
+
+/* आवरणे आह्वानम् — the body of a call to a कार्यम्, given the room to order
+   its arguments in.  It is a separate function so that room is allocated and
+   released in exactly one place: these buffers were three fixed arrays of 32
+   on the stack, indexed by the *declared* parameter count, and a कार्यम् with
+   more parameters than that wrote straight past all three.  Both Python
+   engines answered such a call correctly; this one segfaulted. */
+static void avarane_ahvanam(Mulyam ahveyam, Avarana *a, Mulyam *prachalah, int ganana,
+                            const char **karakah, Mulyam *kramitah, bool *purnani) {
     const SankalitaKaryam *k = a->karyam;
-    Mulyam kramitah[32];
     if (karakah) {
-        karakaih_kramaya(k, prachalah, ganana, karakah, kramitah);
+        karakaih_kramaya(k, prachalah, ganana, karakah, kramitah, purnani);
         if (DOSHA_ASTI) return;
         ganana = k->prachala_ganana;
     } else {
-        for (int i = 0; i < ganana && i < 32; i++) kramitah[i] = prachalah[i];
+        for (int i = 0; i < ganana; i++) kramitah[i] = prachalah[i];
     }
     /* मूलमूल्यानि — how many arguments must be supplied: a count, not the
        index of the first default, because where every parameter names its
@@ -588,7 +631,6 @@ static void ahvanam_kuru(Mulyam ahveyam, Mulyam *prachalah, int ganana,
     }
     /* arguments fill parameters left to right; what is left takes its default */
     if (ganana < k->prachala_ganana) {
-        bool purnani[32];
         for (int i = 0; i < k->prachala_ganana; i++) purnani[i] = i < ganana;
         nyunan_utsrja(k, purnani);
         if (DOSHA_ASTI) {
@@ -978,19 +1020,44 @@ static Mulyam adeshan_chalaya(int virama_gabhirata) {
         case A_PRAYUJ: {
             Mulyam arghah = grihana_stupat();
             Mulyam ahveyam = grihana_stupat();
-            Mulyam prachalah[32];
-            const char *karaka_buf[32];
+            /* प्रयुज् learns its argument count at run time, so the room it
+               needs is not known until now.  It used to clamp that count to
+               32 and drop the rest in silence. */
+            Mulyam antarike[ANTARIKANI_STHANANI];
+            const char *karaka_antarike[ANTARIKANI_STHANANI];
+            Mulyam *prachalah = antarike;
+            const char **karaka_buf = karaka_antarike;
+            Mulyam *mukta_p = NULL;
+            const char **mukta_k = NULL;
             const char **karakah = NULL;
             int n = 0;
             bool sound = true;
 
+            int ichchha = arghah.prakara == P_SUCHI  ? as_suchi(arghah)->dirghata
+                        : arghah.prakara == P_KOSHA  ? as_kosha(arghah)->dirghata
+                        : 0;
+            if (ichchha > ANTARIKANI_STHANANI) {
+                mukta_p = (Mulyam *)malloc(sizeof *mukta_p * (size_t)ichchha);
+                mukta_k = (const char **)malloc(sizeof *mukta_k * (size_t)ichchha);
+                if (!mukta_p || !mukta_k) {
+                    free(mukta_p);
+                    free((void *)mukta_k);
+                    dosha_utsrja("स्मृतिदोषः", "स्मृतिः न पर्याप्ता / out of memory");
+                    muncha(arghah);
+                    muncha(ahveyam);
+                    break;
+                }
+                prachalah = mukta_p;
+                karaka_buf = mukta_k;
+            }
+
             if (arghah.prakara == P_SUCHI) {
                 Suchi *su = as_suchi(arghah);
-                n = su->dirghata > 32 ? 32 : su->dirghata;
+                n = su->dirghata;
                 for (int i = 0; i < n; i++) prachalah[i] = grah(su->angani[i]);
             } else if (arghah.prakara == P_KOSHA) {
                 Kosha *ko = as_kosha(arghah);
-                n = ko->dirghata > 32 ? 32 : ko->dirghata;
+                n = ko->dirghata;
                 for (int i = 0; i < n && sound; i++) {
                     Mulyam kunjika = ko->yugmani[i].kunjika;
                     const char *key = kunjika.prakara == P_SHABDA
@@ -1015,9 +1082,11 @@ static Mulyam adeshan_chalaya(int virama_gabhirata) {
                 sound = false;
             }
             muncha(arghah);
-            if (!sound) { muncha(ahveyam); break; }
+            if (!sound) { muncha(ahveyam); free(mukta_p); free((void *)mukta_k); break; }
             ahvanam_kuru(ahveyam, prachalah, n, karakah);
             muncha(ahveyam);
+            free(mukta_p);
+            free((void *)mukta_k);
             break;
         }
         case A_AHVAYA: case A_KARAKAIH_AHVAYA: {
@@ -1025,12 +1094,29 @@ static Mulyam adeshan_chalaya(int virama_gabhirata) {
             const char **karakah = NULL;
             if (adesha == A_KARAKAIH_AHVAYA)
                 karakah = c->khanda->dhruvah[sanketah[c->sthanam++]].shabdah;
-            Mulyam prachalah[32];
+            /* n is the call site's argument count, and it was written into
+               a fixed array of 32 without a bound — the instruction that
+               actually segfaulted on a 40-argument call. */
+            Mulyam antarike[ANTARIKANI_STHANANI];
+            Mulyam *prachalah = antarike;
+            Mulyam *mukta = NULL;
+            if (n > ANTARIKANI_STHANANI) {
+                mukta = (Mulyam *)malloc(sizeof *mukta * (size_t)n);
+                if (!mukta) {
+                    dosha_utsrja("स्मृतिदोषः", "स्मृतिः न पर्याप्ता / out of memory");
+                    for (int i = 0; i < n; i++) muncha(Y.stupa[Y.stupa_dirghata - n + i]);
+                    Y.stupa_dirghata -= n;
+                    muncha(grihana_stupat());
+                    break;
+                }
+                prachalah = mukta;
+            }
             for (int i = 0; i < n; i++) prachalah[i] = Y.stupa[Y.stupa_dirghata - n + i];
             Y.stupa_dirghata -= n;
             Mulyam ahveyam = grihana_stupat();
             ahvanam_kuru(ahveyam, prachalah, n, karakah);
             muncha(ahveyam);
+            free(mukta);
             break;
         }
         case A_PRATYAGACCHA: {
