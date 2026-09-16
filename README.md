@@ -169,7 +169,7 @@ machine.
 ### Checking that it works
 
 ```powershell
-python -m vaak --version          # वाक् (Vāk) 0.13.0
+python -m vaak --version          # वाक् (Vāk) 0.14.0
 python -m vaak --builtins         # the 39 built-in functions
 python -m vaak                    # संवादः — the interactive session
 ```
@@ -213,13 +213,30 @@ If no compiler is found, Vāk says so rather than failing obscurely.
 
 ### The editor extension
 
-Copy `vscode-vak/` into your VS Code extensions directory and reload the
-window:
+**From a package.** Releases cut from 0.13.1 onward attach a `.vsix`:
+
+```bash
+code --install-extension vak-0.13.1.vsix
+```
+
+You can build that same package yourself — it needs Node, and nothing else:
+
+```bash
+python vscode-vak/build_extension.py
+cd vscode-vak && npx @vscode/vsce package --no-dependencies
+```
+
+**From the source tree.** Copy `vscode-vak/` into your VS Code extensions
+directory and reload the window:
 
 ```
 %USERPROFILE%\.vscode\extensions\vscode-vak      # Windows
 ~/.vscode/extensions/vscode-vak                  # macOS and Linux
 ```
+
+It is not on the VS Code Marketplace. The release workflow can publish it
+there as soon as a publishing token exists; until then the `.vsix` is the
+whole story.
 
 Then point it at whichever toolchain you installed: set `vak.executable` to
 your `वाक्.exe`, or leave it empty and set `vak.pythonPath` so it uses
@@ -264,7 +281,7 @@ run_source('मुद्रय "नमस्ते जगत्"।')
 ### The REPL
 
 ```
-वाक् (Vāk) 0.13.0 — संस्कृतभाषायाः संगणकभाषा
+वाक् (Vāk) 0.14.0 — संस्कृतभाषायाः संगणकभाषा
 सहायता: :सहायता   निर्गमः: :निर्गम  (help / exit)
 वाक्> पूर्णाङ्कः क = ७।
 वाक्> क * क
@@ -684,6 +701,38 @@ A value that passes through an untyped function is unknown to the analyser and i
 at runtime instead — [11_prakarah.vak](examples/11_prakarah.vak) demonstrates both sides of
 that line.
 
+### व्याकरणदोषाः · Syntax errors
+
+The parser runs first, and it too reports every error rather than the first. A broken
+statement is recorded and skipped — the parser resumes where the next statement begins —
+so one run shows all of them, in the same form as the analyser's diagnostics:
+
+```
+व्याकरणदोषः (Syntax Error) — 2 दोषाः
+  दोषः [व्याकरणदोषः] प्रोग्राम.vak:3 — ')' अपेक्षितम् / expected ')' after the expression — किन्तु प्राप्तम् / but found '{'
+         3 | यदि (क > ३ { मुद्रय "बृहत्"। }
+           |            ^
+  दोषः [व्याकरणदोषः] प्रोग्राम.vak:4 — अप्रत्याशितम् चिह्नम् / unexpected token '।'
+         4 | मान ख = ।
+           |         ^
+```
+
+That is the form the VS Code extension reads, so syntax errors appear in the editor on save —
+before this they never did, because they were printed in a form nothing parsed. A broken
+statement is reported once: the braces it opened are skipped along with it, so an orphaned `}`
+is not reported as a second error, and at most one error is reported per line. The parser
+written in Vāk recovers identically, and the test suite holds the two to the same errors,
+line for line and word for word.
+
+Both toolchains report the same **status**, too: `70` for a file that does not parse, `65` for
+one the analyser refuses, `0` for a clean one — so a script or a CI job can tell what happened.
+A program can set its own with `निर्गम(अङ्कः)` / `nirgama(n)`, the built-in that ends it. A
+`दोषे` block does not catch that: it is not a fault, it is the program saying it is done.
+
+The lexer behaves the same way one layer down: a character it cannot read is reported in that
+same form, and reading continues past it, so three stray characters take one run to find rather
+than three. Both lexers — Python and Vāk — are held to the same errors, line for line.
+
 ---
 
 ## दोषनिग्रहः · Exception handling
@@ -878,13 +927,13 @@ virtual machine itself — and each is held to the Python implementation exactly
 
 | Stage | Written in Vāk | Lines | Verified against |
 |---|---|---|---|
-| Lexer | [शब्दविभाजकः.vak](स्वयंसिद्धिः/शब्दविभाजकः.vak) | 285 | the Python lexer — kind, lexeme, value and line of every token |
-| Parser | [व्याकरणम्.vak](स्वयंसिद्धिः/व्याकरणम्.vak) | 916 | the Python parser — the whole syntax tree, node for node |
+| Lexer | [शब्दविभाजकः.vak](स्वयंसिद्धिः/शब्दविभाजकः.vak) | 310 | the Python lexer — kind, lexeme, value and line of every token |
+| Parser | [व्याकरणम्.vak](स्वयंसिद्धिः/व्याकरणम्.vak) | 1030 | the Python parser — the whole syntax tree, node for node, and every syntax error, line and message |
 | **Analyser** | [अर्थविश्लेषकः.vak](स्वयंसिद्धिः/अर्थविश्लेषकः.vak) | 1018 | the Python analyser — every diagnostic's code, line and message, in order |
-| Compiler | [संकलकः.vak](स्वयंसिद्धिः/संकलकः.vak) | 809 | the Python compiler — every instruction, constant and line |
-| VM | [यन्त्रम्.vak](स्वयंसिद्धिः/यन्त्रम्.vak) | 1205 | the Python VM — byte-identical output on every example |
+| Compiler | [संकलकः.vak](स्वयंसिद्धिः/संकलकः.vak) | 832 | the Python compiler — every instruction, constant and line |
+| VM | [यन्त्रम्.vak](स्वयंसिद्धिः/यन्त्रम्.vak) | 1210 | the Python VM — byte-identical output on every example |
 | Graph | [आलेखः.vak](स्वयंसिद्धिः/आलेखः.vak) | 261 | [vaak/graph.py](vaak/graph.py) — the same graph, structure for structure, over every example |
-| Driver | [वाक्.vak](स्वयंसिद्धिः/वाक्.vak) | 274 | compiled natively it becomes `वाक्.exe`, which runs every example identically |
+| Driver | [वाक्.vak](स्वयंसिद्धिः/वाक्.vak) | 308 | compiled natively it becomes `वाक्.exe`, which runs every example identically |
 
 Only the [native back end](#देशीयसंकलनम्--the-native-back-end) is written in C, on
 purpose: it is the substrate the language stands on, not part of the language.
@@ -1439,6 +1488,12 @@ language stops depending on a host language. Progress along that road:
   switch is shared by all three C files, and nothing assumes a `.exe` suffix. Building
   with `VAK_POSIX=1` forces that branch, so it can be exercised on Windows too.
 - ✅ **A browser playground.** The self-hosted toolchain compiled to WebAssembly.
+- ✅ **कारकालेखः — the kāraka graph.** The roles, drawn: actions and their slots,
+  calls as sentences binding participants into them, and the program as a map of
+  which action depends on which. Written twice, in Python and in Vāk, and held to
+  itself over every example; the playground redraws it on every keystroke, built
+  by `आलेखः.vak` compiled to WebAssembly. See
+  [कारकालेखः](#कारकालेखः--the-kāraka-graph).
 - ✅ **The instruction pipeline.** Measurement pointed away from name lookup and at
   allocation and wasted work, and five changes followed: bindings borrow their names
   instead of copying them, scopes come from a pool, `कोशः` keys carry a cached hash,
@@ -1461,7 +1516,10 @@ Beyond the bootstrap:
 2. **`सन्धि`-aware identifiers** — accept the sandhi variants of a name as one identifier.
 3. **Full akṣara mode** — `दीर्घता` and indexing by syllable, not code point.
 4. **Deeper kāraka semantics** — `भाव` and `कर्मणि` voices; roles that flow through calls.
-5. **Tooling** — a VS Code grammar for `.vak`, a formatter, a Devanagari output mode.
+5. **Tooling** — a formatter, and a Devanagari output mode. (The VS Code
+   extension is done: the grammar is generated from `vaak/tokens.py`, a guard
+   fails the build if a keyword category goes unhighlighted, and its diagnostics
+   come from the real analyser — see [साधनानि](#साधनानि--tooling).)
 
 ---
 
@@ -1585,6 +1643,7 @@ Sanskrit-Vak/
 │   └── vak-icon.svg …         #   icons, wordmark, favicon
 ├── vscode-vak/                # the VS Code extension
 │   ├── build_extension.py     #   grammar generated from vaak/tokens.py
+│   ├── check_vsix.py          #   what the packaged .vsix may and may not carry
 │   └── extension.js           #   diagnostics from the real analyser
 ├── docs/
 │   ├── index.html             # the landing page

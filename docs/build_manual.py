@@ -641,7 +641,34 @@ stop the program; सूचनाः are advice and do not.</p>
 <a href="#yantram">written in Vāk itself</a>. The two are compared on sixty-five
 files — every example, the standard library, forty deliberately broken programs,
 and the toolchain's own source — and must produce identical diagnostics, in the
-same order, with the same wording.</p>"""))
+same order, with the same wording.</p>
+<h3>व्याकरणदोषाः — syntax errors, all of them</h3>
+<p>The program has to parse before the analyser can look at it. A syntax error
+does not stop the parser: it notes the error, skips to where the next statement
+begins, and carries on, so one run reports every broken statement rather than
+only the first. They are printed in the same form as the analyser's
+diagnostics — the form the editor extension reads, so they appear in VS Code
+when you save.</p>
+{shell('''$ ./वाक्.exe --परीक्षा प्रोग्राम.vak
+व्याकरणदोषः (Syntax Error) — 2 दोषाः
+  दोषः [व्याकरणदोषः] प्रोग्राम.vak:3 — ')' अपेक्षितम् / expected ')' after the expression — किन्तु प्राप्तम् / but found '{'
+         3 | यदि (क > ३ { मुद्रय "बृहत्"। }
+  दोषः [व्याकरणदोषः] प्रोग्राम.vak:4 — अप्रत्याशितम् चिह्नम् / unexpected token '।'
+         4 | मान ख = ।''')}
+<p>Each broken statement is reported once. The parser takes the braces a broken
+statement opened along with it, so the <code>}}</code> it leaves behind is not
+reported as a second, invented error, and it reports at most one error per
+line. Both parsers, Python and Vāk, recover the same way, and the test suite
+holds them to the same list of errors, message for message.</p>
+<p>A character the lexer cannot read is reported the same way, and reading
+carries on past it — so a file with three stray characters takes one run to
+find them, not three. Both lexers are held to the same list too.</p>
+{shell('''$ ./वाक्.exe --परीक्षा प्रोग्राम.vak
+अक्षरदोषः (Lexical Error) — 2 दोषाः
+  दोषः [अक्षरदोषः] प्रोग्राम.vak:1 — अज्ञातम् अक्षरम् '@' — unknown character '@'
+         1 | मुद्रय "क" @ ५।
+  दोषः [अक्षरदोषः] प्रोग्राम.vak:2 — अज्ञातम् अक्षरम् '$' — unknown character '$'
+         2 | मुद्रय "ख" $ ६।''')}"""))
 
 # ---------------------------------------------------------------- १० · दोषाः
 parts.append(section("doshah", "दोषनिग्रहः", "Exceptions", f"""
@@ -660,7 +687,11 @@ regardless. <code>उत्सृज</code> throws.</p>
 }''')}
 <p>The caught value is an ordinary <code>कोशः</code> carrying at least
 <code>प्रकारः</code> and <code>सन्देशः</code>. Runtime failures from the
-language itself arrive in the same shape, so one handler catches both.</p>"""))
+language itself arrive in the same shape, so one handler catches both.</p>
+<p><code>अन्ततः</code> means what it says. It runs when the attempt ends, when
+a <code>दोषः</code> is caught — and when the block is left early: a
+<code>विरम</code>, <code>अनुवर्त</code> or <code>प्रत्यागच्छ</code> inside the
+attempt runs it on the way out.</p>"""))
 
 # ------------------------------------------------------------ प्रदानम्
 parts.append(section("pradanam", "प्रदानम्", "Reading from the user", f"""

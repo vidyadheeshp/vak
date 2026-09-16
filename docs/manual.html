@@ -256,7 +256,7 @@ footer .verse { font-family: var(--serif); font-size: .95rem; color: var(--ink-s
 <nav class="rail" aria-label="Contents">
   <p class="mark">वाक्</p>
   <p class="sub">Vāk · a manual</p>
-  <p class="ver">0.13.0</p>
+  <p class="ver">0.14.0</p>
   <p class="play"><a href="playground.html">क्रीडाक्षेत्रम् · try it in the browser →</a></p>
   <p class="play"><a href="story.html">कथा · how it was built →</a></p>
   <ol>
@@ -277,7 +277,7 @@ footer .verse { font-family: var(--serif); font-size: .95rem; color: var(--ink-s
       <li><a href="#yantram"><span class="n">१५</span><span class="d">यन्त्रम्</span><span class="e">How Vāk runs</span></a></li>
       <li><a href="#doshasuchi"><span class="n">१६</span><span class="d">दोषसूची</span><span class="e">Every diagnostic</span></a></li>
       <li><a href="#padakoshah"><span class="n">१७</span><span class="d">पदकोशः</span><span class="e">Every keyword</span></a></li>
-      <li><a href="#antarnihitani"><span class="n">१८</span><span class="d">अन्तर्निहितानि</span><span class="e">The 48 built-ins</span></a></li>
+      <li><a href="#antarnihitani"><span class="n">१८</span><span class="d">अन्तर्निहितानि</span><span class="e">The 49 built-ins</span></a></li>
   </ol>
   <div class="controls">
     <button id="canon" aria-pressed="false">देवनागरी → roman</button>
@@ -373,7 +373,7 @@ you type leaves your machine. Use it to try the language before deciding
 whether to install anything.</p>
 
 <h3 class="lib">Checking that it works</h3>
-<figure class="code sh"><pre><code>python -m vaak --version          # वाक् (Vāk) 0.13.0
+<figure class="code sh"><pre><code>python -m vaak --version          # वाक् (Vāk) 0.14.0
 python -m vaak --builtins         # the 39 built-in functions
 python -m vaak                    # संवादः — the interactive session</code></pre></figure>
 <p>Then a program of one line. Put this in <code>परीक्षा.vak</code> and run
@@ -849,6 +849,33 @@ stop the program; सूचनाः are advice and do not.</p>
 files — every example, the standard library, forty deliberately broken programs,
 and the toolchain's own source — and must produce identical diagnostics, in the
 same order, with the same wording.</p>
+<h3>व्याकरणदोषाः — syntax errors, all of them</h3>
+<p>The program has to parse before the analyser can look at it. A syntax error
+does not stop the parser: it notes the error, skips to where the next statement
+begins, and carries on, so one run reports every broken statement rather than
+only the first. They are printed in the same form as the analyser's
+diagnostics — the form the editor extension reads, so they appear in VS Code
+when you save.</p>
+<figure class="code sh"><pre><code>$ ./वाक्.exe --परीक्षा प्रोग्राम.vak
+व्याकरणदोषः (Syntax Error) — 2 दोषाः
+  दोषः [व्याकरणदोषः] प्रोग्राम.vak:3 — &#x27;)&#x27; अपेक्षितम् / expected &#x27;)&#x27; after the expression — किन्तु प्राप्तम् / but found &#x27;{&#x27;
+         3 | यदि (क &gt; ३ { मुद्रय &quot;बृहत्&quot;। }
+  दोषः [व्याकरणदोषः] प्रोग्राम.vak:4 — अप्रत्याशितम् चिह्नम् / unexpected token &#x27;।&#x27;
+         4 | मान ख = ।</code></pre></figure>
+<p>Each broken statement is reported once. The parser takes the braces a broken
+statement opened along with it, so the <code>}</code> it leaves behind is not
+reported as a second, invented error, and it reports at most one error per
+line. Both parsers, Python and Vāk, recover the same way, and the test suite
+holds them to the same list of errors, message for message.</p>
+<p>A character the lexer cannot read is reported the same way, and reading
+carries on past it — so a file with three stray characters takes one run to
+find them, not three. Both lexers are held to the same list too.</p>
+<figure class="code sh"><pre><code>$ ./वाक्.exe --परीक्षा प्रोग्राम.vak
+अक्षरदोषः (Lexical Error) — 2 दोषाः
+  दोषः [अक्षरदोषः] प्रोग्राम.vak:1 — अज्ञातम् अक्षरम् &#x27;@&#x27; — unknown character &#x27;@&#x27;
+         1 | मुद्रय &quot;क&quot; @ ५।
+  दोषः [अक्षरदोषः] प्रोग्राम.vak:2 — अज्ञातम् अक्षरम् &#x27;$&#x27; — unknown character &#x27;$&#x27;
+         2 | मुद्रय &quot;ख&quot; $ ६।</code></pre></figure>
 </section>
 <section id="doshah">
   <div class="head">
@@ -872,6 +899,10 @@ regardless. <code>उत्सृज</code> throws.</p>
 <p>The caught value is an ordinary <code>कोशः</code> carrying at least
 <code>प्रकारः</code> and <code>सन्देशः</code>. Runtime failures from the
 language itself arrive in the same shape, so one handler catches both.</p>
+<p><code>अन्ततः</code> means what it says. It runs when the attempt ends, when
+a <code>दोषः</code> is caught — and when the block is left early: a
+<code>विरम</code>, <code>अनुवर्त</code> or <code>प्रत्यागच्छ</code> inside the
+attempt runs it on the way out.</p>
 </section>
 <section id="pradanam">
   <div class="head">
@@ -1206,7 +1237,7 @@ constructs have such a pair.</p>
 <section id="antarnihitani">
   <div class="head">
     <p class="num">१८</p>
-    <h2><span class="dev">अन्तर्निहितानि</span><span class="eng">The 48 built-ins</span></h2>
+    <h2><span class="dev">अन्तर्निहितानि</span><span class="eng">The 49 built-ins</span></h2>
   </div>
   
 <p>Available everywhere without an import. Two more —
@@ -1263,13 +1294,14 @@ brought in with <code>आनय</code>.</p>
     <tr><td><code>सञ्चिकास्ति</code></td><td class="iast">sanchikasti</td><td>सञ्चिका विद्यते वा / does the path exist</td></tr>
     <tr><td><code>सञ्चिकानाशय</code></td><td class="iast">sanchikanashaya</td><td>सञ्चिकाम् नाशयति / delete a file</td></tr>
     <tr><td><code>निर्देशिका</code></td><td class="iast">nirdeshika</td><td>निर्देशिकायाः सूची / list a directory</td></tr>
+    <tr><td><code>निर्गम</code></td><td class="iast">nirgama</td><td>कार्यक्रमम् समापयति / end the program with a status</td></tr>
   </tbody>
 </table></div>
 </section>
 
   <footer>
     <p class="verse">वाक् इति भाषा — यत्र संस्कृतम् एव आदेशः<span class="danda">॥</span></p>
-    <p>0.13.0 · 48 built-ins · five engines, one output</p>
+    <p>0.14.0 · 49 built-ins · five engines, one output</p>
     <p class="copyright">© 2026 Vidyadheesh Pandurangi. वाक् is free software, released under the <a href="https://github.com/vidyadheeshp/vak/blob/main/LICENSE">MIT Licence</a> — use it, change it, teach with it, ship it.</p>
     <p>Visits are counted with <a href="https://vak.goatcounter.com">GoatCounter</a> — no cookies, no personal data, and Do Not Track is honoured.</p>
   </footer>
