@@ -431,6 +431,14 @@ static void mulyam_lekhaya(Lekha *l, Mulyam m, bool uddhrta) {
         lekha_yojaya_c(l, ANTARNIHITANI[m.as.antarnihitam].nama);
         lekha_yojaya_c(l, ">");
         return;
+    case P_PUNARAVARTAKA:
+        /* प्रत्येकम्-वाक्यस्य आदेशैः एव रच्यते नश्यति च — मुद्रय इदं कदापि न प्राप्नोति।
+           Built and consumed entirely within the for-each opcodes; no bytecode
+           the compiler emits can hand this to मुद्रय. Named rather than left to
+           fall through silently, so a future compiler bug that did reach here
+           would print something legible instead of nothing at all. */
+        lekha_yojaya_c(l, "<पुनरावर्तकः>");
+        return;
     }
 }
 
