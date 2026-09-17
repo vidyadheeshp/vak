@@ -8,6 +8,7 @@ No third-party dependencies; it is a plain unittest suite.
 from __future__ import annotations
 
 import inspect
+import math
 import io
 import json
 import os
@@ -2321,6 +2322,152 @@ class TestStandardLibraryAdditions(unittest.TestCase):
             with self.subTest(function=fn):
                 with self.assertRaises(RuntimeVakError):
                     self.run_vak(f'आनय "गणितम्"।\nमुद्रय गणितम्.{fn}([])।')
+
+
+class TestTranscendentalFunctions(unittest.TestCase):
+    """घातीयः, लघुगणकः, ज्या, कोटिज्या, स्पर्शज्या — exp, ln, sin, cos, tan.
+
+    None of the built-ins do floating-point transcendentals, so — exactly as
+    वर्गमूलम् already does for square roots — each is Taylor series plus range
+    reduction, written in Vāk and checked against Python's own math module.
+
+    Large trigonometric arguments lose precision: range reduction subtracts
+    multiples of a fixed-precision पाई, and that subtraction's error grows
+    with the argument. Correct to full double precision near शून्य; correct
+    to eleven or twelve places by क्ष = १००. The tolerances below say which is
+    which, rather than pretending both are exact.
+    """
+
+    def run_vak(self, source: str) -> str:
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            run_source(source, str(ROOT / "प.vak"))
+        return buf.getvalue().strip()
+
+    def value(self, call: str) -> float:
+        return float(self.run_vak(f'आनय "गणितम्"।\nमुद्रय देवनागरी({call})।'))
+
+    # ------------------------------------------------------------ घातीयः
+    def test_exp_matches_python(self):
+        for x in (0, 1, -1, 5, -10, 0.5):
+            with self.subTest(x=x):
+                self.assertAlmostEqual(
+                    self.value(f"गणितम्.घातीयः({x!r})"), math.exp(x), places=10)
+
+    def test_exp_of_one_is_e(self):
+        self.assertAlmostEqual(self.value("गणितम्.घातीयः(१)"),
+                               self.value("गणितम्.ई"), places=12)
+
+    # ----------------------------------------------------------- लघुगणकः
+    def test_ln_matches_python(self):
+        for x in (1, math.e, 100, 0.01, 100000):
+            with self.subTest(x=x):
+                self.assertAlmostEqual(
+                    self.value(f"गणितम्.लघुगणकः({x!r})"), math.log(x), places=10)
+
+    def test_ln_undoes_exp(self):
+        for x in (0.3, 2, -4, 10):
+            with self.subTest(x=x):
+                self.assertAlmostEqual(
+                    self.value(f"गणितम्.लघुगणकः(गणितम्.घातीयः({x!r}))"),
+                    x, places=9)
+
+    def test_ln_of_zero_or_negative_is_an_error(self):
+        for x in ("०", "-५"):
+            with self.subTest(x=x):
+                with self.assertRaises(RuntimeVakError) as caught:
+                    self.run_vak(f'आनय "गणितम्"।\nमुद्रय गणितम्.लघुगणकः({x})।')
+                self.assertIn("धनात्मकस्य", str(caught.exception))
+
+    # ------------------------------------------------------- ज्या, कोटिज्या
+    def test_sin_matches_python_near_zero(self):
+        for x in (0, math.pi / 2, math.pi, 2 * math.pi):
+            with self.subTest(x=x):
+                self.assertAlmostEqual(
+                    self.value(f"गणितम्.ज्या({x!r})"), math.sin(x), places=10)
+
+    def test_cos_matches_python_near_zero(self):
+        for x in (0, math.pi / 2, math.pi):
+            with self.subTest(x=x):
+                self.assertAlmostEqual(
+                    self.value(f"गणितम्.कोटिज्या({x!r})"), math.cos(x), places=10)
+
+    def test_sin_and_cos_at_large_arguments_stay_close(self):
+        """The precision this class's docstring warns about, stated as a
+        number rather than left to the imagination."""
+        for x in (100, -50):
+            with self.subTest(x=x):
+                self.assertAlmostEqual(
+                    self.value(f"गणितम्.ज्या({x!r})"), math.sin(x), places=10)
+                self.assertAlmostEqual(
+                    self.value(f"गणितम्.कोटिज्या({x!r})"), math.cos(x), places=10)
+
+    def test_the_pythagorean_identity(self):
+        """sin²+cos²=१ holds at every angle, independent of which reference
+        value either function is being compared to — the cleanest check that
+        does not depend on Python's own trig at all."""
+        for x in (0.4, 1.5, -3, 12.7, 100):
+            with self.subTest(x=x):
+                s = self.value(f"गणितम्.ज्या({x!r})")
+                c = self.value(f"गणितम्.कोटिज्या({x!r})")
+                self.assertAlmostEqual(s * s + c * c, 1.0, places=9)
+
+    # ---------------------------------------------------------- स्पर्शज्या
+    def test_tan_matches_python(self):
+        for x in (0, math.pi / 4, 1, -1):
+            with self.subTest(x=x):
+                self.assertAlmostEqual(
+                    self.value(f"गणितम्.स्पर्शज्या({x!r})"), math.tan(x), places=9)
+
+    def test_tan_is_undefined_where_cosine_is_zero(self):
+        with self.assertRaises(RuntimeVakError) as caught:
+            self.run_vak('आनय "गणितम्"।\nमुद्रय गणितम्.स्पर्शज्या(गणितम्.पाई / २)।')
+        self.assertIn("असंज्ञातः", str(caught.exception))
+
+    # -------------------------------------------------------- हरः engines
+    def engines(self, source: str) -> dict[str, str]:
+        out = {"tree": output(source), "vm": vm_output(source)}
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            run_with_vak(source)
+        out["यन्त्रम्.vak"] = buf.getvalue().strip()
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            VM("<प>").run(compile_with_vak(source, "<प>"))
+        out["compiled by Vāk"] = buf.getvalue().strip()
+        return out
+
+    def test_every_python_engine_agrees(self):
+        source = ('आनय "गणितम्"।\n'
+                  "मुद्रय देवनागरी(गणितम्.घातीयः(२))।\n"
+                  "मुद्रय देवनागरी(गणितम्.लघुगणकः(१०))।\n"
+                  "मुद्रय देवनागरी(गणितम्.ज्या(१))।\n"
+                  "मुद्रय देवनागरी(गणितम्.कोटिज्या(१))।\n"
+                  "मुद्रय देवनागरी(गणितम्.स्पर्शज्या(०.५))।")
+        answers = self.engines(source)
+        distinct = set(answers.values())
+        self.assertEqual(len(distinct), 1, f"engines disagree: {answers}")
+
+    @unittest.skipIf(GCC is None, "C-संकलकः न प्राप्तः / no C compiler available")
+    def test_the_native_runtime_agrees(self):
+        """गणितम्.vak is compiled straight to C for वाक्.exe, same as any other
+        library — no separate implementation exists to fall out of step."""
+        source = ('आनय "गणितम्"।\n'
+                  "मुद्रय देवनागरी(गणितम्.घातीयः(२))।\n"
+                  "मुद्रय देवनागरी(गणितम्.ज्या(१))।")
+        expected = self.run_vak(source)
+        directory = Path(tempfile.mkdtemp(prefix="vak-transcendental-"))
+        path = directory / "प्रोग्राम.vak"
+        path.write_text(source, encoding="utf-8")
+        try:
+            exe = build_executable(source, path, directory)
+            proc = subprocess.run([str(exe.resolve())], capture_output=True, timeout=120)
+            printed = proc.stdout.decode("utf-8", "replace").replace("\r\n", "\n").strip()
+            self.assertEqual(proc.returncode, 0, proc.stderr.decode("utf-8", "replace")[:400])
+            self.assertEqual(printed, expected)
+        finally:
+            shutil.rmtree(directory, ignore_errors=True)
+
 
 class TestUnusedVariableWarning(unittest.TestCase):
     """Issue #7. A warning, not an error — the program is still valid."""

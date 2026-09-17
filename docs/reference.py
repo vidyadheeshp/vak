@@ -47,6 +47,12 @@ LIB_DOCS: dict[str, str] = {
     "मध्यमा": "the median of the list",
     "घातः": "आधारः raised to the power घाताङ्कः",
     "वर्गमूलम्": "the square root of क, by Newton's method",
+    "द्विलघुः": "the natural logarithm of २",
+    "घातीयः": "e raised to the power घाताङ्कः",
+    "लघुगणकः": "the natural logarithm of क",
+    "ज्या": "the sine of कोणः, in radians",
+    "कोटिज्या": "the cosine of कोणः, in radians",
+    "स्पर्शज्या": "the tangent of कोणः, in radians",
     "बहुलकः": "the most frequent value; the smaller one when two tie",
     "विचरणम्": "the population variance — the mean squared deviation",
     "प्रमाणविचलनम्": "the population standard deviation",
@@ -67,7 +73,7 @@ LIB_DOCS: dict[str, str] = {
 }
 
 MODULE_BLURB: dict[str, str] = {
-    "गणितम्": "Mathematics — two constants and sixteen functions.",
+    "गणितम्": "Mathematics — three constants and twenty-one functions.",
     "शब्दाः": "Strings — thirteen functions over शब्दः.",
 }
 
