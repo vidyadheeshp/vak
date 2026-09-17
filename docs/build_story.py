@@ -287,6 +287,37 @@ the playground has no Python in it, so the graph you watch redraw as you type is
 built by <code>आलेखः.vak</code>, compiled to WebAssembly, running on the C
 runtime — the toolchain drawing a picture of itself.</p>
 <p class="turn">A type system you can watch is a type system you can teach.</p>"""),
+
+    ("VIII", "0.14.0", "निर्गमः", "What the language could not yet say", 100, """
+<p>A Vāk program had no way to say how it went. It could print, it could throw,
+it could simply finish — but whether it had found what it was looking for was
+never anything a script or a build step could ask it. <code>निर्गम</code> gives
+it a status: <code>70</code> for a file that does not parse, <code>65</code> for
+one the analyser refuses, whatever a program chooses for itself. It is
+deliberately not built on the language's own error type — a <code>दोषे</code>
+block catches faults, and a program announcing that it is finished is not one.</p>
+<p>The lexer and parser had the same fault the driver did, one layer down: both
+stopped at the first mistake. A file with three bad characters took three runs
+to find them. Both now recover and report every one in a single pass, in the
+form the diagnostics have always used — which meant, for the first time, a
+syntax error showed up while writing the program, not only after running it.</p>
+<p>Wiring that recovery into the lexer found something recovery had nothing to
+do with. अनुवर्त inside a प्रयत्नः reported one error twice, on every engine
+but the reference interpreter. The compilers had been emitting the jump out of
+an attempt without ending the attempt — the handler stayed registered, अन्ततः
+never ran — and nothing had ever asked विरम, अनुवर्त or प्रत्यागच्छ to leave a
+प्रयत्नः before. On the Vāk-written virtual machine that meant a corrupted
+stack; on the native runtime, a segmentation fault.</p>
+<p class="turn">The interpreter had been giving the right answer the whole
+time. It took a feature unrelated to try blocks to ask it the question.</p>
+<p>The editor extension was packaged for a release for the first time, and its
+own guard rejected it — a script written to keep a bad package from shipping,
+rejecting a good one instead, because it expected <code>README.md</code> under
+the name it was given rather than the name the packaging tool actually writes.
+Found by finally getting that tool running for real, after every shortcut to
+avoid it had failed in its own way.</p>
+<p class="turn">A check that has never met the real thing it is checking is not
+yet a check.</p>"""),
 ]
 
 ENGINES = [
@@ -324,7 +355,8 @@ ACT_TITLES = {"I": "Python builds a language",
               "IV": "Making it real",
               "V": "Making it fast",
               "VI": "Going back for what was missing",
-              "VII": "Making the grammar visible"}
+              "VII": "Making the grammar visible",
+              "VIII": "What the language could not yet say"}
 
 
 #: The dates are read from the tags, so only released versions carry one. The
