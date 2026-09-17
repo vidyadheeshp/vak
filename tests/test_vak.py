@@ -18,6 +18,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import zipfile
 from contextlib import redirect_stdout
 from pathlib import Path
 
@@ -4228,6 +4229,45 @@ class TestTheEditorExtensionIsCurrent(unittest.TestCase):
                      "extension/build_extension.py", "extension/check_vsix.py",
                      "extension/vak-0.13.0.vsix"):
             self.assertTrue(checker.unwanted(name), f"{name} must be rejected")
+
+    def test_the_checker_accepts_what_vsce_actually_produces(self):
+        """The v0.14.0 release failed here: REQUIRED named `extension/README.md`,
+        and vsce — confirmed by building a real archive with the actual tool —
+        lowercases it to `readme.md` (and LICENSE to LICENSE.txt, which is not
+        required and so was never the problem). The check was rejecting a file
+        that was there all along, under the name vsce always gives it.
+
+        This builds an archive with exactly vsce's real casing and requires the
+        checker to accept it — so a REQUIRED entry drifting from what vsce
+        actually writes fails a test, not a release."""
+        sys.path.insert(0, str(ROOT / "vscode-vak"))
+        import importlib
+        checker = importlib.import_module("check_vsix")
+
+        real = ROOT / "vscode-vak"
+        directory = Path(tempfile.mkdtemp(prefix="vak-vsix-shape-"))
+        path = directory / "vak-shape-test.vsix"
+        try:
+            with zipfile.ZipFile(path, "w") as z:
+                z.writestr("[Content_Types].xml", "<Types/>")
+                z.writestr("extension.vsixmanifest", "<PackageManifest/>")
+                z.write(real / "package.json", "extension/package.json")
+                z.write(real / "extension.js", "extension/extension.js")
+                z.write(real / "translit.js", "extension/translit.js")
+                z.write(real / "language-configuration.json",
+                        "extension/language-configuration.json")
+                z.write(real / "syntaxes" / "vak.tmLanguage.json",
+                        "extension/syntaxes/vak.tmLanguage.json")
+                z.write(real / "images" / "icon-128.png", "extension/images/icon-128.png")
+                z.write(real / "icons" / "vak-file-light.svg",
+                        "extension/icons/vak-file-light.svg")
+                z.write(real / "icons" / "vak-file-dark.svg",
+                        "extension/icons/vak-file-dark.svg")
+                z.write(real / "README.md", "extension/readme.md")   # vsce's own casing
+                z.write(real / "LICENSE", "extension/LICENSE.txt")   # vsce's own casing
+            self.assertEqual(checker.check(str(path)), 0)
+        finally:
+            shutil.rmtree(directory, ignore_errors=True)
 
 class TestPackaging(unittest.TestCase):
     """`twine check` validates the description and nothing else, so an invalid

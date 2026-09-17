@@ -26,7 +26,11 @@ REQUIRED = [
     "extension/images/icon-128.png",
     "extension/icons/vak-file-light.svg",
     "extension/icons/vak-file-dark.svg",
-    "extension/README.md",
+    # vsce lowercases README.md to readme.md when it packages an extension —
+    # confirmed against a real archive built with the actual tool, after this
+    # exact-case check rejected the v0.14.0 release over a file that was
+    # there all along, just spelled the way vsce always spells it.
+    "extension/readme.md",
 ]
 
 #: Nothing here belongs in a published package. Matched on path segments and
