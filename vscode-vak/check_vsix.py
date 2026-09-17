@@ -67,8 +67,16 @@ def check(path: str) -> int:
 
     for problem in problems:
         print(f"  VSIX FAIL {problem}")
+        # a plain print here reaches the step's raw log only — CI ran this
+        # once already and failed silently as far as anyone without log
+        # access could tell, because nothing here used the syntax GitHub
+        # actually surfaces in the Annotations panel. This does.
+        print(f"::error::vsix check failed — {problem}")
     if problems:
         print(f"{len(problems)} problem(s) — not fit to publish")
+        print("  full archive listing, for whichever of the above needs it:")
+        for name in sorted(names):
+            print(f"    {name}")
         return 1
 
     print(f"  {len(names)} files, nothing unwanted")
