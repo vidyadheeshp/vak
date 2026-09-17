@@ -54,7 +54,14 @@ GCC_CANDIDATES = (
 
 
 def find_gcc() -> str | None:
-    """संकलकः विद्यते वा — locate a C compiler, PATH first."""
+    """संकलकः विद्यते वा — locate a C compiler, PATH first.
+
+    VAK_CC overrides the search entirely — CI uses it to force clang, whose
+    sanitizers are what a fuzzing/ASan job actually wants to compile with.
+    """
+    override = os.environ.get("VAK_CC")
+    if override:
+        return shutil.which(override) or override
     for candidate in GCC_CANDIDATES:
         found = shutil.which(candidate) if not Path(candidate).is_absolute() else None
         if found:
@@ -367,6 +374,11 @@ def build_executable(source: str, path: Path, out_dir: Path | None = None,
             command.append("-DVAK_POSIX")
         elif Path(gcc).name.lower().startswith("gcc") and NATIVE_DIR.drive:
             command.append("-lshell32")      # CommandLineToArgvW, for UTF-16 argv
+        # VAK_CFLAGS is how CI compiles the same runtime under ASan/UBSan
+        # without a second, hand-maintained build path.
+        extra = os.environ.get("VAK_CFLAGS")
+        if extra:
+            command.extend(extra.split())
         result = subprocess.run(command, capture_output=True, text=True)
         if result.returncode != 0:
             raise RuntimeError(

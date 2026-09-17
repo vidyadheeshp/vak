@@ -124,6 +124,31 @@ jobs:
           name: dist
           path: dist/*
 
+  # Every fixed-size buffer in native/ that has had a close look this project
+  # so far turned out to have a real bug — out-of-bounds writes and reads that
+  # -Wall never catches because they are valid C, just wrong. ASan/UBSan catch
+  # them where they actually happen: while the test suite's differential tests
+  # run real Vāk programs through the compiled runtime.
+  sanitizers:
+    name: संस्वच्छता · ASan + UBSan
+    runs-on: ubuntu-latest
+    env:
+      VAK_CC: clang
+      VAK_CFLAGS: -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer -g -O1
+      ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+      - name: परीक्षाः · run the test suite against a sanitized native build
+        run: python -m pytest tests/ -q
+
   # The native back end emits C and links it; this is the only job that proves
   # the POSIX branches in native/ actually compile.
   native:
