@@ -149,6 +149,36 @@ jobs:
       - name: परीक्षाः · run the test suite against a sanitized native build
         run: python -m pytest tests/ -q
 
+  # The sanitizer job above only sees the inputs the differential test suite
+  # happens to construct. This throws libFuzzer's mutation engine at the one
+  # place raw, unvalidated bytes actually reach the native runtime — पठ()
+  # hands stdin straight to a Shabda with no UTF-8 check — instead of relying
+  # on a human to imagine the malformed input by hand.
+  fuzz:
+    name: विकृतपरीक्षा · fuzz the string built-ins
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the harness
+        run: |
+          clang -std=c11 -g -O1 -fsanitize=fuzzer,address,undefined \
+              -fno-sanitize-recover=all \
+              -I native native/fuzz/fuzz_shabda.c native/mulyani.c \
+              native/antarnihitani.c native/yantram.c -lm -o fuzz_shabda
+      - name: Fuzz for a fixed budget
+        env:
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: |
+          mkdir -p artifacts
+          ./fuzz_shabda -max_total_time=90 -artifact_prefix=artifacts/ \
+              native/fuzz/corpus/
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: fuzz-crash
+          path: artifacts/
+
   # The native back end emits C and links it; this is the only job that proves
   # the POSIX branches in native/ actually compile.
   native:
