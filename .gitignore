@@ -29,3 +29,8 @@ bench/results.json
 
 # the packaged editor extension — built by the release workflow
 vscode-vak/*.vsix
+
+# coverage.py
+.coverage
+.coverage.*
+coverage-html/

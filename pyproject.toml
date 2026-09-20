@@ -55,7 +55,7 @@ vaak = "vaak.cli:main"
 vak-lang = "vaak.cli:main"
 
 [project.optional-dependencies]
-dev = ["pytest>=7"]
+dev = ["pytest>=7", "coverage>=7"]
 
 [tool.setuptools]
 # Only the Python implementation is packaged.  The C runtime, the Vāk-written
@@ -70,3 +70,13 @@ vaak = ["पुस्तकालयः/*.vak"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.coverage.run]
+# vaak/ is the Python reference implementation. The other engines are not
+# Python and this cannot see into them, and code that only runs in a spawned
+# process (most of cli.py) shows as dark here without being untested.
+source = ["vaak"]
+
+[tool.coverage.report]
+skip_covered = false
+sort = "-miss"

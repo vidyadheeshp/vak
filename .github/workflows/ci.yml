@@ -50,6 +50,33 @@ jobs:
             python -m vaak "$f" > /dev/null
           done
 
+  # Coverage sees only the Python reference implementation — the other four
+  # engines are not Python. A line dark here has still never run under the
+  # differential suite in this engine, which is exactly where the sanitizer
+  # and fuzz jobs above should be pointed next.
+  coverage:
+    name: आच्छादनम् · coverage of the Python reference engine
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+      - name: परीक्षाः · run the test suite under coverage
+        run: python -m coverage run -m pytest tests/ -q
+      - name: Report — worst-covered files first
+        run: python -m coverage report -m
+      - name: Build the browsable HTML report
+        run: python -m coverage html -d coverage-html
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-html
+          path: coverage-html/
+
   # The documentation is generated from the language's own tables and refuses to
   # build when they have drifted, so building it is a real check.
   docs:
