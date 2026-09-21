@@ -699,7 +699,15 @@ static Mulyam a_varna(Mulyam *pra, int n) {
         dosha_utsrja("कार्यकालदोषः", "वर्णः अङ्कम् एव इच्छति / वर्णः expects a number");
         return shunyam_mulyam();
     }
-    unsigned cp = (unsigned)anka_mulyam(pra[0]);
+    double dcp = anka_mulyam(pra[0]);
+    /* the range test is what keeps the cast below defined; NaN fails it too */
+    if (!(dcp >= 0 && dcp <= 0x10FFFF) || (dcp >= 0xD800 && dcp < 0xE000)) {
+        dosha_utsrja("कार्यकालदोषः",
+                     "वर्णः वैध-संकेतम् इच्छति / वर्णः expects a valid Unicode code point "
+                     "(0 to 1114111, not a surrogate)");
+        return shunyam_mulyam();
+    }
+    unsigned cp = (unsigned)dcp;
     char buf[5];
     int j = 0;
     if (cp < 0x80) buf[j++] = (char)cp;

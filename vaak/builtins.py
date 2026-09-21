@@ -156,6 +156,9 @@ def _varna(code: Any) -> str:
     """वर्णः — the character for a Unicode code point."""
     if isinstance(code, bool) or not isinstance(code, (int, float)):
         _fail("वर्णः अङ्कम् एव इच्छति / वर्णः expects a number")
+    if code != code or not (0 <= code <= 0x10FFFF) or 0xD800 <= code < 0xE000:
+        _fail("वर्णः वैध-संकेतम् इच्छति / वर्णः expects a valid Unicode code point "
+              "(0 to 1114111, not a surrogate)")
     return chr(int(code))
 
 

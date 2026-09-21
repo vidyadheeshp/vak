@@ -2324,6 +2324,44 @@ class TestStandardLibraryAdditions(unittest.TestCase):
                     self.run_vak(f'आनय "गणितम्"।\nमुद्रय गणितम्.{fn}([])।')
 
 
+class TestVarnaRejectsNonCodePoints(unittest.TestCase):
+    """वर्णः turns a number into a character. The C runtime once cast the
+    number to unsigned without checking it, which is undefined behaviour for
+    anything outside the range — found by the fuzz job — and the Python
+    engine let chr() raise a raw ValueError. Both now raise the same दोषः."""
+
+    BAD = ("-१", "१११४११२", "५५२९६", "५७३४३", "१०००००००००००००००००००")
+
+    def test_the_python_engines_raise_a_vak_error(self):
+        for bad in self.BAD:
+            for run in (output, vm_output):
+                with self.subTest(code=bad, engine=run.__name__):
+                    with self.assertRaises(RuntimeVakError) as caught:
+                        run(f"मुद्रय वर्णः({bad})।")
+                    self.assertIn("वर्णः", str(caught.exception))
+
+    def test_the_limits_themselves_still_work(self):
+        self.assertEqual(output("मुद्रय दीर्घता(वर्णः(१११४१११))।"), "1")
+        self.assertEqual(output("मुद्रय दीर्घता(वर्णः(०))।"), "1")
+
+    @unittest.skipIf(GCC is None, "C-संकलकः न प्राप्तः / no C compiler available")
+    def test_the_native_runtime_refuses_too(self):
+        directory = Path(tempfile.mkdtemp(prefix="vak-varna-"))
+        try:
+            for bad in self.BAD:
+                with self.subTest(code=bad):
+                    source = f"मुद्रय वर्णः({bad})।"
+                    path = directory / "प्रोग्राम.vak"
+                    path.write_text(source, encoding="utf-8")
+                    exe = build_executable(source, path, directory)
+                    proc = subprocess.run([str(exe.resolve())],
+                                          capture_output=True, timeout=120)
+                    self.assertNotEqual(proc.returncode, 0)
+                    self.assertIn("वर्णः", proc.stderr.decode("utf-8", "replace"))
+        finally:
+            shutil.rmtree(directory, ignore_errors=True)
+
+
 class TestTranscendentalFunctions(unittest.TestCase):
     """घातीयः, लघुगणकः, ज्या, कोटिज्या, स्पर्शज्या — exp, ln, sin, cos, tan.
 
