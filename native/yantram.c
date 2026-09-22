@@ -349,7 +349,7 @@ static Mulyam suchakat_grihana(Mulyam lakshya, Mulyam suchaka) {
         if (lakshya.prakara == P_SUCHI) return grah(as_suchi(lakshya)->angani[norm]);
         Shabda *s = as_shabda(lakshya);
         int a = utf8_sthanam(s->paatha, s->baits, (int)norm);
-        return shabda_mulyam(s->paatha + a, utf8_padam(s->paatha, a));
+        return shabda_mulyam(s->paatha + a, utf8_padam(s->paatha, a, s->baits));
     }
     if (lakshya.prakara == P_KOSHA) {
         Mulyam out;

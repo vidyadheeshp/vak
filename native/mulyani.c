@@ -245,24 +245,32 @@ void kosha_nyasaya(Mulyam kosha, Mulyam key, Mulyam value) {
 }
 
 /* ---------------------------------------------------------------- UTF-8 */
-int utf8_padam(const char *s, int offset) {
+/* baits बाह्यम् सीमा एव — a Shabda's bytes need not be valid UTF-8 (पठ hands
+   over whatever stdin gave it, unchecked), so a leading byte can claim a
+   width its string does not have the bytes left to back. Clamping to what
+   remains is what keeps every reader of this width from walking past the
+   allocation — found by libFuzzer as a heap-buffer-overflow in अक्षराणि. */
+int utf8_padam(const char *s, int offset, int baits) {
     unsigned char c = (unsigned char)s[offset];
-    if (c < 0x80) return 1;
-    if ((c & 0xE0) == 0xC0) return 2;
-    if ((c & 0xF0) == 0xE0) return 3;
-    if ((c & 0xF8) == 0xF0) return 4;
-    return 1;
+    int width = 1;
+    if (c >= 0x80) {
+        if ((c & 0xE0) == 0xC0) width = 2;
+        else if ((c & 0xF0) == 0xE0) width = 3;
+        else if ((c & 0xF8) == 0xF0) width = 4;
+    }
+    int left = baits - offset;
+    return width < left ? width : (left > 0 ? left : 1);
 }
 
 int utf8_ganana(const char *s, int baits) {
     int n = 0;
-    for (int i = 0; i < baits; ) { i += utf8_padam(s, i); n++; }
+    for (int i = 0; i < baits; ) { i += utf8_padam(s, i, baits); n++; }
     return n;
 }
 
 int utf8_sthanam(const char *s, int baits, int index) {
     int i = 0, n = 0;
-    while (i < baits && n < index) { i += utf8_padam(s, i); n++; }
+    while (i < baits && n < index) { i += utf8_padam(s, i, baits); n++; }
     return i;
 }
 

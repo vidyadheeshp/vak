@@ -201,7 +201,7 @@ static Mulyam a_suchi(Mulyam *pra, int n) {
     if (m.prakara == P_SHABDA) {
         Shabda *s = as_shabda(m);
         for (int i = 0; i < s->baits; ) {
-            int w = utf8_padam(s->paatha, i);
+            int w = utf8_padam(s->paatha, i, s->baits);
             Mulyam ch = shabda_mulyam(s->paatha + i, w);
             suchi_yojaya(out, ch);
             muncha(ch);
@@ -425,7 +425,7 @@ static Mulyam a_aksharani(Mulyam *pra, int n) {
     int arambha = -1, i = 0;
     unsigned antima = 0;
     while (i < s->baits) {
-        int w = utf8_padam(s->paatha, i);
+        int w = utf8_padam(s->paatha, i, s->baits);
         unsigned cp = utf8_sanketa(s->paatha, i, w);
         bool anuvartate = (arambha >= 0) && (samyojakah(cp) || antima == 0x094D || antima == 0x200D);
         if (!anuvartate) {
@@ -502,7 +502,7 @@ static Mulyam a_vibhaja(Mulyam *pra, int n) {
             i += seplen;
             start = i;
         } else {
-            i += utf8_padam(s->paatha, i);
+            i += utf8_padam(s->paatha, i, s->baits);
         }
     }
     Mulyam part = shabda_mulyam(s->paatha + start, s->baits - start);
@@ -690,7 +690,7 @@ static Mulyam a_sanketa(Mulyam *pra, int n) {
         return shunyam_mulyam();
     }
     Shabda *s = as_shabda(pra[0]);
-    return purnanka_mulyam((int64_t)utf8_sanketa(s->paatha, 0, utf8_padam(s->paatha, 0)));
+    return purnanka_mulyam((int64_t)utf8_sanketa(s->paatha, 0, utf8_padam(s->paatha, 0, s->baits)));
 }
 
 static Mulyam a_varna(Mulyam *pra, int n) {

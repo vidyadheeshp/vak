@@ -2324,6 +2324,34 @@ class TestStandardLibraryAdditions(unittest.TestCase):
                     self.run_vak(f'आनय "गणितम्"।\nमुद्रय गणितम्.{fn}([])।')
 
 
+class TestTruncatedUtf8FromStdin(unittest.TestCase):
+    """पठ() hands the native runtime whatever stdin gave it, unchecked — the
+    one place a Shabda's bytes are not guaranteed valid UTF-8. A string
+    ending in a truncated multi-byte sequence made utf8_padam claim a width
+    the buffer did not have, so अक्षराणि read past its allocation. Found by
+    the fuzz job as a heap-buffer-overflow; utf8_padam now clamps to what
+    is actually left in the string."""
+
+    @unittest.skipIf(GCC is None, "C-संकलकः न प्राप्तः / no C compiler available")
+    def test_a_dangling_lead_byte_does_not_crash_akshara_functions(self):
+        source = ('शब्दः स = पठ()।\n'
+                  'मुद्रय दीर्घता(अक्षराणि(स))।\n'
+                  'मुद्रय दीर्घता(सूची(स))।')
+        directory = Path(tempfile.mkdtemp(prefix="vak-truncutf8-"))
+        try:
+            path = directory / "प्रोग्राम.vak"
+            path.write_text(source, encoding="utf-8")
+            exe = build_executable(source, path, directory)
+            for dangling in (b"\xe0\x80", b"\xf0\x9f", b"\xc0", b"\xf0"):
+                with self.subTest(bytes=dangling):
+                    proc = subprocess.run([str(exe.resolve())], input=dangling,
+                                          capture_output=True, timeout=30)
+                    self.assertEqual(proc.returncode, 0,
+                                     proc.stderr.decode("utf-8", "replace")[:400])
+        finally:
+            shutil.rmtree(directory, ignore_errors=True)
+
+
 class TestVarnaRejectsNonCodePoints(unittest.TestCase):
     """वर्णः turns a number into a character. The C runtime once cast the
     number to unsigned without checking it, which is undefined behaviour for

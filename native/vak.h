@@ -218,7 +218,7 @@ int kosha_sthanam(Mulyam kosha, Mulyam key);
 /* UTF-8 helpers — Vāk counts and indexes strings by code point */
 int utf8_ganana(const char *s, int baits);
 int utf8_sthanam(const char *s, int baits, int index);  /* byte offset of cp #index */
-int utf8_padam(const char *s, int offset);              /* byte length of cp at offset */
+int utf8_padam(const char *s, int offset, int baits);   /* byte length of cp at offset, clamped to baits */
 
 /* --------------------------------------------------------------------- दोषाः */
 typedef struct {
