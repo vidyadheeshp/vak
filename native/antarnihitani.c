@@ -27,6 +27,19 @@ static double anka_mulyam(Mulyam m) {
     return m.prakara == P_PURNANKA ? (double)m.as.purnanka : m.as.dashamsha;
 }
 
+/* (int64_t)anka_mulyam(m) सीधा — a दशांशः can hold anything a caller wrote,
+   including NaN or a magnitude no int64_t represents, and casting that is
+   undefined behaviour. Every index, slice bound, range endpoint and random
+   bound taken from a मूल्यम् argument goes through this instead — found by
+   the fuzz job as UBSan aborts on अंशः and वर्णः before this existed. */
+static int64_t anka_purnankah(Mulyam m) {
+    double d = anka_mulyam(m);
+    if (d != d) return 0;
+    if (d >= 9223372036854775807.0) return INT64_MAX;
+    if (d <= -9223372036854775808.0) return INT64_MIN;
+    return (int64_t)d;
+}
+
 static Mulyam shabda_nirmaya(const char *s) { return shabda_mulyam_c(s); }
 
 /* एकः देवनागरी-अङ्कः रोमन्-अङ्कः वा? */
@@ -228,11 +241,11 @@ static Mulyam a_parasa(Mulyam *pra, int n) {
             return shunyam_mulyam();
         }
     }
-    if (n == 1) { anta = (int64_t)anka_mulyam(pra[0]); }
+    if (n == 1) { anta = anka_purnankah(pra[0]); }
     else if (n >= 2) {
-        arambha = (int64_t)anka_mulyam(pra[0]);
-        anta = (int64_t)anka_mulyam(pra[1]);
-        if (n >= 3) padam = (int64_t)anka_mulyam(pra[2]);
+        arambha = anka_purnankah(pra[0]);
+        anta = anka_purnankah(pra[1]);
+        if (n >= 3) padam = anka_purnankah(pra[2]);
     }
     if (padam == 0) {
         dosha_utsrja("कार्यकालदोषः",
@@ -265,7 +278,7 @@ static Mulyam a_nishkasa(Mulyam *pra, int n) {
                          "रिक्ता सूची / cannot remove from an empty सूची");
             return shunyam_mulyam();
         }
-        int64_t at = (n >= 2) ? (int64_t)anka_mulyam(pra[1]) : -1;
+        int64_t at = (n >= 2) ? anka_purnankah(pra[1]) : -1;
         if (at < 0) at += s->dirghata;
         if (at < 0 || at >= s->dirghata) {
             dosha_utsrja("सूचकदोषः", "सूचकः परिधेः बहिः %lld / index %lld is out of range",
@@ -616,7 +629,7 @@ static Mulyam a_purna(Mulyam *pra, int n) {
         dosha_utsrja("कार्यकालदोषः", "पूर्णम् अङ्कम् एव इच्छति / पूर्ण expects a number");
         return shunyam_mulyam();
     }
-    return purnanka_mulyam((int64_t)anka_mulyam(pra[0]));
+    return purnanka_mulyam(anka_purnankah(pra[0]));
 }
 
 static Mulyam a_yadrcchika(Mulyam *pra, int n) {
@@ -624,10 +637,17 @@ static Mulyam a_yadrcchika(Mulyam *pra, int n) {
     if (!bijam) { srand((unsigned)time(NULL)); bijam = true; }
     if (n == 0) return dashamsha_mulyam((double)rand() / ((double)RAND_MAX + 1.0));
     int64_t lo = 0, hi;
-    if (n == 1) hi = (int64_t)anka_mulyam(pra[0]);
-    else { lo = (int64_t)anka_mulyam(pra[0]); hi = (int64_t)anka_mulyam(pra[1]); }
+    if (n == 1) hi = anka_purnankah(pra[0]);
+    else { lo = anka_purnankah(pra[0]); hi = anka_purnankah(pra[1]); }
     if (hi < lo) { int64_t t = lo; lo = hi; hi = t; }
-    return purnanka_mulyam(lo + (int64_t)(rand() % (int)(hi - lo + 1)));
+    /* hi - lo + 1 can overflow int64_t at the extremes anka_purnankah allows,
+       which then narrowed to (int) as zero and crashed rand() % 0 — found by
+       the fuzz job's own follow-on mutation. The span is computed unsigned,
+       where the wraparound is exactly the true span even at those extremes,
+       then clamped to what rand()'s % can use safely. */
+    uint64_t span = (uint64_t)hi - (uint64_t)lo;
+    if (span >= (uint64_t)INT32_MAX) span = (uint64_t)INT32_MAX - 1;
+    return purnanka_mulyam(lo + (int64_t)(rand() % ((int)span + 1)));
 }
 
 static int PRACHALA_GANANA = 0;
@@ -732,11 +752,11 @@ static Mulyam a_amsha(Mulyam *pra, int n) {
         dosha_utsrja("कार्यकालदोषः", "अंशः द्वौ प्राचलौ इच्छति / अंशः needs at least two arguments");
         return shunyam_mulyam();
     }
-    int64_t start = (int64_t)anka_mulyam(pra[1]);
+    int64_t start = anka_purnankah(pra[1]);
     if (pra[0].prakara == P_SHABDA) {
         Shabda *s = as_shabda(pra[0]);
         int total = vak_shabda_dirghata(pra[0]);
-        int64_t stop = (n >= 3) ? (int64_t)anka_mulyam(pra[2]) : total;
+        int64_t stop = (n >= 3) ? anka_purnankah(pra[2]) : total;
         if (start < 0) start += total;
         if (stop < 0) stop += total;
         if (start < 0) start = 0;
@@ -748,7 +768,7 @@ static Mulyam a_amsha(Mulyam *pra, int n) {
     }
     if (pra[0].prakara == P_SUCHI) {
         Suchi *s = as_suchi(pra[0]);
-        int64_t stop = (n >= 3) ? (int64_t)anka_mulyam(pra[2]) : s->dirghata;
+        int64_t stop = (n >= 3) ? anka_purnankah(pra[2]) : s->dirghata;
         if (start < 0) start += s->dirghata;
         if (stop < 0) stop += s->dirghata;
         if (start < 0) start = 0;

@@ -211,7 +211,14 @@ def _parasa(a: Any, b: Any = None, step: Any = 1) -> list:
             _fail("परासः अङ्कान् एव इच्छति / परास expects numbers")
     if step == 0:
         _fail("परासस्य पदम् शून्यम् न भवेत् / the step of परास cannot be zero")
-    return list(range(int(start), int(stop), int(step)))
+    try:
+        return list(range(int(start), int(stop), int(step)))
+    except OverflowError:
+        # CPython's own OverflowError here — materialising the range asks for
+        # more elements than a machine word can even count, let alone hold in
+        # memory. The native engine hits the same wall as a real malloc
+        # failure; this raises the matching दोषः instead of a bare traceback.
+        _fail("परासः अतिविशालः / परास is too large to build as a list")
 
 
 def _yojaya(collection: Any, *items: Any) -> Any:

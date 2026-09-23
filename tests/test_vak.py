@@ -2352,6 +2352,70 @@ class TestTruncatedUtf8FromStdin(unittest.TestCase):
             shutil.rmtree(directory, ignore_errors=True)
 
 
+class TestHugeIndexArgumentsDoNotCrash(unittest.TestCase):
+    """अंशः, परास, पूर्ण and यादृच्छिक all cast a caller-supplied दशांशः to
+    int64_t. A magnitude past what int64_t can hold made that cast itself
+    undefined behaviour — found by the fuzz job mutating past अंशः's second
+    argument, past वर्णः. All four now go through one clamping helper.
+
+    परास is different in kind, not just degree: a huge but valid range asks
+    to materialise a list no machine can hold, so refusing it cleanly is
+    correct, not a bug — both engines now do. The other three must return an
+    ordinary answer. Writing this test is what found यादृच्छिक's own bug: the
+    clamped hi could still overflow computing hi - lo + 1, which then
+    narrowed to zero and crashed rand() % 0."""
+
+    HUGE = "99999999999999999999999.0"
+    CLEAN = (f'अंशः("अभ्यासः", {HUGE})', f'पूर्ण({HUGE})', f'यादृच्छिक(0, {HUGE})')
+
+    def test_the_python_engines_return_an_answer(self):
+        for call in self.CLEAN:
+            for run in (output, vm_output):
+                with self.subTest(call=call, engine=run.__name__):
+                    run(f"मुद्रय {call}।")   # not raising is the assertion
+
+    def test_python_parasa_refuses_cleanly_instead_of_a_bare_traceback(self):
+        for run in (output, vm_output):
+            with self.subTest(engine=run.__name__):
+                with self.assertRaises(RuntimeVakError) as caught:
+                    run(f"मुद्रय परास({self.HUGE})।")
+                self.assertIn("परासः", str(caught.exception))
+
+    @unittest.skipIf(GCC is None, "C-संकलकः न प्राप्तः / no C compiler available")
+    def test_the_native_runtime_returns_an_answer(self):
+        directory = Path(tempfile.mkdtemp(prefix="vak-hugeindex-"))
+        try:
+            for call in self.CLEAN:
+                with self.subTest(call=call):
+                    source = f"मुद्रय {call}।"
+                    path = directory / "प्रोग्राम.vak"
+                    path.write_text(source, encoding="utf-8")
+                    exe = build_executable(source, path, directory)
+                    proc = subprocess.run([str(exe.resolve())],
+                                          capture_output=True, timeout=30)
+                    self.assertEqual(proc.returncode, 0,
+                                     proc.stderr.decode("utf-8", "replace")[:400])
+        finally:
+            shutil.rmtree(directory, ignore_errors=True)
+
+    @unittest.skipIf(GCC is None, "C-संकलकः न प्राप्तः / no C compiler available")
+    def test_native_parasa_fails_cleanly_instead_of_crashing(self):
+        """The native engine really does run out of memory building this
+        list — smrti() already exits 70 on a failed malloc, on purpose, and
+        that is the graceful outcome here, not a bug to hide."""
+        directory = Path(tempfile.mkdtemp(prefix="vak-hugeindex-"))
+        try:
+            source = f"मुद्रय परास({self.HUGE})।"
+            path = directory / "प्रोग्राम.vak"
+            path.write_text(source, encoding="utf-8")
+            exe = build_executable(source, path, directory)
+            proc = subprocess.run([str(exe.resolve())],
+                                  capture_output=True, timeout=60)
+            self.assertNotEqual(proc.returncode, 0)
+        finally:
+            shutil.rmtree(directory, ignore_errors=True)
+
+
 class TestVarnaRejectsNonCodePoints(unittest.TestCase):
     """वर्णः turns a number into a character. The C runtime once cast the
     number to unsigned without checking it, which is undefined behaviour for
