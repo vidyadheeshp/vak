@@ -820,6 +820,7 @@ ORDER = [
     ("LET", "declare a variable"), ("CONST", "declare a constant"),
     ("FUNC", "define a function"), ("RETURN", "return from a function"),
     ("PRINT", "print"), ("IF", "if"), ("ELSE", "else"), ("WHILE", "while"),
+    ("DO", "do — the body runs once before यावत् asks"),
     ("REPEAT", "repeat a fixed number of times"), ("FOR", "for each"),
     ("SWITCH", "choose among alternatives"), ("CASE", "in this case"),
     ("IN", "of the collection"), ("BREAK", "leave the loop"),
