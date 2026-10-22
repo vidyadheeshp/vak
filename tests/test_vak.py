@@ -1478,9 +1478,11 @@ class TestNative(unittest.TestCase):
                          "1024 2 3.14159")
 
     def test_strings_are_utf8_and_akshara_aware(self):
+        """दीर्घता counts अक्षराः (syllables), not code points: संस्कृतम् is
+        four — सं, स्कृ, त, म् — not nine Unicode scalars."""
         self.assertEqual(
             self.native_output('मुद्रय दीर्घता("संस्कृतम्"), अक्षराणि("वाक्"), विपर्यय("कनक")।'),
-            ' 9 ["वा", "क्"] कनक'.strip())
+            '4 ["वा", "क्"] कनक')
 
     def test_collections(self):
         self.assertEqual(
@@ -2023,10 +2025,11 @@ class TestStringGrowth(unittest.TestCase):
             "42 सत्य")
 
     def test_a_grown_string_still_counts_its_aksharas(self):
-        """The akṣara count is cached too."""
+        """The akṣara count is cached too, and दीर्घता counts अक्षराः (two:
+        क, ष्ण) rather than code points (four)."""
         self.assertEqual(
             self.both('शब्दः द = "क"। द = द + "ष्ण"। मुद्रय अक्षराणि(द), दीर्घता(द)।'),
-            '["क", "ष्ण"] 4')
+            '["क", "ष्ण"] 2')
 
     def test_other_operands_are_untouched(self):
         self.assertEqual(self.both('मुद्रय १ + २, "x" + "y", [१] + [२]।'),
@@ -3269,8 +3272,8 @@ class TestApplyAndReflection(unittest.TestCase):
                           '{"अपादानम्": [१, २]})।', "[1, 2]")
 
     def test_a_builtin_can_be_applied(self):
-        # दीर्घता counts code points, so वाक् is व ा क ् — four, not two aksharas
-        self.assert_agree('मुद्रय प्रयुज्(दीर्घता, ["वाक्"])।', "4")
+        # दीर्घता counts अक्षराः, so वाक् is वा-क् — two, not four code points
+        self.assert_agree('मुद्रय प्रयुज्(दीर्घता, ["वाक्"])।', "2")
 
     def test_an_inline_closure_can_be_applied(self):
         """The closure exists only on the stack. The C runtime freed it the

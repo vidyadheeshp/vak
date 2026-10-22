@@ -338,7 +338,7 @@ static Mulyam suchakat_grihana(Mulyam lakshya, Mulyam suchaka) {
         if (DOSHA_ASTI) return shunyam_mulyam();
         int dirghata = (lakshya.prakara == P_SUCHI)
                      ? as_suchi(lakshya)->dirghata
-                     : utf8_ganana(as_shabda(lakshya)->paatha, as_shabda(lakshya)->baits);
+                     : akshara_ganana(as_shabda(lakshya)->paatha, as_shabda(lakshya)->baits);
         int64_t norm = at < 0 ? at + dirghata : at;
         if (norm < 0 || norm >= dirghata) {
             dosha_utsrja("सूचकदोषः",
@@ -348,8 +348,8 @@ static Mulyam suchakat_grihana(Mulyam lakshya, Mulyam suchaka) {
         }
         if (lakshya.prakara == P_SUCHI) return grah(as_suchi(lakshya)->angani[norm]);
         Shabda *s = as_shabda(lakshya);
-        int a = utf8_sthanam(s->paatha, s->baits, (int)norm);
-        return shabda_mulyam(s->paatha + a, utf8_padam(s->paatha, a, s->baits));
+        int a = akshara_sthanam(s->paatha, s->baits, (int)norm);
+        return shabda_mulyam(s->paatha + a, akshara_padam(s->paatha, a, s->baits));
     }
     if (lakshya.prakara == P_KOSHA) {
         Mulyam out;

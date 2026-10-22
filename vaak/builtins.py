@@ -146,9 +146,13 @@ def _shabda(value: Any) -> str:
 
 
 def _sanketa(ch: Any) -> int:
-    """संकेतः — the Unicode code point of one character."""
+    """संकेतः — the Unicode code point of one code point.
+
+    Not one अक्षरः: क्ष is a single अक्षरः but two code points, and संकेतः
+    could not return one integer for it anyway.
+    """
     if not isinstance(ch, str) or len(ch) != 1:
-        _fail("संकेतः एकम् अक्षरम् एव इच्छति / संकेतः expects a single character")
+        _fail("संकेतः एकम् सङ्केतबिन्दुम् एव इच्छति / संकेतः expects a single code point")
     return ord(ch)
 
 
@@ -163,16 +167,23 @@ def _varna(code: Any) -> str:
 
 
 def _amsha(text: Any, start: Any = 0, stop: Any = None) -> Any:
-    """अंशः — a slice of a शब्दः or सूची: अंशः(स, २, ५)"""
+    """अंशः — a slice of a शब्दः or सूची: अंशः(स, २, ५)
+
+    A शब्दः slices by अक्षरः (syllable), matching दीर्घता and indexing — स[२]
+    and अंशः(स, २) agree on what the second "character" of स is.
+    """
     if not isinstance(text, (str, list)):
         _fail("अंशः शब्दम् सूचीम् वा इच्छति / अंशः expects a शब्दः or सूची")
     if isinstance(start, bool) or not isinstance(start, (int, float)):
         _fail("अंशस्य आरम्भः अङ्कः भवेत् / the start of अंशः must be a number")
+    sequence = aksharas(text) if isinstance(text, str) else text
     if stop is None:
-        return text[int(start):]
-    if isinstance(stop, bool) or not isinstance(stop, (int, float)):
-        _fail("अंशस्य अन्तः अङ्कः भवेत् / the end of अंशः must be a number")
-    return text[int(start):int(stop)]
+        result = sequence[int(start):]
+    else:
+        if isinstance(stop, bool) or not isinstance(stop, (int, float)):
+            _fail("अंशस्य अन्तः अङ्कः भवेत् / the end of अंशः must be a number")
+        result = sequence[int(start):int(stop)]
+    return "".join(result) if isinstance(text, str) else result
 
 
 def _devanagari(value: Any) -> str:
@@ -184,8 +195,10 @@ def _devanagari(value: Any) -> str:
 # collections
 # --------------------------------------------------------------------------
 def _dirghata(value: Any) -> int:
-    """दीर्घता — length of a string, सूची or कोश."""
-    if isinstance(value, (str, list, dict)):
+    """दीर्घता — length of a शब्दः (in अक्षराः, not code points), सूची or कोश."""
+    if isinstance(value, str):
+        return len(aksharas(value))
+    if isinstance(value, (list, dict)):
         return len(value)
     _fail(f"{type_name(value)} इत्यस्य दीर्घता नास्ति / {type_name(value)} has no length")
 

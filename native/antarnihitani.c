@@ -426,6 +426,37 @@ static unsigned utf8_sanketa(const char *s, int offset, int width) {
          | (((unsigned char)s[offset+2] & 0x3F) << 6) | ((unsigned char)s[offset+3] & 0x3F);
 }
 
+/* एकस्य अक्षरस्य बाइट्-दैर्घ्यम्, आरम्भात् — the byte width of the akṣara
+   (orthographic syllable) beginning at offset: the base code point plus any
+   combining marks, virāma (०९४D) or ZWJ (२००D) that continue it onto the
+   next. Shared by अक्षराणि, दीर्घता, indexing and अंशः, so "character" means
+   the same thing wherever a program asks for one — they used not to agree. */
+int akshara_padam(const char *s, int offset, int baits) {
+    int w = utf8_padam(s, offset, baits);
+    unsigned antima = utf8_sanketa(s, offset, w);
+    int i = offset + w;
+    while (i < baits) {
+        int w2 = utf8_padam(s, i, baits);
+        unsigned cp = utf8_sanketa(s, i, w2);
+        if (!(samyojakah(cp) || antima == 0x094D || antima == 0x200D)) break;
+        antima = cp;
+        i += w2;
+    }
+    return i - offset;
+}
+
+int akshara_ganana(const char *s, int baits) {
+    int n = 0;
+    for (int i = 0; i < baits; ) { i += akshara_padam(s, i, baits); n++; }
+    return n;
+}
+
+int akshara_sthanam(const char *s, int baits, int index) {
+    int i = 0, n = 0;
+    while (i < baits && n < index) { i += akshara_padam(s, i, baits); n++; }
+    return i;
+}
+
 static Mulyam a_aksharani(Mulyam *pra, int n) {
     (void)n;
     if (pra[0].prakara != P_SHABDA) {
@@ -435,25 +466,11 @@ static Mulyam a_aksharani(Mulyam *pra, int n) {
     }
     Shabda *s = as_shabda(pra[0]);
     Mulyam out = suchi_mulyam();
-    int arambha = -1, i = 0;
-    unsigned antima = 0;
-    while (i < s->baits) {
-        int w = utf8_padam(s->paatha, i, s->baits);
-        unsigned cp = utf8_sanketa(s->paatha, i, w);
-        bool anuvartate = (arambha >= 0) && (samyojakah(cp) || antima == 0x094D || antima == 0x200D);
-        if (!anuvartate) {
-            if (arambha >= 0) {
-                Mulyam c = shabda_mulyam(s->paatha + arambha, i - arambha);
-                suchi_yojaya(out, c); muncha(c);
-            }
-            arambha = i;
-        }
-        antima = cp;
-        i += w;
-    }
-    if (arambha >= 0) {
-        Mulyam c = shabda_mulyam(s->paatha + arambha, s->baits - arambha);
+    for (int i = 0; i < s->baits; ) {
+        int w = akshara_padam(s->paatha, i, s->baits);
+        Mulyam c = shabda_mulyam(s->paatha + i, w);
         suchi_yojaya(out, c); muncha(c);
+        i += w;
     }
     return out;
 }
@@ -704,9 +721,13 @@ static Mulyam a_kala(Mulyam *pra, int n) {
 
 static Mulyam a_sanketa(Mulyam *pra, int n) {
     (void)n;
-    if (pra[0].prakara != P_SHABDA || vak_shabda_dirghata(pra[0]) != 1) {
+    /* संकेतः answers in a single Unicode code point, so it checks for
+       exactly one — not one अक्षरः, which क्ष (two code points) is and which
+       संकेतः could not represent as one integer anyway. */
+    if (pra[0].prakara != P_SHABDA
+        || utf8_ganana(as_shabda(pra[0])->paatha, as_shabda(pra[0])->baits) != 1) {
         dosha_utsrja("कार्यकालदोषः",
-                     "संकेतः एकम् अक्षरम् एव इच्छति / संकेतः expects a single character");
+                     "संकेतः एकम् सङ्केतबिन्दुम् एव इच्छति / संकेतः expects a single code point");
         return shunyam_mulyam();
     }
     Shabda *s = as_shabda(pra[0]);
@@ -755,15 +776,15 @@ static Mulyam a_amsha(Mulyam *pra, int n) {
     int64_t start = anka_purnankah(pra[1]);
     if (pra[0].prakara == P_SHABDA) {
         Shabda *s = as_shabda(pra[0]);
-        int total = vak_shabda_dirghata(pra[0]);
+        int total = vak_shabda_dirghata(pra[0]);     /* अक्षराः, not code points */
         int64_t stop = (n >= 3) ? anka_purnankah(pra[2]) : total;
         if (start < 0) start += total;
         if (stop < 0) stop += total;
         if (start < 0) start = 0;
         if (stop > total) stop = total;
         if (stop < start) stop = start;
-        int a = utf8_sthanam(s->paatha, s->baits, (int)start);
-        int b = utf8_sthanam(s->paatha, s->baits, (int)stop);
+        int a = akshara_sthanam(s->paatha, s->baits, (int)start);
+        int b = akshara_sthanam(s->paatha, s->baits, (int)stop);
         return shabda_mulyam(s->paatha + a, b - a);
     }
     if (pra[0].prakara == P_SUCHI) {

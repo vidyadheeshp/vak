@@ -86,7 +86,7 @@ typedef struct {                /* शब्दः — a UTF-8 string */
     Vastu vastu;
     int baits;                  /* bytes, excluding the NUL */
     int avakasha;               /* bytes allocated, so growth is amortised */
-    int akshara;                /* code points (cached, -1 = not counted) */
+    int akshara;                /* अक्षराणि, not code points (cached, -1 = not counted) */
     unsigned sanjna;            /* hash (cached, 0 = not computed yet) */
     char *paatha;
 } Shabda;
@@ -219,6 +219,13 @@ int kosha_sthanam(Mulyam kosha, Mulyam key);
 int utf8_ganana(const char *s, int baits);
 int utf8_sthanam(const char *s, int baits, int index);  /* byte offset of cp #index */
 int utf8_padam(const char *s, int offset, int baits);   /* byte length of cp at offset, clamped to baits */
+
+/* अक्षरः — one code point plus any combining marks, virāma or ZWJ that
+   continue it. "Character" for दीर्घता, indexing and अंशः; संकेतः/वर्णः stay
+   at the code-point functions above, since an अक्षरः need not be one. */
+int akshara_ganana(const char *s, int baits);
+int akshara_sthanam(const char *s, int baits, int index);
+int akshara_padam(const char *s, int offset, int baits);
 
 /* --------------------------------------------------------------------- दोषाः */
 typedef struct {

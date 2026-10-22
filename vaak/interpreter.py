@@ -16,6 +16,7 @@ from . import ast_nodes as A
 from .builtins import build_builtins
 from .environment import Environment
 from .errors import RuntimeVakError
+from .tokens import aksharas
 from .values import (
     NativeFunction,
     VakCallable,
@@ -555,12 +556,15 @@ class Interpreter:
 
     def _index(self, target: Any, index: Any, line: int) -> Any:
         if isinstance(target, (list, str)):
+            # स[२] indexes by अक्षरः (syllable), matching दीर्घता and अंशः —
+            # not by code point.
+            sequence = aksharas(target) if isinstance(target, str) else target
             i = self._as_index(index, line)
-            if not -len(target) <= i < len(target):
+            if not -len(sequence) <= i < len(sequence):
                 raise RuntimeVakError(
                     f"सूचकः परिधेः बहिः {i} / index {i} is out of range", line, code="सूचकदोषः"
                 )
-            return target[i]
+            return sequence[i]
         if isinstance(target, dict):
             if index not in target:
                 raise RuntimeVakError(

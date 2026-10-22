@@ -275,7 +275,7 @@ int utf8_sthanam(const char *s, int baits, int index) {
 }
 
 static int shabda_dirghata(Shabda *s) {
-    if (s->akshara < 0) s->akshara = utf8_ganana(s->paatha, s->baits);
+    if (s->akshara < 0) s->akshara = akshara_ganana(s->paatha, s->baits);
     return s->akshara;
 }
 

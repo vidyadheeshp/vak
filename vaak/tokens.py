@@ -244,6 +244,23 @@ ZWNJ, ZWJ = "‌", "‍"
 VIRAMA = "्"          # U+094D — the vowel-killer that welds a conjunct together
 
 
+def _samyojakah(ch: str) -> bool:
+    """अक्षरः-continuing marks — matras, anusvara, visarga, virama, Vedic
+    accent marks, ZWJ and ZWNJ — by the same explicit code-point ranges as
+    samyojakah() in native/antarnihitani.c. The native runtime has no
+    Unicode category table to consult, so this stays an explicit range
+    check rather than unicodedata.category(ch) in ("Mn", "Mc"): the general
+    test and this one agree on every Devanagari input the test suite tries,
+    but need not agree on combining marks from other scripts, and the two
+    engines must actually agree, not just on the inputs anyone thought to
+    test.
+    """
+    cp = ord(ch)
+    return (0x0900 <= cp <= 0x0903 or cp in (0x093A, 0x093B, 0x093C)
+            or 0x093E <= cp <= 0x094F or 0x0951 <= cp <= 0x0957
+            or 0x0962 <= cp <= 0x0963 or cp in (0x200C, 0x200D))
+
+
 def aksharas(text: str) -> list[str]:
     """अक्षराणि — split a string into syllable clusters, not code points.
 
@@ -252,15 +269,12 @@ def aksharas(text: str) -> list[str]:
     though it is four code points. Anything that treats a string as a list
     of code points — reversing it especially — produces nonsense text.
     """
-    import unicodedata
-
     clusters: list[str] = []
     for ch in text:
         if clusters and (
-            unicodedata.category(ch) in ("Mn", "Mc")      # matras, anusvara, virama
-            or ch in (ZWNJ, ZWJ)
-            or clusters[-1].endswith(VIRAMA)              # a conjunct continues
-            or clusters[-1].endswith(ZWJ)
+            _samyojakah(ch)
+            or clusters[-1][-1] == VIRAMA                 # a conjunct continues
+            or clusters[-1][-1] == ZWJ
         ):
             clusters[-1] += ch
         else:

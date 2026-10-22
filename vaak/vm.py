@@ -25,6 +25,7 @@ from .environment import Environment
 from .errors import RuntimeVakError
 from .interpreter import VakThrow, error_kosha
 from .opcodes import Op
+from .tokens import aksharas
 from .values import (
     VakCallable,
     check_type,
@@ -643,13 +644,16 @@ class VM:
     def _index(self, target: Any, index: Any) -> Any:
         line = self._line()
         if isinstance(target, (list, str)):
+            # स[२] indexes by अक्षरः (syllable), matching दीर्घता and अंशः —
+            # not by code point.
+            sequence = aksharas(target) if isinstance(target, str) else target
             position = self._as_index(index, line)
-            if not -len(target) <= position < len(target):
+            if not -len(sequence) <= position < len(sequence):
                 raise RuntimeVakError(
                     f"सूचकः परिधेः बहिः {position} / index {position} is out of range",
                     line, code="सूचकदोषः",
                 )
-            return target[position]
+            return sequence[position]
         if isinstance(target, dict):
             if index not in target:
                 raise RuntimeVakError(

@@ -927,13 +927,13 @@ virtual machine itself — and each is held to the Python implementation exactly
 
 | Stage | Written in Vāk | Lines | Verified against |
 |---|---|---|---|
-| Lexer | [शब्दविभाजकः.vak](स्वयंसिद्धिः/शब्दविभाजकः.vak) | 310 | the Python lexer — kind, lexeme, value and line of every token |
+| Lexer | [शब्दविभाजकः.vak](स्वयंसिद्धिः/शब्दविभाजकः.vak) | 319 | the Python lexer — kind, lexeme, value and line of every token |
 | Parser | [व्याकरणम्.vak](स्वयंसिद्धिः/व्याकरणम्.vak) | 1030 | the Python parser — the whole syntax tree, node for node, and every syntax error, line and message |
-| **Analyser** | [अर्थविश्लेषकः.vak](स्वयंसिद्धिः/अर्थविश्लेषकः.vak) | 1018 | the Python analyser — every diagnostic's code, line and message, in order |
-| Compiler | [संकलकः.vak](स्वयंसिद्धिः/संकलकः.vak) | 832 | the Python compiler — every instruction, constant and line |
+| **Analyser** | [अर्थविश्लेषकः.vak](स्वयंसिद्धिः/अर्थविश्लेषकः.vak) | 1022 | the Python analyser — every diagnostic's code, line and message, in order |
+| Compiler | [संकलकः.vak](स्वयंसिद्धिः/संकलकः.vak) | 834 | the Python compiler — every instruction, constant and line |
 | VM | [यन्त्रम्.vak](स्वयंसिद्धिः/यन्त्रम्.vak) | 1210 | the Python VM — byte-identical output on every example |
 | Graph | [आलेखः.vak](स्वयंसिद्धिः/आलेखः.vak) | 261 | [vaak/graph.py](vaak/graph.py) — the same graph, structure for structure, over every example |
-| Driver | [वाक्.vak](स्वयंसिद्धिः/वाक्.vak) | 308 | compiled natively it becomes `वाक्.exe`, which runs every example identically |
+| Driver | [वाक्.vak](स्वयंसिद्धिः/वाक्.vak) | 318 | compiled natively it becomes `वाक्.exe`, which runs every example identically |
 
 Only the [native back end](#देशीयसंकलनम्--the-native-back-end) is written in C, on
 purpose: it is the substrate the language stands on, not part of the language.
@@ -1500,6 +1500,13 @@ language stops depending on a host language. Progress along that road:
   string building went from quadratic to linear, and a call stopped formatting an
   error message and comparing type *names* for every parameter. See
   [कार्यक्षमता](#कार्यक्षमता--performance).
+- ✅ **Full akṣara mode.** `दीर्घता`, indexing (`स[२]`) and `अंशः` now count and
+  cut by अक्षरः (syllable) — वाक् is two, not four — matching अक्षराणि instead
+  of disagreeing with it. संकेतः/वर्णः stay at the code-point level on purpose,
+  since an अक्षरः need not be one. The self-hosted lexer and two path-handling
+  functions had to be rewritten to scan by code point explicitly (via सूची),
+  since lexing and path-splitting are exactly the operations that must not
+  follow syllable boundaries.
 - ⬜ **Frame slots.** Function calls remain the weak spot, at about 8.4× CPython
   (measured — `python bench/benchmark.py`).
   Closing that means locals in a contiguous stack array with no scope object at
@@ -1514,9 +1521,8 @@ Beyond the bootstrap:
 
 1. **Objects** — `वर्गः` (class), `स्वयम्` (self), or a lighter prototype model on `कोशः`.
 2. **`सन्धि`-aware identifiers** — accept the sandhi variants of a name as one identifier.
-3. **Full akṣara mode** — `दीर्घता` and indexing by syllable, not code point.
-4. **Deeper kāraka semantics** — `भाव` and `कर्मणि` voices; roles that flow through calls.
-5. **Tooling** — a formatter, and a Devanagari output mode. (The VS Code
+3. **Deeper kāraka semantics** — `भाव` and `कर्मणि` voices; roles that flow through calls.
+4. **Tooling** — a formatter, and a Devanagari output mode. (The VS Code
    extension is done: the grammar is generated from `vaak/tokens.py`, a guard
    fails the build if a keyword category goes unhighlighted, and its diagnostics
    come from the real analyser — see [साधनानि](#साधनानि--tooling).)
