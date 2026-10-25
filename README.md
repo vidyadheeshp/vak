@@ -929,9 +929,9 @@ virtual machine itself — and each is held to the Python implementation exactly
 |---|---|---|---|
 | Lexer | [शब्दविभाजकः.vak](स्वयंसिद्धिः/शब्दविभाजकः.vak) | 319 | the Python lexer — kind, lexeme, value and line of every token |
 | Parser | [व्याकरणम्.vak](स्वयंसिद्धिः/व्याकरणम्.vak) | 1030 | the Python parser — the whole syntax tree, node for node, and every syntax error, line and message |
-| **Analyser** | [अर्थविश्लेषकः.vak](स्वयंसिद्धिः/अर्थविश्लेषकः.vak) | 1022 | the Python analyser — every diagnostic's code, line and message, in order |
-| Compiler | [संकलकः.vak](स्वयंसिद्धिः/संकलकः.vak) | 834 | the Python compiler — every instruction, constant and line |
-| VM | [यन्त्रम्.vak](स्वयंसिद्धिः/यन्त्रम्.vak) | 1210 | the Python VM — byte-identical output on every example |
+| **Analyser** | [अर्थविश्लेषकः.vak](स्वयंसिद्धिः/अर्थविश्लेषकः.vak) | 1023 | the Python analyser — every diagnostic's code, line and message, in order |
+| Compiler | [संकलकः.vak](स्वयंसिद्धिः/संकलकः.vak) | 835 | the Python compiler — every instruction, constant and line |
+| VM | [यन्त्रम्.vak](स्वयंसिद्धिः/यन्त्रम्.vak) | 1211 | the Python VM — byte-identical output on every example |
 | Graph | [आलेखः.vak](स्वयंसिद्धिः/आलेखः.vak) | 261 | [vaak/graph.py](vaak/graph.py) — the same graph, structure for structure, over every example |
 | Driver | [वाक्.vak](स्वयंसिद्धिः/वाक्.vak) | 318 | compiled natively it becomes `वाक्.exe`, which runs every example identically |
 
@@ -1516,16 +1516,27 @@ language stops depending on a host language. Progress along that road:
   machine it must clear a ~7% measurement noise floor to be verifiable.
 - ⬜ **Memory.** The native runtime reference-counts and so leaks reference cycles; a small
   mark-and-sweep pass would close that.
+- ✅ **A formatter and a Devanagari output mode.** `--format` reprints a
+  program in one canonical style — Devanagari numerals, four-space
+  indentation, no parentheses around `मुद्रय`'s arguments — validated by
+  reparsing and rerunning every example and fixture and diffing the output
+  against the original, not by eye. Known limitation, stated rather than
+  hidden: comments are not preserved, since the parser discards them before
+  the AST exists, which is also why `--format` only ever prints to stdout
+  and never rewrites a file. `देवनागरी_निर्गमः(सत्यता)` is the runtime half —
+  a program turns Devanagari-numeral output on or off for `मुद्रय`/`शब्द`
+  itself, instead of wrapping every number in `देवनागरी()` by hand, and
+  returns the previous setting so it can be turned back off exactly as it
+  found it. The VS Code extension was already done: the grammar is
+  generated from `vaak/tokens.py`, a guard fails the build if a keyword
+  category goes unhighlighted, and its diagnostics come from the real
+  analyser — see [साधनानि](#साधनानि--tooling).
 
 Beyond the bootstrap:
 
 1. **Objects** — `वर्गः` (class), `स्वयम्` (self), or a lighter prototype model on `कोशः`.
 2. **`सन्धि`-aware identifiers** — accept the sandhi variants of a name as one identifier.
 3. **Deeper kāraka semantics** — `भाव` and `कर्मणि` voices; roles that flow through calls.
-4. **Tooling** — a formatter, and a Devanagari output mode. (The VS Code
-   extension is done: the grammar is generated from `vaak/tokens.py`, a guard
-   fails the build if a keyword category goes unhighlighted, and its diagnostics
-   come from the real analyser — see [साधनानि](#साधनानि--tooling).)
 
 ---
 

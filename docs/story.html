@@ -220,7 +220,7 @@ footer p { margin:.3rem 0; max-width:none; }
   <p class="eyebrow">कथा · the making of वाक्</p>
   <h1>A language written in Python, that slowly learned to
   <em>write itself</em>.</h1>
-  <p class="stand"><b>0.0.1 to 0.14.0.</b> Vāk began as 7,635 lines
+  <p class="stand"><b>0.0.1 to 0.14.0.</b> Vāk began as 7,897 lines
   of Python that could not have compiled one line of itself. It now compiles itself completely, runs on five
   independent engines held to identical output, and needs no Python at all. This
   is how that happened — including the two optimisations that turned out to be
@@ -241,7 +241,7 @@ footer p { margin:.3rem 0; max-width:none; }
     <h3><span class="ver" title="numbered in retrospect">0.0.1</span><span class="dev">आरम्भः</span><span class="eng">It begins in Python</span></h3>
     
 <p>The first version could not have compiled a single line of itself. It was a
-lexer, a parser and a tree-walking interpreter — 7,635 lines of Python —
+lexer, a parser and a tree-walking interpreter — 7,897 lines of Python —
 and everything the language could do, Python did on its behalf.</p>
 <p>That is the ordinary way to start, and it contains the ordinary trap: a
 language whose only implementation is written in another language has not really
@@ -299,7 +299,7 @@ legitimate implementation of Vāk — including one written in Vāk.</p>
 into tokens, held to the Python lexer on the kind, lexeme, value and line of
 every token.</p>
 <p>Then the parser, 1030 lines, held to the whole syntax tree,
-node for node. Then the compiler, 834 lines, held to every
+node for node. Then the compiler, 835 lines, held to every
 instruction, constant and line number.</p>
 <p>At each step the new stage had to process <em>its own source</em> and agree.
 The parser parsing the parser. That is the point where this stopped being a
@@ -310,7 +310,7 @@ toy.</p>
     <h3><span class="ver" title="numbered in retrospect">0.5.0</span><span class="dev">यन्त्रम्</span><span class="eng">And then the machine itself</span></h3>
     
 <p>The virtual machine — dispatch loop, environments, call frames, exception
-unwinding — written in Vāk, in 1210 lines. A machine
+unwinding — written in Vāk, in 1211 lines. A machine
 describing a machine, in the language that machine runs.</p>
 <p>It is still in the repository though nothing depends on it now: it is the
 executable specification of what the instructions <em>mean</em>, and the tests
@@ -323,10 +323,10 @@ still run every example through it.</p>
     
 <p>The native back end does not translate Vāk into C statement by statement. It
 emits the <em>bytecode</em> as C data and links it against a C implementation of
-the same machine — 3,723 lines. That is deliberate: every engine runs the
+the same machine — 3,767 lines. That is deliberate: every engine runs the
 same instructions, so every engine can be held to the same output.</p>
 <p>Compile the Vāk-written toolchain that way and the result is
-<b>वाक्.exe</b> — 888 KB, self-contained, no Python anywhere in the loop.
+<b>वाक्.exe</b> — 889 KB, self-contained, no Python anywhere in the loop.
 Python is used to build it once, exactly as a C compiler is used once to build a
 self-hosting C compiler. After that the language stands on its own.</p>
   </li>
@@ -340,7 +340,7 @@ match. A lexer either agrees on a token or it does not; an analyser has to
 produce the <em>same complaints</em>, in the same order, with the same wording.
 It does — across sixty-five files, forty of them deliberately broken, one per
 diagnostic kind.</p>
-<p>With that, the entire front end exists in Vāk: 4,839 lines. The
+<p>With that, the entire front end exists in Vāk: 4,842 lines. The
 language describes itself completely.</p>
   </li>
   <li class="ch reveal" data-share="100" data-ver="0.10.0">
@@ -354,7 +354,7 @@ whose grammar is <em>generated</em> from the language's own keyword tables, so
 highlighting cannot drift. A typing aid, because Devanagari on a plain keyboard
 is otherwise a wall. POSIX branches, so Linux and macOS are reachable.</p>
 <p>39 keywords — each spelled three ways, so none of it needs
-a Devanagari keyboard — 49 built-ins, 16 worked
+a Devanagari keyboard — 50 built-ins, 16 worked
 examples — and every keyword spelled two ways, so none of it requires a
 Devanagari keyboard.</p>
   </li>
@@ -482,9 +482,9 @@ yet a check.</p>
     never disagree.</p>
     <div class="facts">
       <div><b>5</b><span>engines, byte-identical</span></div>
-      <div><b>402</b><span>tests</span></div>
-      <div><b>4,839</b><span>lines written in Vāk</span></div>
-      <div><b>888 KB</b><span>self-contained binary</span></div>
+      <div><b>413</b><span>tests</span></div>
+      <div><b>4,842</b><span>lines written in Vāk</span></div>
+      <div><b>889 KB</b><span>self-contained binary</span></div>
       <div><b>6</b><span>kāraka roles as types</span></div>
     </div>
   </li>

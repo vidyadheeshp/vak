@@ -159,7 +159,7 @@ def error_kinds() -> list[tuple[str, str]]:
 
 # ------------------------------------------------------------- आदेशपङ्क्तिः
 FLAG_ORDER = [
-    "--tokens", "--ast", "--check", "--no-check", "--vm", "--bytecode",
+    "--tokens", "--ast", "--format", "--check", "--no-check", "--vm", "--bytecode",
     "--self", "--self-vm", "--native", "--run-native", "--builtins",
     "--karakas", "--graph", "--version",
 ]

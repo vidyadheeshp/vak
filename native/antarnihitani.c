@@ -16,9 +16,10 @@
 int vak_shabda_dirghata(Mulyam m);
 
 /* ------------------------------------------------------------ साधनानि */
-static const char *DEVA_ANKAH[10] = {
-    "०", "१", "२", "३", "४", "५", "६", "७", "८", "९"
-};
+/* DEVA_ANKAH मुल्यानि.c-तः — मुद्रणम् (मूल्यम्_लिख) अपि एतमेव सारणीम् इच्छति,
+   देवनागरी_निर्गमः चालिते सति। DEVA_ANKAH is defined in mulyani.c, since
+   mulyam_lekhaya's own number-printing needs the same table once
+   देवनागरी_निर्गमः is on. */
 
 static bool anka(Mulyam m) {
     return m.prakara == P_PURNANKA || m.prakara == P_DASHAMSHA;
@@ -188,6 +189,19 @@ static Mulyam a_devanagari(Mulyam *pra, int n) {
     Mulyam m = shabda_mulyam(out, j);
     free(out); free(s);
     return m;
+}
+
+static Mulyam a_devanagari_nirgama(Mulyam *pra, int n) {
+    (void)n;
+    if (pra[0].prakara != P_SATYATA) {
+        dosha_utsrja("कार्यकालदोषः",
+                     "देवनागरी_निर्गमः सत्यता एव इच्छति / "
+                     "देवनागरी_निर्गमः expects a सत्यता");
+        return shunyam_mulyam();
+    }
+    bool purvam = DEVANAGARI_NIRGAMAH;
+    DEVANAGARI_NIRGAMAH = pra[0].as.satyata;
+    return satyata_mulyam(purvam);
 }
 
 /* -------------------------------------------------------------- संग्रहाः */
@@ -1126,6 +1140,7 @@ const Antarnihitam ANTARNIHITANI[] = {
     { "संख्या", 1, a_sankhya },
     { "शब्द", 1, a_shabda },
     { "देवनागरी", 1, a_devanagari },
+    { "देवनागरी_निर्गमः", 1, a_devanagari_nirgama },
     { "दीर्घता", 1, a_dirghata },
     { "सूची", -1, a_suchi },
     { "परास", -1, a_parasa },

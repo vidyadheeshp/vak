@@ -240,6 +240,10 @@ void dosha_utsrja(const char *prakara, const char *fmt, ...);
 extern Dosha VARTAMANA_DOSHA;
 extern bool DOSHA_ASTI;
 
+/* --------------------------------------------------------- देवनागरी-निर्गमः */
+extern const char *DEVA_ANKAH[10];
+extern bool DEVANAGARI_NIRGAMAH;
+
 /* ------------------------------------------------------------- अन्तर्निहितानि */
 typedef struct {
     const char *nama;

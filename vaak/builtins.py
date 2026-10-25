@@ -17,6 +17,7 @@ from typing import Any
 
 from .errors import VakExit, RuntimeVakError
 from .tokens import DEV_TO_ASCII, aksharas
+from . import values
 from .values import NativeFunction, VakCallable, stringify, to_devanagari, type_name
 
 
@@ -189,6 +190,19 @@ def _amsha(text: Any, start: Any = 0, stop: Any = None) -> Any:
 def _devanagari(value: Any) -> str:
     """देवनागरी — render a number with Devanagari digits: 42 -> ४२"""
     return to_devanagari(stringify(value))
+
+
+def _devanagari_nirgama(on: Any) -> bool:
+    """देवनागरी_निर्गमः — मुद्रय and शब्द render every number in Devanagari
+    numerals while this is सत्य, instead of a program wrapping each one in
+    देवनागरी() by hand. Returns the previous setting, so a program can save
+    it and turn the mode back off exactly as it found it."""
+    if not isinstance(on, bool):
+        _fail("देवनागरी_निर्गमः सत्यता एव इच्छति / "
+              "देवनागरी_निर्गमः expects a सत्यता")
+    previous = values.DEVANAGARI_OUTPUT
+    values.DEVANAGARI_OUTPUT = on
+    return previous
 
 
 # --------------------------------------------------------------------------
@@ -584,6 +598,10 @@ _REGISTRY: list[tuple[str, str, Any, int, str, str]] = [
     ("संख्या", "sankhya", _sankhya, 1, "अङ्कः करोति / convert to number", "अङ्कः"),
     ("शब्द", "shabda", _shabda, 1, "शब्दः करोति / convert to string", "शब्दः"),
     ("देवनागरी", "devanagari", _devanagari, 1, "देवनागरी-अङ्काः / Devanagari digits", "शब्दः"),
+    ("देवनागरी_निर्गमः", "devanagari_nirgamah", _devanagari_nirgama, 1,
+     "मुद्रय/शब्दस्य देवनागरी-अङ्कान् चालयति/निवारयति, पूर्वस्थितिं प्रत्यागच्छति / "
+     "turn Devanagari-numeral output on or off, returning the previous setting",
+     "सत्यता"),
     ("दीर्घता", "dirghata", _dirghata, 1, "दीर्घता / length", "पूर्णाङ्कः"),
     ("सूची", "suchi", _suchi, -1, "सूचीम् रचयति / build a list", "सूची"),
     ("परास", "parasa", _parasa, -1, "अङ्कपरासः / numeric range", "सूची"),

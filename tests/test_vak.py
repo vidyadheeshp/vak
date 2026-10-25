@@ -2457,6 +2457,183 @@ class TestVarnaRejectsNonCodePoints(unittest.TestCase):
             shutil.rmtree(directory, ignore_errors=True)
 
 
+class TestDevanagariOutputMode(unittest.TestCase):
+    """देवनागरी_निर्गमः — turn Devanagari-numeral output on or off globally,
+    instead of wrapping every number in देवनागरी() by hand.
+
+    This is process-global mutable state (native/mulyani.c's
+    DEVANAGARI_NIRGAMAH, vaak.values.DEVANAGARI_OUTPUT), so every test here
+    ends by turning it back off itself, and tearDown is a safety net for
+    when a test fails before it gets that far — a leaked True would corrupt
+    every unrelated test that runs after this class.
+    """
+
+    def tearDown(self):
+        import vaak.values as values
+        values.DEVANAGARI_OUTPUT = False
+
+    def run_vak(self, source: str) -> str:
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            run_source(source, str(ROOT / "प.vak"))
+        return buf.getvalue().strip()
+
+    def engines(self, source: str) -> dict[str, str]:
+        out = {"tree": output(source), "vm": vm_output(source)}
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            run_with_vak(source)
+        out["यन्त्रम्.vak"] = buf.getvalue().strip()
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            VM("<प>").run(compile_with_vak(source, "<प>"))
+        out["compiled by Vāk"] = buf.getvalue().strip()
+        return out
+
+    def test_turns_numerals_devanagari_until_turned_back_off(self):
+        self.assertEqual(
+            self.run_vak('देवनागरी_निर्गमः(सत्य)।\n'
+                         'मुद्रय ४२, "क", ३.१४।\n'
+                         'देवनागरी_निर्गमः(असत्य)।\n'
+                         'मुद्रय ४२।'),
+            '४२ क ३.१४\n42')
+
+    def test_returns_the_previous_setting(self):
+        self.assertEqual(
+            self.run_vak('मुद्रय देवनागरी_निर्गमः(सत्य)।\n'
+                         'मुद्रय देवनागरी_निर्गमः(असत्य)।'),
+            'असत्य\nसत्य')
+
+    def test_rejects_a_non_boolean_argument(self):
+        with self.assertRaises(RuntimeVakError) as caught:
+            self.run_vak("देवनागरी_निर्गमः(१)।")
+        self.assertIn("देवनागरी_निर्गमः", str(caught.exception))
+
+    def test_every_python_engine_agrees(self):
+        source = ('देवनागरी_निर्गमः(सत्य)।\n'
+                  'मुद्रय ४२, ३.१४।\n'
+                  'देवनागरी_निर्गमः(असत्य)।\n'
+                  'मुद्रय ७।')
+        answers = self.engines(source)
+        distinct = set(answers.values())
+        self.assertEqual(len(distinct), 1, f"engines disagree: {answers}")
+
+    @unittest.skipIf(GCC is None, "C-संकलकः न प्राप्तः / no C compiler available")
+    def test_the_native_runtime_agrees(self):
+        source = ('देवनागरी_निर्गमः(सत्य)।\n'
+                  'मुद्रय ४२, ३.१४।\n'
+                  'देवनागरी_निर्गमः(असत्य)।\n'
+                  'मुद्रय ७।')
+        expected = self.run_vak(source)
+        directory = Path(tempfile.mkdtemp(prefix="vak-devanagari-output-"))
+        try:
+            path = directory / "प्रोग्राम.vak"
+            path.write_text(source, encoding="utf-8")
+            exe = build_executable(source, path, directory)
+            proc = subprocess.run([str(exe.resolve())], capture_output=True, timeout=30)
+            printed = proc.stdout.decode("utf-8", "replace").replace("\r\n", "\n").strip()
+            self.assertEqual(proc.returncode, 0, proc.stderr.decode("utf-8", "replace")[:400])
+            self.assertEqual(printed, expected)
+        finally:
+            shutil.rmtree(directory, ignore_errors=True)
+
+
+class TestFormatter(unittest.TestCase):
+    """vaak.formatter — a canonical printer for the AST, Python-only (no
+    native or self-hosted copy: formatting is a development-time tool, not
+    part of the language's runtime semantics).
+
+    The real correctness test isn't "does it look right" but "does format →
+    reparse → run still do what the original did" — checked here against
+    every real example and clean fixture, not just hand-picked snippets.
+    """
+
+    def run_vak(self, source: str) -> str:
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            run_source(source, str(ROOT / "प.vak"))
+        return buf.getvalue().strip()
+
+    def test_round_trips_every_example_and_fixture(self):
+        """Format, reparse, run — and compare against the original's own
+        output. Error-message line numbers are allowed to differ (removing
+        comments and blank lines necessarily moves them); everything else
+        must match exactly."""
+        from vaak.formatter import format_source
+        paths = (sorted((ROOT / "examples").glob("[0-9][0-9]_*.vak"))
+                + sorted((ROOT / "tests" / "शुद्धनमूनाः").glob("*.vak")))
+        for path in paths:
+            with self.subTest(file=path.name):
+                source = path.read_text(encoding="utf-8")
+                formatted = format_source(source)
+                original = io.StringIO()
+                with redirect_stdout(original):
+                    run_source(source, str(path))
+                reformatted = io.StringIO()
+                with redirect_stdout(reformatted):
+                    run_source(formatted, str(path) + ".formatted")
+                strip_lines = lambda s: re.sub(r"\d+", "#", s)  # noqa: E731
+                self.assertEqual(strip_lines(original.getvalue()),
+                                 strip_lines(reformatted.getvalue()))
+
+    def test_is_idempotent(self):
+        """Formatting already-formatted output changes nothing further —
+        the usual property a real formatter is expected to have."""
+        from vaak.formatter import format_source
+        for path in sorted((ROOT / "examples").glob("[0-9][0-9]_*.vak")):
+            with self.subTest(file=path.name):
+                once = format_source(path.read_text(encoding="utf-8"))
+                self.assertEqual(once, format_source(once))
+
+    def test_escapes_embedded_quotes_and_backslashes(self):
+        """Found by the round-trip check on a real example: a string value
+        that itself contains a literal \" closed the re-emitted string
+        literal early, silently truncating everything after it."""
+        from vaak.formatter import format_source
+        source = 'मुद्रय "अ \\"ब\\" स"।'
+        formatted = format_source(source)
+        self.assertEqual(self.run_vak(formatted), self.run_vak(source))
+        self.assertEqual(self.run_vak(source), 'अ "ब" स')
+
+    def test_indents_a_closure_body_at_its_own_nesting_depth(self):
+        """Found on examples/05_karya.vak: एक anonymous कार्यम् returned from
+        inside another function printed its body at depth 0, flush against
+        the left margin, instead of nested inside both functions."""
+        from vaak.formatter import format_source
+        source = ('कार्यम् बाह्यम्() {\n'
+                  '    प्रत्यागच्छ कार्यम् () { प्रत्यागच्छ १। }।\n'
+                  '}')
+        formatted = format_source(source)
+        inner_line = [l for l in formatted.splitlines() if "प्रत्यागच्छ १" in l][0]
+        self.assertTrue(inner_line.startswith("        "),
+                        f"expected 8-space indent, got: {inner_line!r}")
+
+    def test_unary_word_operator_keeps_its_space(self):
+        """न + सत्य concatenated directly re-lexes as one identifier,
+        नसत्य — found the same way, on a real उदाहरणम्."""
+        from vaak.formatter import format_source
+        formatted = format_source("मुद्रय न सत्य।")
+        self.assertEqual(self.run_vak(formatted), "असत्य")
+
+    def test_cli_flag_prints_to_stdout_and_never_touches_the_file(self):
+        directory = Path(tempfile.mkdtemp(prefix="vak-format-"))
+        try:
+            path = directory / "प्रोग्राम.vak"
+            source = 'मुद्रय "नमस्ते"।'
+            path.write_text(source, encoding="utf-8")
+            proc = subprocess.run(
+                [sys.executable, "-m", "vaak", "--format", str(path)],
+                capture_output=True, cwd=str(ROOT),
+                env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+            )
+            self.assertEqual(proc.returncode, 0, proc.stderr.decode("utf-8", "replace"))
+            self.assertIn("मुद्रय", proc.stdout.decode("utf-8"))
+            self.assertEqual(path.read_text(encoding="utf-8"), source,
+                             "--format must never rewrite the file")
+        finally:
+            shutil.rmtree(directory, ignore_errors=True)
+
+
 class TestTranscendentalFunctions(unittest.TestCase):
     """घातीयः, लघुगणकः, ज्या, कोटिज्या, स्पर्शज्या — exp, ln, sin, cos, tan.
 
@@ -3044,7 +3221,7 @@ class TestEveryEngineKnowsEveryBuiltin(unittest.TestCase):
         "पठ", "काल", "यादृच्छिक", "दोष", "प्राचलाः", "खण्डम्_चालय",
         "सञ्चिकापठ", "सञ्चिकापङ्क्तयः", "सञ्चिकालिख", "सञ्चिकायोजय",
         "सञ्चिकास्ति", "सञ्चिकानाशय", "निर्देशिका", "लिख", "दोषलिख",
-        "निर्गम",
+        "निर्गम", "देवनागरी_निर्गमः",
     }
 
     #: One call per built-in, chosen to give a printable answer.

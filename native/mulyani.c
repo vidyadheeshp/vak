@@ -12,6 +12,18 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* देवनागरी_निर्गमः चालित सति मुद्रय/शब्दः एतैः अङ्कैः एव लिखतः।
+   Read by mulyam_lekhaya below, and by a_devanagari in antarnihitani.c for
+   the one-shot देवनागरी() conversion — one table, so both agree. */
+const char *DEVA_ANKAH[10] = {
+    "०", "१", "२", "३", "४", "५", "६", "७", "८", "९"
+};
+
+/* देवनागरी_निर्गमः builtin द्वारा स्थाप्यते — मुद्रय/शब्दः तदनुसारं लिखतः। Set
+   by the देवनागरी_निर्गमः builtin; मुद्रय/शब्दः render every number in
+   Devanagari numerals while this is true. */
+bool DEVANAGARI_NIRGAMAH = false;
+
 /* ------------------------------------------------------------------ रचना */
 static void *smrti(size_t n) {
     void *p = malloc(n);
@@ -369,6 +381,19 @@ static void lekha_yojaya(Lekha *l, const char *s, int n) {
 
 static void lekha_yojaya_c(Lekha *l, const char *s) { lekha_yojaya(l, s, (int)strlen(s)); }
 
+/* buf में प्रत्येकं दशमांकं देवनागरी-अङ्के परिणमति, देवनागरी_निर्गमः चालित सति —
+   चिह्नम्, दशांशबिन्दुः इत्यादि अपरिवर्तितम् एव। Converts just the ASCII
+   digits in buf to Devanagari numerals when देवनागरी_निर्गमः is on; sign,
+   decimal point and the rest pass through untouched — the same substitution
+   देवनागरी() itself does, so मुद्रय and that builtin agree. */
+static void lekha_yojaya_ankaih(Lekha *l, const char *buf) {
+    if (!DEVANAGARI_NIRGAMAH) { lekha_yojaya_c(l, buf); return; }
+    for (const char *p = buf; *p; p++) {
+        if (*p >= '0' && *p <= '9') lekha_yojaya_c(l, DEVA_ANKAH[*p - '0']);
+        else lekha_yojaya(l, p, 1);
+    }
+}
+
 /* पैथन्-वत् दशांशस्य लेखनम् — the shortest representation that round-trips */
 static void dashamsha_lekhaya(Lekha *l, double d) {
     if (isnan(d))      { lekha_yojaya_c(l, "nan"); return; }
@@ -376,7 +401,7 @@ static void dashamsha_lekhaya(Lekha *l, double d) {
     if (d == (double)(int64_t)d && fabs(d) < 1e18) {
         char buf[32];
         snprintf(buf, sizeof buf, "%lld", (long long)d);
-        lekha_yojaya_c(l, buf);
+        lekha_yojaya_ankaih(l, buf);
         return;
     }
     char buf[64];
@@ -384,7 +409,7 @@ static void dashamsha_lekhaya(Lekha *l, double d) {
         snprintf(buf, sizeof buf, "%.*g", p, d);
         if (strtod(buf, NULL) == d) break;
     }
-    lekha_yojaya_c(l, buf);
+    lekha_yojaya_ankaih(l, buf);
 }
 
 static void mulyam_lekhaya(Lekha *l, Mulyam m, bool uddhrta) {
@@ -394,7 +419,7 @@ static void mulyam_lekhaya(Lekha *l, Mulyam m, bool uddhrta) {
     case P_SATYATA: lekha_yojaya_c(l, m.as.satyata ? "सत्य" : "असत्य"); return;
     case P_PURNANKA:
         snprintf(buf, sizeof buf, "%lld", (long long)m.as.purnanka);
-        lekha_yojaya_c(l, buf);
+        lekha_yojaya_ankaih(l, buf);
         return;
     case P_DASHAMSHA: dashamsha_lekhaya(l, m.as.dashamsha); return;
     case P_SHABDA: {

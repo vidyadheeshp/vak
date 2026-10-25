@@ -316,15 +316,20 @@ def is_truthy(value: Any) -> bool:
     return True
 
 
-def format_number(value: int | float) -> str:
-    if isinstance(value, float) and value.is_integer():
-        return str(int(value))
-    return str(value)
+#: Set by the देवनागरी_निर्गमः builtin. मुद्रय and शब्द render every number in
+#: Devanagari numerals while this is true, instead of a program having to
+#: wrap each one in देवनागरी() by hand.
+DEVANAGARI_OUTPUT = False
 
 
 def to_devanagari(text: str) -> str:
     """'42' -> '४२'"""
     return text.translate(ASCII_TO_DEV)
+
+
+def format_number(value: int | float) -> str:
+    text = str(int(value)) if isinstance(value, float) and value.is_integer() else str(value)
+    return to_devanagari(text) if DEVANAGARI_OUTPUT else text
 
 
 def stringify(value: Any, quote_strings: bool = False) -> str:

@@ -141,7 +141,8 @@ def run_file(path: Path, show_tokens: bool = False, show_ast: bool = False,
              check_only: bool = False, skip_check: bool = False,
              show_bytecode: bool = False, use_vm: bool = False,
              self_hosted: bool = False, self_vm: bool = False,
-             native: bool = False, run_native: bool = False) -> int:
+             native: bool = False, run_native: bool = False,
+             show_format: bool = False) -> int:
     try:
         source = path.read_text(encoding="utf-8")
     except OSError as err:
@@ -155,6 +156,14 @@ def run_file(path: Path, show_tokens: bool = False, show_ast: bool = False,
         program = parse(tokenize(source, str(path)), str(path))
         if show_ast:
             dump_ast(program)
+            return 0
+        if show_format:
+            from .formatter import format_program
+            # कदापि सञ्चिकायाम् न लिख्यते — केवलं stdout एव। अभिप्रायेण टिप्पणी न
+            # रक्ष्यते, अतः सञ्चिकां पुनर्लेखनेन टिप्पणीनाशः प्रकृतः हानिः स्यात्।
+            # Never writes the file, stdout only — comments are not preserved,
+            # and overwriting in place would make that loss, not a convenience.
+            print(format_program(program), end="")
             return 0
 
         if not skip_check:
@@ -351,6 +360,9 @@ def main(argv: list[str] | None = None) -> int:
                     help="arguments passed to the program, readable with प्राचलाः()")
     ap.add_argument("--tokens", action="store_true", help="print the token stream and stop")
     ap.add_argument("--ast", action="store_true", help="print the syntax tree and stop")
+    ap.add_argument("--format", "--svarupana", action="store_true", dest="format_",
+                    help="print the program reformatted to one canonical style, and "
+                         "stop (to stdout only — comments are not preserved)")
     ap.add_argument("--check", action="store_true",
                     help="run the semantic analyser and stop, without executing")
     ap.add_argument("--no-check", action="store_true",
@@ -391,7 +403,7 @@ def main(argv: list[str] | None = None) -> int:
         return _with_deep_stack(
             lambda: run_file(Path(args.file), args.tokens, args.ast, args.check,
                              args.no_check, args.bytecode, args.vm, args.self_hosted,
-                             args.self_vm, args.native, args.run_native))
+                             args.self_vm, args.native, args.run_native, args.format_))
     return repl()
 
 

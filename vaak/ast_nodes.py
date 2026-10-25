@@ -132,7 +132,7 @@ class Param:
         shown = " ".join(parts + [self.name])
         if self.has_default:
             from .values import stringify
-            shown += f" = {stringify(self.default)}"
+            shown += f" = {stringify(self.default, quote_strings=True)}"
         return shown
 
 
