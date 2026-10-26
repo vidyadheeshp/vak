@@ -46,8 +46,6 @@ TESTS = sum(
 # ------------------------------------------------------------------ shared
 TYPES = {t for t in TYPE_NAMES if not t.isascii()}
 KEYWORD_SET = {w for w in KEYWORDS if not w.isascii()}
-# the words themselves, not the three spellings each of them has
-DEV_KEYWORDS = {w for w in KEYWORDS if any("ऀ" <= c <= "ॿ" for c in w)}
 
 import re                                                      # noqa: E402
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))

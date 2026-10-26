@@ -1,0 +1,46 @@
+# १६ — वस्तु / objects, built from what वाक् already has
+# चालनम् / run:  python -m vaak examples/16_vastu.vak
+#
+# वाक् has no वर्गः (class) and no स्वयम् (self) that a method binds
+# automatically. It does not need either: a "constructor" is an ordinary
+# कार्यम् that returns a कोशः of closures, and each closure already carries
+# its own copy of whatever local state the constructor declared — exactly
+# the same mechanism गणकनिर्माता uses in १५_कार्यम्.vak for a single counter,
+# just returning several closures that share one set of locals instead of
+# a single function returning one.
+
+कार्यम् बिन्दु_रचय(कर्ता अङ्कः आरम्भ_क्ष, कर्म अङ्कः आरम्भ_य) : कोशः {
+    मान क्ष = आरम्भ_क्ष।
+    मान य = आरम्भ_य।
+    प्रत्यागच्छ {
+        "क्ष": कार्यम्() { प्रत्यागच्छ क्ष। },
+        "य": कार्यम्() { प्रत्यागच्छ य। },
+        "दूरी": कार्यम्() { प्रत्यागच्छ मूल(क्ष ^ २ + य ^ २)। },
+        # चाल उभयतः परिवर्तयति — क्ष, य इति स्थानिकचरौ, न प्राचलौ, अतः प्रत्येकं
+        # बिन्दुः स्वकीयं स्थितिं स्वयमेव धारयति।
+        # चाल mutates the closed-over क्ष/य directly — they are locals of
+        # बिन्दु_रचय, not fields on a shared object, so each बिन्दुः keeps its
+        # own state independently of every other one made the same way.
+        "चाल": कार्यम्(दक्ष, दय) {
+            क्ष = क्ष + दक्ष।
+            य = य + दय।
+        },
+    }।
+}
+
+मान बिन्दुः१ = बिन्दु_रचय(३, ४)।
+मान बिन्दुः२ = बिन्दु_रचय(०, ०)।
+
+मुद्रय "बिन्दुः१ दूरी मूलात्:", बिन्दुः१.दूरी()।
+
+बिन्दुः१.चाल(१, १)।
+मुद्रय "चालनानन्तरम् बिन्दुः१:", बिन्दुः१.क्ष(), बिन्दुः१.य()।
+मुद्रय "बिन्दुः२ अस्पृष्टः:", बिन्दुः२.क्ष(), बिन्दुः२.य()।
+
+# बिन्दवः सूचीरूपेणापि संग्रहीतुं शक्यन्ते, यतो हि ते मूल्यान्येव, न विशेषः प्रकारः।
+# बिन्दुः is an ordinary मूल्यम् — a कोशः — so a list of them is just a सूची,
+# and प्रत्येकम् walks it exactly as it would any other collection.
+मान बिन्दवः = [बिन्दु_रचय(१, ०), बिन्दु_रचय(०, १), बिन्दु_रचय(५, १२)]।
+प्रत्येकम् (बिन्दुः अन्तः बिन्दवः) {
+    मुद्रय "दूरी:", बिन्दुः.दूरी()।
+}

@@ -1531,12 +1531,25 @@ language stops depending on a host language. Progress along that road:
   generated from `vaak/tokens.py`, a guard fails the build if a keyword
   category goes unhighlighted, and its diagnostics come from the real
   analyser — see [साधनानि](#साधनानि--tooling).
+- ✅ **Objects, the way वाक् can already afford them.** No `वर्गः`, no
+  `स्वयम्` — a constructor is an ordinary `कार्यम्` returning a `कोशः` of
+  closures, each one carrying its own copy of whatever locals the
+  constructor declared. Two calls to the same constructor are already
+  independent, because two calls to any function with locals always are;
+  nothing new had to be built for it. See `examples/16_vastu.vak`. This
+  deliberately sidesteps [issue #8](https://github.com/vidyadheeshp/vak/issues/8)
+  rather than answer it — a closure has no receiver parameter for a kāraka
+  role to attach to. `वस्तु.विधि()` auto-binding a declared कर्ता parameter
+  to `वस्तु` is a different, considerably larger feature — a new bytecode
+  opcode in both compilers and all three VMs — and stays open as that, not
+  as part of this.
 
 Beyond the bootstrap:
 
-1. **Objects** — `वर्गः` (class), `स्वयम्` (self), or a lighter prototype model on `कोशः`.
-2. **`सन्धि`-aware identifiers** — accept the sandhi variants of a name as one identifier.
-3. **Deeper kāraka semantics** — `भाव` and `कर्मणि` voices; roles that flow through calls.
+1. **`सन्धि`-aware identifiers** — accept the sandhi variants of a name as one identifier.
+2. **Deeper kāraka semantics** — `भाव` and `कर्मणि` voices; roles that flow through calls.
+3. **`वस्तु.विधि()` auto-dispatch** — binding a declared receiver automatically, which needs
+   [issue #8](https://github.com/vidyadheeshp/vak/issues/8) settled first and a new opcode after that.
 
 ---
 

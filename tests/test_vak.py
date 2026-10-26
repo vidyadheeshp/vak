@@ -2538,6 +2538,88 @@ class TestDevanagariOutputMode(unittest.TestCase):
             shutil.rmtree(directory, ignore_errors=True)
 
 
+class TestClosuresAsObjects(unittest.TestCase):
+    """वाक् has no वर्गः/स्वयम् and no auto-bound method receiver — a GitHub
+    issue (#8) asks what kāraka role a receiver would even take, and that
+    stays open. "Objects" don't need an answer to it: a constructor is an
+    ordinary कार्यम् returning a कोशः of closures, exactly as examples/16's
+    गणकनिर्माता-style pattern already does for a single counter. Nothing
+    here is new runtime machinery — these tests exist to pin the pattern
+    down, not to exercise a feature that was added for it.
+    """
+
+    def engines(self, source: str) -> dict[str, str]:
+        out = {"tree": output(source), "vm": vm_output(source)}
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            run_with_vak(source)
+        out["यन्त्रम्.vak"] = buf.getvalue().strip()
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            VM("<प>").run(compile_with_vak(source, "<प>"))
+        out["compiled by Vāk"] = buf.getvalue().strip()
+        return out
+
+    MAKE_POINT = (
+        'कार्यम् बिन्दु(अङ्कः क, अङ्कः य) : कोशः {\n'
+        '    प्रत्यागच्छ {\n'
+        '        "क्ष": कार्यम्() { प्रत्यागच्छ क। },\n'
+        '        "य": कार्यम्() { प्रत्यागच्छ य। },\n'
+        '        "चाल": कार्यम्(दक्ष, दय) { क = क + दक्ष। य = य + दय। },\n'
+        '    }।\n'
+        '}\n'
+    )
+
+    def test_two_instances_keep_independent_state(self):
+        source = (self.MAKE_POINT
+                  + 'मान अ = बिन्दु(१, २)।\n'
+                    'मान ब = बिन्दु(१, २)।\n'
+                    'अ.चाल(१०, १०)।\n'
+                    'मुद्रय अ.क्ष(), अ.य(), ब.क्ष(), ब.य()।')
+        self.assertEqual(output(source), "11 12 1 2")
+
+    def test_mutation_through_a_closure_persists_across_calls(self):
+        source = (self.MAKE_POINT
+                  + 'मान अ = बिन्दु(०, ०)।\n'
+                    'अ.चाल(१, १)। अ.चाल(१, १)। अ.चाल(१, १)।\n'
+                    'मुद्रय अ.क्ष(), अ.य()।')
+        self.assertEqual(output(source), "3 3")
+
+    def test_objects_are_ordinary_values_storable_in_a_list(self):
+        source = (self.MAKE_POINT
+                  + 'मान बिन्दवः = [बिन्दु(०, ०), बिन्दु(१, १)]।\n'
+                    'प्रत्येकम् (ब अन्तः बिन्दवः) { मुद्रय ब.क्ष()। }')
+        self.assertEqual(output(source), "0\n1")
+
+    def test_every_python_engine_agrees(self):
+        source = (self.MAKE_POINT
+                  + 'मान अ = बिन्दु(५, ६)।\n'
+                    'अ.चाल(-१, -२)।\n'
+                    'मुद्रय अ.क्ष(), अ.य()।')
+        answers = self.engines(source)
+        distinct = set(answers.values())
+        self.assertEqual(len(distinct), 1, f"engines disagree: {answers}")
+
+    @unittest.skipIf(GCC is None, "C-संकलकः न प्राप्तः / no C compiler available")
+    def test_the_native_runtime_agrees(self):
+        source = (self.MAKE_POINT
+                  + 'मान अ = बिन्दु(५, ६)।\n'
+                    'अ.चाल(-१, -२)।\n'
+                    'मुद्रय अ.क्ष(), अ.य()।')
+        expected = output(source)
+        directory = Path(tempfile.mkdtemp(prefix="vak-closure-object-"))
+        try:
+            path = directory / "प्रोग्राम.vak"
+            path.write_text(source, encoding="utf-8")
+            exe = build_executable(source, path, directory)
+            proc = subprocess.run([str(exe.resolve())], capture_output=True, timeout=30)
+            printed = proc.stdout.decode("utf-8", "replace").replace("\r\n", "\n").strip()
+            self.assertEqual(proc.returncode, 0, proc.stderr.decode("utf-8", "replace")[:400])
+            self.assertEqual(printed, expected)
+        finally:
+            shutil.rmtree(directory, ignore_errors=True)
+
+
 class TestFormatter(unittest.TestCase):
     """vaak.formatter — a canonical printer for the AST, Python-only (no
     native or self-hosted copy: formatting is a development-time tool, not

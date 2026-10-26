@@ -114,10 +114,14 @@ DATED = bool(DATES)
 # a tarball with no git history falls back to the three that can be named.
 REAL = set(DATES) | {__version__} or {"0.10.0", "0.11.0", __version__}
 
-# len(KEYWORDS) counts the Devanagari, IAST and ASCII spellings of the same
-# word, so it reads as a far larger vocabulary than Vak actually asks anyone
-# to learn.  The honest count is the words themselves.
-DEV_KEYWORDS = {w for w in KEYWORDS if any("ऀ" <= c <= "ॿ" for c in w)}
+# KEYWORD_COUNT is the number of distinct token types — not len(KEYWORDS),
+# which counts every Devanagari/IAST/ASCII spelling of the same word, and
+# not len(DEV_KEYWORDS) either, which counts Devanagari spellings alone and
+# still overcounts: ten keywords (FUNC, RETURN, WHILE, FOR, REPEAT, SWITCH,
+# TRY, CATCH, FINALLY, THROW) have two valid Devanagari spellings each, so
+# that figure is 39 against a true count of 29. Both numbers are real; only
+# one of them is "keywords."
+KEYWORD_COUNT = len({t for t in KEYWORDS.values()})
 
 ORDER = ["lexer", "parser", "compiler", "machine", "driver", "analyser", "main"]
 CUMULATIVE, _running = {}, 0
@@ -215,7 +219,7 @@ on a server. An editor extension
 whose grammar is <em>generated</em> from the language's own keyword tables, so
 highlighting cannot drift. A typing aid, because Devanagari on a plain keyboard
 is otherwise a wall. POSIX branches, so Linux and macOS are reachable.</p>
-<p>{len(DEV_KEYWORDS)} keywords — each spelled three ways, so none of it needs
+<p>{KEYWORD_COUNT} keywords — each spelled three ways, so none of it needs
 a Devanagari keyboard — {len(BUILTIN_DOCS)} built-ins, {EXAMPLES} worked
 examples — and every keyword spelled two ways, so none of it requires a
 Devanagari keyboard.</p>"""),
